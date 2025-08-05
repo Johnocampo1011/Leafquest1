@@ -1,0 +1,1220 @@
+<Stack.Navigator>
+      <Stack.Screen
+          name="HomeFeed"
+          component={HomeScreenContent}
+          options={{ headerShown: false }} // Hide header for HomeFeed
+      />
+      <Stack.Screen
+          name="PlantDetail"
+          component={PlantDetailScreen}
+          options={{ title: 'Plant Details' }}
+      />
+    </Stack.Navigator>
+    { id: 5, label: 'BIRD NEST FERN', screen: 'BirdNestFernDetail', src: require('./assets/homeplant.png') },
+    { id: 6, label: 'BIRD NEST FERN', screen: 'BirdNestFernDetail', src: require('./assets/homeplant.png') },
+    { id: 7, label: 'BIRD NEST FERN', screen: 'BirdNestFernDetail', src: require('./assets/homeplant.png') },
+    { id: 8, label: 'BIRD NEST FERN', screen: 'BirdNestFernDetail', src: require('./assets/homeplant.png') },
+    { id: 9, label: 'BIRD NEST FERN', screen: 'BirdNestFernDetail', src: require('./assets/homeplant.png') },
+    { id: 10, label: 'BIRD NEST FERN', screen: 'BirdNestFernDetail', src: require('./assets/homeplant.png') },
+
+
+
+
+
+    const styles = StyleSheet.create({
+  header: {
+    height: 40,
+    backgroundColor: 'fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 40,
+  },
+});
+
+export function PothosDetail({navigation}) {
+return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <CustomHeader onMenuPress={() => navigation.navigate('Menu')} />
+      <ScrollView contentContainerStyle={plntstyles.container}>
+        
+        <View style={plntstyles.content}>
+          <Image source={require('./assets/myplant.png')} style={plntstyles.plantImage} resizeMode="contain" />
+        </View>
+        <View style={plntstyles.circlesRow}>
+          {[{ icon: 'water', count: 12 }, { icon: 'sunny', count: 8 }, { icon: 'leaf', count: 3 }].map(({ icon, count }, idx) => (
+            <TouchableOpacity key={idx} style={plntstyles.circleButton}>
+              <Ionicons name={icon} size={24} color="#3a7d44" />
+              <View style={plntstyles.badge}>
+                <Text style={plntstyles.badgeText}>{count}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={plntstyles.detailSectionlibrary}>
+          <Text style={plntstyles.sectionTitle}>More Details</Text>
+          <Text style={plntstyles.paragraph}>
+            • Botanical family: Araceae{'\n'}• Origin: Tropical rainforests
+          </Text>
+          <Text style={[plntstyles.paragraph, { marginTop: 20 }]}>
+            In venenatis sit amet lectus sed accumsan...
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+//duplicate of Homescreen.js
+
+import React, { useState } from 'react';
+import { View,Text,StyleSheet,Image,ScrollView,TextInput,TouchableOpacity, Platform } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Video } from 'expo-av';
+
+
+// --- Navigator Setups (Internal) ---
+const HomeStack = createNativeStackNavigator();
+const VideosStack = createNativeStackNavigator();
+
+// --- Custom Header ---
+function Header() {
+  const navigation = useNavigation();
+  return (
+    <View style={headerStyles.container}>
+      <Text style={{fontSize:20, fontWeight:"bold"}}>LEAFQUEST</Text>
+      <TouchableOpacity style={{marginLeft:200}} onPress={() => {}}>
+        <Ionicons name="menu" size={24} color="#000"/> 
+      </TouchableOpacity>
+      <View />
+    </View>
+  );
+}
+
+export function HomeScreenContent({ navigation }) {
+   const items = [
+    {
+      id: 0,
+      src: require('./assets/pothos.png'),
+      screen: 'Pothos',
+      label: 'POTHOS',
+    },
+    {
+      id: 1,
+      src: require('./assets/PHILODENDRON.png'),
+      screen: 'Philoderon',
+      label: 'PHILODENDRON',
+    },
+    {
+      id: 2,
+      src: require('./assets/PrayerPlant.png'),
+      screen: 'PrayerPlant',
+      label: 'PRAYER PLANT',
+    },
+    {
+      id: 3,
+      src: require('./assets/BirdNestFern.png'),
+      screen: 'BirdNestFern',
+      label: 'BIRD NEST FERN',
+    },
+    {
+      id: 4,
+      src: require('./assets/ZzPlant.png'),
+      screen: 'ZzPlant',
+      label: 'ZZ PLANT',
+    },
+    
+  ];
+
+  return (
+    <View style={homeStyles.container}>
+      <Header />
+      <ScrollView contentContainerStyle={homeStyles.scrollContent}>
+        
+
+        <View style={homeStyles.gridContainer}>
+          {items.map(({ id, src, screen, label }) => (
+            <TouchableOpacity
+              key={id}
+              style={homeStyles.gridItem}
+              onPress={() => navigation.navigate(screen, { plantId: id })}
+            >
+              <Image source={src} style={homeStyles.image} />
+              <Text style={homeStyles.label}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+      <TouchableOpacity
+          style={{
+            backgroundColor: '#4CAF50',
+            padding: 14,
+            borderRadius: 12,
+            alignItems: 'center',
+            marginHorizontal: 14,
+            marginTop: 10,
+            marginBottom: 10,
+          }}
+          onPress={() => navigation.navigate('QuizScreen')}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+            Take Plant Quiz
+          </Text>
+        </TouchableOpacity>
+    </View>
+  );
+}
+
+
+
+export function MessageScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.text}>Welcome to LeafQuest!</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+  },
+  text: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'green',
+  },
+});
+
+
+
+function VideoPlayerScreen() {
+  const navigation = useNavigation();
+  const videoItems = [
+    { id: 1, title: 'Video One', desc: 'Intro to plants', image: require('./assets/flower.png') },
+    { id: 2, title: 'Video Two', desc: 'Sunlight tips', image: require('./assets/videoplant.png') },
+    { id: 3, title: 'Video Three', desc: 'Watering guide', image: require('./assets/flower.png') },
+    { id: 4, title: 'Video Four', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+    { id: 5, title: 'Video Five', desc: 'Watering guide', image: require('./assets/flower.png') },
+    { id: 6, title: 'Video Six', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+  ];
+
+  return (
+    <View style={detailStyles.container}>
+      <Header />
+      <Video
+        source={{ uri: 'https://www.w3schools.com/html/mov_bbb.mp4' }}
+        useNativeControls
+        resizeMode="cover"
+        isLooping 
+        style={{ width: '100%', height: 220, borderRadius:14, marginTop:15,borderWidth: 2, borderColor: 'black' }}
+      />
+      <Text style={videoplayStyles.title}>Video Title</Text>
+      <Text style={videoplayStyles.description}>Video description goes here...</Text>
+      <ScrollView style={{ padding: 15 }}>
+        {videoItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={videoStyles.videoItem}
+            onPress={() => console.log("Tapped related video:", item.title)}
+          >
+            <Image source={item.image} style={videoStyles.thumbnail} />
+            <View style={videoStyles.infoBox}>
+              <Text style={videoStyles.title}>{item.title}</Text>
+              <Text style={videoStyles.desc}>{item.desc}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function VideosScreen() {
+  const navigation = useNavigation();
+  const [search, setSearch] = useState('');
+  const videoItems = [
+    { id: 1, title: 'Video One', desc: 'Intro to plants', image: require('./assets/videoplant.png') },
+    { id: 2, title: 'Video Two', desc: 'Sunlight tips', image: require('./assets/videoplant.png') },
+    { id: 3, title: 'Video Three', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+    { id: 4, title: 'Video Four', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+    { id: 5, title: 'Video Five', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+    { id: 6, title: 'Video Six', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+  ];
+
+  const filteredItems = videoItems.filter(item =>
+    item.title.toLowerCase().includes(search.toLowerCase()) ||
+    item.desc.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <View style={otherStyles.container}>
+      <Header />
+      <TextInput
+        style={videoStyles.searchBar}
+        placeholder="Search videos..."
+        value={search}
+        onChangeText={setSearch}
+      />
+      <ScrollView style={{ padding: 15 }}>
+        {filteredItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={videoStyles.videoItem}
+            onPress={() => navigation.navigate('VideoPlayer')}
+          >
+            <Image source={item.image} style={videoStyles.thumbnail} />
+            <View style={videoStyles.infoBox}>
+              <Text style={videoStyles.title}>{item.title}</Text>
+              <Text style={videoStyles.desc}>{item.desc}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+// --- VideosStackNavigator Component ---
+export function VideosStackNavigator() {
+  return (
+    <VideosStack.Navigator screenOptions={{ headerShown: false }}>
+      <VideosStack.Screen name="VideosMain" component={VideosScreen} />
+      <VideosStack.Screen name="VideoPlayer" component={VideoPlayerScreen} />
+    </VideosStack.Navigator>
+  );
+}
+
+
+//DI PA NAGANA TO BE UPDATED
+
+export function LibraryScreen({ navigation }) {
+  const items = [
+    {
+      id: 0,
+      src: require('./assets/pothos.png'),
+      screen: 'PothosLibrary',
+      label: 'POTHOS',
+    },
+    {
+      id: 1,
+      src: require('./assets/PHILODENDRON.png'),
+      screen: 'PhilodendronLibrary', // 
+      label: 'PHILODENDRON',
+    },
+  ];
+
+  return (
+    <ScrollView contentContainerStyle={homeStyles.scrollContent}>
+      <View style={homeStyles.container}>
+        <Header />
+        <View style={homeStyles.gridContainer}>
+          {items.map(({ id, src, screen, label }) => (
+            <TouchableOpacity
+              key={id}
+              style={homeStyles.gridItem}
+              onPress={() => {
+                try {
+                  navigation.navigate(screen, { plantId: id });
+                } catch (err) {
+                  console.error(`Failed to navigate to ${screen}`, err);
+                }
+              }}
+            >
+              <Image source={src} style={homeStyles.image} />
+              <Text style={homeStyles.label}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+
+
+
+
+
+
+
+// --- LibraryScreen Component ---
+/*export function LibraryScreen({ navigation }) {
+  const [searchText, setSearchText] = useState('');
+  const items = Array.from({ length: 32 }).map((_, idx) => ({ id: idx + 1, label: `Library Item ${idx + 1}`, image: require('./assets/image.png') }));
+  const filteredItems = items.filter(item => item.label.toLowerCase().includes(searchText.toLowerCase()));
+  return (
+    <View style={otherStyles.container}>
+      <Header />
+      <TextInput style={libraryStyles.searchBar} placeholder="Search Plant Library…" value={searchText} onChangeText={setSearchText}/>
+      <Text style={libraryStyles.title}>Plant Library</Text>
+      <ScrollView contentContainerStyle={libraryStyles.gridContainer}>
+        {filteredItems.map(item => (
+          <TouchableOpacity key={item.id} style={libraryStyles.gridItem} onPress={() => navigation.navigate('Home', { screen: 'PlantDetail', params: { plantId: item.id } })}>
+            <Image source={item.image} style={libraryStyles.image} />
+            <Text style={libraryStyles.label}>{item.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+ }
+  */
+
+
+
+
+// --- Styles ---
+
+
+
+
+const headerStyles = StyleSheet.create({ 
+  container: { height: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ddd', marginTop: Platform.OS === 'android' ? 40 : 0,}, 
+});
+
+const homeStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fafafa',
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between', // Ensures even spacing
+    paddingHorizontal: 10,
+    paddingTop: 10,
+  },
+  gridItem: {
+    width: '48%', // 2 columns
+    marginBottom: 15,
+    alignItems: 'center',
+    backgroundColor: 'lightgray',
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 8,
+    padding: 10,
+  },
+  image: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'contain',
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});
+
+const plntstyles = StyleSheet.create({ 
+  container: { flex: 1, backgroundColor: '#fff', padding: 20, }, headerlibrary: { alignItems: 'center', marginBottom: 20, }, titlelibrary: { fontSize: 24, fontWeight: 'bold', color: '#333', }, content: { alignItems: 'center', marginBottom: 30, }, plantImage: { width: '80%', height: 240, resizeMode: 'contain', }, circlesRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 30, }, circleButton: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#3a7d44', alignItems: 'center', justifyContent: 'center', position: 'relative', }, badge: { position: 'absolute', top: -6, right: -6, backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 4, paddingVertical: 2, borderWidth: 1, borderColor: 'black', }, badgeText: { fontSize: 12, color: '#3a7d44', fontWeight: 'bold', }, detailSectionlibrary: { paddingBottom: 40, }, sectionTitle: { fontSize: 20, fontWeight: '600', marginBottom: 10, }, paragraph: { fontSize: 14, lineHeight: 20, color: '#555', },
+});
+
+const videoStyles = StyleSheet.create({ 
+  searchBar: { backgroundColor: '#f0f0f0', margin: 15, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, fontSize: 16 }, videoItem: { flexDirection: 'row', marginBottom: 20, alignItems: 'center' }, thumbnail: { width: 160, height: 80, borderRadius: 6, marginRight: 15 }, infoBox: { flex: 1 }, title: { fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: '#222' }, desc: { fontSize: 13, color: '#666' }, 
+});
+
+const videoplayStyles = StyleSheet.create({ 
+  title: { fontSize: 24, fontWeight: 'bold', paddingHorizontal: 15, marginTop: 10, color: '#333' }, description: { fontSize: 14, paddingHorizontal: 15, marginTop: 5, marginBottom: 15, color: '#555',}, 
+});
+
+const libraryStyles = StyleSheet.create({ 
+  title: { fontSize: 30, fontWeight: 'bold', marginHorizontal: 15, marginBottom: 5, color: '#333' }, 
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 10, paddingBottom: 10 }, gridItem: { width: '23%', marginBottom: 15, alignItems: 'center', borderWidth:1, borderColor: 'black', borderRadius: 6, backgroundColor: 'lightgray',paddingBottom: 18, paddingHorizontal:8, }, 
+  image: { width: 'contain', aspectRatio: .8, }, 
+  label: { marginTop: 6, fontSize: 12, color: '#333', textAlign: 'center' }, 
+  searchBar: { backgroundColor: '#f0f0f0', margin: 15, marginBottom: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, fontSize: 16 }, 
+});
+
+const detailStyles = StyleSheet.create({ 
+  container: { flex: 1, backgroundColor: '#fff', padding: 10, }, content: { flex: 1, alignItems: 'center', justifyContent: 'center' }, text: { fontSize: 18 }, 
+});
+
+const otherStyles = StyleSheet.create({ 
+  container: { flex: 1, backgroundColor: '#fff', }, content: { flex: 1, alignItems: 'center', justifyContent: 'center' }, 
+});
+
+
+//duplicate app.js
+
+// App.js - FINAL REVISED: Login Screen with Logo, Green Card, Labels, AND Links
+
+import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StyleSheet, Text, ImageBackground, View, SafeAreaView, TextInput, Button, TouchableOpacity, InteractionManager, Image,  Alert,
+  ActivityIndicator, } from 'react-native';
+import { useState } from 'react';
+import { HomeStackScreen } from './HomeStack';
+import React from 'react';
+import QuizScreen from './QuizScreen';
+import { WebView } from 'react-native-webview';
+
+
+// --- LoginScreen component (Logo + Green Card + Labels + Links) ---
+export function LoginScreen({ navigation }) {
+  return (
+    <View style={styles.loginOuterContainer}>
+      <StatusBar style="auto" />
+      <ImageBackground
+        style={styles.imagebg}
+        source={require('./assets/greenbg 1.png')}
+        resizeMode="cover"
+      >
+      
+        <View style={styles.centeringContainer}>
+
+          <Image
+            source={require('./assets/udm-logo.jpg')} // Using your confirmed logo file
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+
+          <Text style={styles.mainTitle1}>LEAFQUEST</Text>
+
+       
+          <View style={styles.formContainer}>
+
+          
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>EMAIL:</Text>
+              <TextInput style={styles.input} keyboardType="email-address" placeholderTextColor="#999" autoCapitalize="none"/>
+            </View>
+
+          
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>PASSWORD:</Text>
+              <TextInput style={styles.input} placeholderTextColor="#999" secureTextEntry autoCapitalize="none"/>
+            </View>
+
+           
+            <TouchableOpacity onPress={() => navigation.navigate('ForgotPasswordScreen')}>
+              <Text style={styles.forgotPasswordLinkGreen}>
+                Forgot your password?
+              </Text>
+            </TouchableOpacity>
+
+         
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={() => {
+                  // TODO: Implement actual login logic
+                  navigation.navigate('MessageScreen');
+
+              }} >
+              <Text style={styles.loginButtonText}>LOGIN</Text>
+            </TouchableOpacity>
+
+    
+            <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
+              <Text style={styles.signUpLinkGreen}>
+                Don't have an account?{' '}
+                <Text style={styles.signUpLinkActionGreen}>Sign Up</Text>
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </ImageBackground>
+    </View>
+  );
+}
+// --- End LoginScreen component ---
+
+const Stack = createNativeStackNavigator();
+
+// Main App Navigator Setup (Remains the same)
+export default function App() {
+  // ... Navigator setup ...
+  return (
+    <NavigationContainer>
+    <Stack.Navigator initialRouteName="LoginScreen" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      <Stack.Screen name="MessageScreen" component={MessageScreen} /> 
+      <Stack.Screen name="MessageScreen2" component={MessageScreen2} /> 
+      <Stack.Screen name="ForgotPasswordScreen" component={ForgotPasswordScreen} />
+      <Stack.Screen name="VerificationScreen" component={VerificationScreen} />
+      <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen} />
+      <Stack.Screen name="PasswordSuccessScreen" component={PasswordSuccessScreen} />
+      <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+      <Stack.Screen name="WelcomeMessage" component={WelcomeMessage} />
+      <Stack.Screen name="Homescreen" component={HomeStackScreen} />
+      <Stack.Screen name="QuizScreen" component={QuizScreen} />
+      
+
+    </Stack.Navigator>
+  </NavigationContainer>
+
+
+
+  );
+}
+
+export function MessageScreen({ navigation }) {
+      return (
+  
+          
+          <View style={messagestyle.container}>
+  
+      <ImageBackground
+                  style={messagestyle.imagebg}
+                  source={require('./assets/Ellipse 5.png')}
+                  resizeMode="cover"
+      ></ImageBackground>
+  
+      <Text style={messagestyle.title}>WELCOME TO LEAFQUEST!</Text>
+  
+      <Text style={messagestyle.body}>
+          Hey there, future plant parent! Ready to make your world a little greener? LeafQuest is your new helper for finding, learning about, and taking care of plants. Let's play!
+      </Text>
+  
+      <Text style={messagestyle.body}>
+          LeafQuest is your personal companion for plant nurturing, designed to help you discover, identify, and care for plants with ease. This app features a minimalist, nature-themed look that mirrors its interest in plant nurturing. It includes a warm and friendly-looking login page with bright green leaf details to produce a cool, welcoming feel.
+
+
+      </Text>
+  
+      <TouchableOpacity style={messagestyle.button} onPress={() => navigation.navigate('MessageScreen2')}>
+          <Text style={messagestyle.buttonText}>CONTINUE</Text>
+      </TouchableOpacity>
+      </View>
+  );
+  }
+
+  export function MessageScreen2({ navigation }) {
+  
+      return (
+          <View style={messagestyle.container}>
+  
+      <ImageBackground
+                  style={messagestyle.imagebg}
+                  source={require('./assets/Ellipse 5.png')}
+                  resizeMode="cover"
+      ></ImageBackground>
+  
+      <Text style={messagestyle.title2}>WHY  LEAFQUEST!</Text>
+  
+      <Text style={messagestyle.body2}>
+Your Ultimate Plant Companion! {'\n'}LeafQuest makes plant care easy and fun:    </Text>
+  
+      <Text style={messagestyle.body2}>
+        Smart Suggestions: Snap a pic of your space, and we'll suggest a plant that fits best for that environment.{'\n'} 
+        Know Your Plants: Explore our Plant Library to display and arrange a set of plant information , with a search bar to quickly locate a specific plant specie you were looking for. {'\n'}
+        Track Your Greens: On My Plants Page, view all of the discovered plants , see their growth level, and get three actions to care for the health of the plant. {'\n'}
+        Learn & Grow: Watch video content related to plants and take plant related quizzes  to boost your knowledge!{'\n'}
+      </Text>
+  
+      <TouchableOpacity style={messagestyle.button} onPress={() => navigation.replace('Homescreen')}>
+          <Text style={messagestyle.buttonText}>CONTINUE</Text>
+      </TouchableOpacity>
+      </View>
+  );
+  }
+
+
+// --- Other Screen Component Definitions (Remain the same) ---
+export function ForgotPasswordScreen({ navigation }) { /* ... */
+  const [username, setUsername] = useState(''); const [email, setEmail] = useState('');
+  return ( 
+    <View style={styles.loginOuterContainer}>
+      <StatusBar style="auto" />
+      <ImageBackground
+        style={styles.imagebg}
+        source={require('./assets/greenbg 1.png')}
+        resizeMode="cover"
+      >
+      
+        <View style={styles.centeringContainer}>
+          <Text style={styles.mainTitle}>FORGOT PASSWORD</Text>
+        
+          <View style={styles.formContainer}>
+        
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>USERNAME:</Text>
+              <TextInput style={set1styles.input} value={username} onChangeText={setUsername}/>
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>EMAIL:</Text>
+              <TextInput style={set1styles.input} keyboardType="email-address" value={email} onChangeText={setEmail}/> 
+            </View>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={() => navigation.navigate('VerificationScreen')}> 
+              <Text style={styles.loginButtonText}>SEND EMAIL</Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </ImageBackground>
+    </View>
+  );
+}
+
+export function VerificationScreen({ navigation }) {
+  const [code, setCode] = useState(['', '', '', '']);
+  const [loading, setLoading] = useState(false);
+
+  const handleResendEmail = async () => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
+      Alert.alert("Success", "Verification email resent!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to resend email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View style={styles.loginOuterContainer}>
+      <StatusBar style="auto" />
+      <ImageBackground
+        style={styles.imagebg}
+        source={require('./assets/greenbg 1.png')}
+        resizeMode="cover"
+      >
+        <View style={styles.centeringContainer}>
+          <Text style={styles.mainTitle}>VERIFICATION</Text>
+
+          <View style={set1styles.codeContainer}>
+            {code.map((digit, idx) => (
+              <TextInput
+                key={idx}
+                style={set1styles.codeInput}
+                maxLength={1}
+                keyboardType="number-pad"
+                onChangeText={(text) => {
+                  const newCode = [...code];
+                  newCode[idx] = text;
+                  setCode(newCode);
+                }}
+                value={digit}
+              />
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => navigation.navigate('ChangePasswordScreen')}
+          >
+            <Text style={styles.loginButtonText}>CONFIRM</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.resendButton}
+            onPress={handleResendEmail}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            {loading ? (
+              <ActivityIndicator color="#1B5E16" />
+            ) : (
+              <Text style={styles.resendText}>RESEND EMAIL</Text>
+            )}
+          </TouchableOpacity>
+
+        </View>
+      </ImageBackground>
+    </View>
+  );
+}
+
+export function ChangePasswordScreen({ navigation }) {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+
+  const handleChangePassword = () => {
+    if (password.trim() === '' || confirm.trim() === '') {
+      Alert.alert('Error', 'Please fill in both fields.');
+      return;
+    }
+
+    if (password !== confirm) {
+      Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
+      return;
+    }
+
+
+    navigation.navigate('PasswordSuccessScreen');
+  };
+
+  return (
+    <View style={styles.loginOuterContainer}>
+      <StatusBar style="auto" />
+      <ImageBackground
+        style={styles.imagebg}
+        source={require('./assets/greenbg 1.png')}
+        resizeMode="cover"
+      >
+        <View style={styles.centeringContainer}>
+          <Text style={styles.mainTitle}>CHANGE PASSWORD</Text>
+
+          <View style={styles.formContainer}>
+            <View style={set1styles.form}>
+              <TextInput
+                style={set1styles.input}
+                placeholder="New Password"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+
+              <TextInput
+                style={set1styles.input}
+                placeholder="Confirm Password"
+                secureTextEntry
+                value={confirm}
+                onChangeText={setConfirm}
+              />
+
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={handleChangePassword}
+              >
+                <Text style={styles.loginButtonText}>CONFIRM</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ImageBackground>
+    </View>
+  );
+}
+
+export function PasswordSuccessScreen({ navigation }) {
+  return (
+    <SafeAreaView style={set1styles.container}>
+      <Text style={set1styles.title}>Password Successfully Changed!</Text>
+      
+      <TouchableOpacity
+        style={set1styles.button}
+        onPress={() => navigation.navigate('LoginScreen')}
+      >
+        <Text style={set1styles.buttonText}>PROCEED TO HOMEPAGE</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+}
+
+export function SignUpScreen({ navigation }) {
+  const [firstName, setfirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+
+  const validateAndSignUp = () => {
+    
+    if (!firstName || !lastName || !email || !username || !password || !confirm) {
+      Alert.alert('Error', 'Please fill in all fields.');
+      return;
+    }
+
+    // Email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return;
+    }
+
+    // Password match check
+    if (password !== confirm) {
+      Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
+      return;
+    }
+
+    // Password length check (optional)
+    if (password.length < 6) {
+      Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
+      return;
+    }
+
+    // If all checks pass, proceed
+    navigation.navigate('WelcomeMessage');
+  };
+
+  return (
+    <View style={styles.loginOuterContainer}>
+      <StatusBar style="auto" />
+      <ImageBackground
+        style={styles.imagebg}
+        source={require('./assets/greenbg 1.png')}
+        resizeMode="cover"
+      >
+        <View style={styles.centeringContainer}>
+
+          <Text style={styles.mainTitle}>CREATE ACCOUNT</Text>
+
+          <View style={styles.formContainer}>
+            <View style={set1styles.form}>
+              <TextInput
+                style={set1styles.input}
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setfirstName}
+              />
+              <TextInput
+                style={set1styles.input}
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+              <TextInput
+                style={set1styles.input}
+                placeholder="Email"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+              />
+              <TextInput
+                style={set1styles.input}
+                placeholder="Username"
+                value={username}
+                onChangeText={setUsername}
+              />
+              <TextInput
+                style={set1styles.input}
+                placeholder="Password"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TextInput
+                style={set1styles.input}
+                placeholder="Confirm Password"
+                secureTextEntry
+                value={confirm}
+                onChangeText={setConfirm}
+              />
+            
+
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={validateAndSignUp}
+            >
+              <Text style={styles.loginButtonText}>SIGNUP</Text>
+            </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ImageBackground>
+    </View>
+  );
+}
+
+function WelcomeMessage({ navigation }) {
+  return (
+    <View style={styleswelcome.container}>
+      <Text style={styleswelcome.title}>Welcome to LeafQuest!</Text>
+
+      <Text style={styleswelcome.body}>
+        Your journey to a greener life begins here. Explore, learn, and grow with us!
+      </Text>
+
+      <TouchableOpacity
+        style={styleswelcome.button}
+        onPress={() => {
+          InteractionManager.runAfterInteractions(() => {
+            navigation.replace('LoginScreen');
+          });
+        }}
+      >
+        <Text style={styleswelcome.buttonText}>Continue</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+
+
+
+
+
+// --- Stylesheets ---
+
+const styleswelcome = StyleSheet.create({
+  // ... styleswelcome remains the same ...
+  container: { flex: 1, paddingHorizontal: 30, paddingVertical: 70, justifyContent: 'center', backgroundColor: '#E5E5E5'},
+  title: { fontSize: 45, fontWeight: 'bold', color: '#2C5D1E', textAlign: 'center', textTransform: 'uppercase', marginBottom: 50},
+  body: { fontSize: 15, color: 'Black', lineHeight: 20, marginBottom: 25, textAlign: 'justify'},
+  button: { backgroundColor: 'green', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginVertical: 20 },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16},
+});
+
+const set1styles = StyleSheet.create({
+  // ... set1styles remains the same ...
+  container: { flex: 1, padding: 20, justifyContent: 'center', backgroundColor: '#F5F0E9'},
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center'},
+  form: { gap: 15 },
+  input: { height: 45, backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 15, fontSize: 16, borderWidth: 1, borderColor: '#ccc'},
+  codeContainer: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 40, marginVertical: 20},
+  codeInput: { width: 65, height: 65, borderWidth: 1.5, borderRadius: 8, textAlign: 'center', fontSize: 18, borderColor: 'black', backgroundColor: '#fff',marginHorizontal: 5},
+  button: { backgroundColor: 'green', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 10},
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16},
+
+});
+
+const messagestyle = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#E5E5E5',       
+    paddingHorizontal: 40,
+    paddingVertical: 100,
+    justifyContent: 'center',
+    textAlign: 'justify',
+},
+title: {
+    fontSize: 45,
+    fontWeight: 'bold',
+    color: '#2C5D1E',            
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    marginBottom: 50,
+},
+body: {
+    fontSize: 15,
+    color: 'Black',                
+    lineHeight: 20,
+    marginBottom: 25, 
+    textAlign: 'justify',
+    fontWeight: 'bold',
+},
+button: {
+    backgroundColor: '#2C5D1E',       
+    paddingVertical: 15,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 20,
+    
+},
+title2: {
+    fontSize: 45,
+    fontWeight: 'bold',
+    color: '#2C5D1E',            
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    marginBottom: 80,
+},
+body2: {
+     fontSize: 15,
+    color: 'Black',                
+    lineHeight: 20,
+    marginBottom: 25, 
+    textAlign: 'justify',
+    fontWeight: 'bold',
+},
+button: {
+    backgroundColor: '#2C5D1E',       
+    paddingVertical: 15,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 20,
+    borderWidth: 2,
+    borderColor: 'black'
+},
+buttonText: {
+    color: '#FFFFFF',                
+    fontWeight: 'bold',
+    fontSize: 18,
+    letterSpacing: .1,
+    textTransform: 'uppercase',
+},
+imagebg: {
+    position: 'absolute',
+    width: 380, 
+    height: 600, 
+    top: 260,
+},
+});
+
+
+
+
+
+// --- UPDATED styles object for LoginScreen (Green card + Logo + Links) ---
+const styles = StyleSheet.create({
+  loginOuterContainer: {
+    flex: 1,
+  },
+  imagebg: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  centeringContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    
+  },
+  logoImage: {
+    width: 100, // Make width and height equal
+    height: 100,
+    borderRadius: 50, //  50% of width/height = circle
+    marginBottom: 20,
+  },
+  mainTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 30,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  mainTitle1: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 30,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  formContainer: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#97BD99',
+    borderRadius: 25,
+    paddingVertical: 30,
+    paddingHorizontal: 25,
+    alignItems: 'stretch',
+  },
+  loginTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0B3A5F',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  inputGroup: {
+    width: '100%',
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#3D3D3D',
+    marginBottom: 5,
+    textAlign: 'left',
+  },
+  input: {
+    height: 45,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#DDD',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    width: '100%',
+  },
+  forgotPasswordLinkGreen: {
+    color: '#E8F5E9',
+    fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
+    marginTop: 2,
+    marginBottom: 15,
+  },
+  loginButton: {
+    backgroundColor: '#1B5E16',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+    borderWidth: 1,
+  },
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: 'bold',
+  },
+  signUpLinkGreen: {
+    color: '#E8F5E9',
+    textAlign: 'center',
+    fontSize: 14,
+    marginTop: 20,
+  },
+  signUpLinkActionGreen: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  resendButton: {
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'white',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+    top: 10,
+  },
+  resendText: {
+    color: '#1B5E16',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+});
+
+/*function VideoPlayerScreen() {
+  const navigation = useNavigation();
+  const videoItems = [
+    { id: 1, title: 'Video One', desc: 'Intro to plants', image: require('./assets/flower.png') },
+    { id: 2, title: 'Video Two', desc: 'Sunlight tips', image: require('./assets/videoplant.png') },
+    { id: 3, title: 'Video Three', desc: 'Watering guide', image: require('./assets/flower.png') },
+    { id: 4, title: 'Video Four', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+    { id: 5, title: 'Video Five', desc: 'Watering guide', image: require('./assets/flower.png') },
+    { id: 6, title: 'Video Six', desc: 'Watering guide', image: require('./assets/videoplant.png') },
+  ];
+
+  return (
+    <View style={detailStyles.container}>
+      <Header />
+      <Video
+        source={{ uri: 'https://www.w3schools.com/html/mov_bbb.mp4' }}
+        useNativeControls
+        resizeMode="cover"
+        isLooping 
+        style={{ width: '100%', height: 220, borderRadius:14, marginTop:15,borderWidth: 2, borderColor: 'black' }}
+      />
+      <Text style={videoplayStyles.title}>Video Title</Text>
+      <Text style={videoplayStyles.description}>Video description goes here...</Text>
+      <ScrollView style={{ padding: 15 }}>
+        {videoItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={videoStyles.videoItem}
+            onPress={() => console.log("Tapped related video:", item.title)}
+          >
+            <Image source={item.image} style={videoStyles.thumbnail} />
+            <View style={videoStyles.infoBox}>
+              <Text style={videoStyles.title}>{item.title}</Text>
+              <Text style={videoStyles.desc}>{item.desc}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+*/
