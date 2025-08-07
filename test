@@ -1217,4 +1217,21 @@ const styles = StyleSheet.create({
   );
 }
 
-*/
+*/  
+
+
+
+              <Text style={videoStyles.videoTitle}>{item.title}</Text>
+              <Text style={videoStyles.videoDesc}>{item.desc}</Text>
+
+                videoTitle: {                // ✅ Renamed from 'title' to avoid clash
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    marginBottom: 4, 
+    color: '#222' 
+  },
+
+  videoDesc: {                 // ✅ Renamed from 'desc' to avoid clash
+    fontSize: 13, 
+    color: '#666' 
+  },

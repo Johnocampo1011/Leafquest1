@@ -63,7 +63,7 @@ export function HomeScreenContent({ navigation }) {
     <View style={homeStyles.container}>
       <Header />
       <ScrollView contentContainerStyle={homeStyles.scrollContent}>
-        
+        <Text style={{ fontSize: 30, fontWeight: 'bold', marginHorizontal:24, marginVertical:4 }}>My Plants</Text>
 
         <View style={homeStyles.gridContainer}>
           {items.map(({ id, src, screen, label }) => (
@@ -77,7 +77,6 @@ export function HomeScreenContent({ navigation }) {
   </TouchableOpacity>
 ))}
 
-// Add Plant Button
 
 <TouchableOpacity
   style={[homeStyles.gridItem, { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ccc' }]}
@@ -165,20 +164,18 @@ export function VideoPlayerScreen() {
       title: 'Sunlight Tips',
       desc: 'YouTube Video 2',
       image: require('./assets/videoplant.png'),
-      youtubeId: 'ugKWkJyGFQg', // sample: Rick Astley 😂
+      youtubeId: 'ugKWkJyGFQg', 
     },
     
   ];
 
  const screenHeight = Dimensions.get('window').height;
  
-
 const renderVideoPlayer = () => {
   if (selectedVideo.youtubeId) {
     return (
       
         
-
       <View style={videoStyles.videoContainer}>
         
         <WebView
@@ -253,6 +250,7 @@ export function VideosScreen() {
   return (
     <View style={otherStyles.container}>
       <Header />
+      <Text style={{ fontSize: 30, fontWeight: 'bold', marginHorizontal:24, marginTop:10 }}>Videos</Text>
       <TextInput
         style={videoStyles.searchBar}
         placeholder="Search videos..."
@@ -261,11 +259,14 @@ export function VideosScreen() {
       />
       <ScrollView style={{ padding: 15 }}>
         {filteredItems.map((item) => (
+
+          
           <TouchableOpacity
             key={item.id}
             style={videoStyles.videoItem}
             onPress={() => navigation.navigate('VideoPlayer', { video: item })}
           >
+            
             <Image source={item.image} style={videoStyles.thumbnail} />
             <View style={videoStyles.infoBox}>
               <Text style={videoStyles.videoTitle}>{item.title}</Text>
@@ -299,8 +300,10 @@ export function LibraryScreen({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={homeStyles.scrollContent}>
+      
       <View style={homeStyles.container}>
         <Header />
+        <Text style={{ fontSize: 30, fontWeight: 'bold', marginHorizontal:24, marginVertical:10 }}>Plant Libraries</Text>
         <View style={homeStyles.gridContainer}>
           {items.map(({ id, src, screen, label }) => (
             <TouchableOpacity
@@ -325,41 +328,7 @@ export function LibraryScreen({ navigation }) {
 }
 
 
-
-
-
-
-
-
-// --- LibraryScreen Component ---
-/*export function LibraryScreen({ navigation }) {
-  const [searchText, setSearchText] = useState('');
-  const items = Array.from({ length: 32 }).map((_, idx) => ({ id: idx + 1, label: `Library Item ${idx + 1}`, image: require('./assets/image.png') }));
-  const filteredItems = items.filter(item => item.label.toLowerCase().includes(searchText.toLowerCase()));
-  return (
-    <View style={otherStyles.container}>
-      <Header />
-      <TextInput style={libraryStyles.searchBar} placeholder="Search Plant Library…" value={searchText} onChangeText={setSearchText}/>
-      <Text style={libraryStyles.title}>Plant Library</Text>
-      <ScrollView contentContainerStyle={libraryStyles.gridContainer}>
-        {filteredItems.map(item => (
-          <TouchableOpacity key={item.id} style={libraryStyles.gridItem} onPress={() => navigation.navigate('Home', { screen: 'PlantDetail', params: { plantId: item.id } })}>
-            <Image source={item.image} style={libraryStyles.image} />
-            <Text style={libraryStyles.label}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
- }
-  */
-
-
-
-
 // --- Styles ---
-
-
 
 
 const headerStyles = StyleSheet.create({ 
@@ -411,7 +380,7 @@ const plntstyles = StyleSheet.create({
 const videoStyles = StyleSheet.create({ 
   searchBar: { 
     backgroundColor: '#f0f0f0', 
-    margin: 15, 
+    margin: 12, 
     paddingHorizontal: 18, 
     paddingVertical: 14, 
     borderRadius: 20, 

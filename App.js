@@ -90,19 +90,6 @@ export function LoginScreen({ navigation }) {
   );
 }
 
-/*export function LoginVerification({navigation}) {}
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleLogin = () => {
-    if (email.trim() === '' || password.trim() === '') {
-      Alert.alert('Error', 'Please fill in both fields.'); 
-}}
-      */
-
-  
-// --- End LoginScreen component ---
-
 const Stack = createNativeStackNavigator();
 
 // Main App Navigator Setup (Remains the same)
