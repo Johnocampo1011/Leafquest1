@@ -282,51 +282,60 @@ export function VideosScreen() {
 
 //DI PA NAGANA TO BE UPDATED
 
-export function LibraryScreen({ navigation }) {
-  const items = [
-    {
-      id: 0,
-      src: require('./assets/pothos.png'),
-      screen: 'PothosLibrary',
-      label: 'POTHOS',
-    },
-    {
-      id: 1,
-      src: require('./assets/PHILODENDRON.png'),
-      screen: 'PhilodendronLibrary', // 
-      label: 'PHILODENDRON',
-    },
-  ];
+
+
+
+
+
+
+
+export function PlantLibraryDetailsScreen({ route }) {
+  const { label, description, image } = route.params;
 
   return (
-    <ScrollView contentContainerStyle={homeStyles.scrollContent}>
-      
-      <View style={homeStyles.container}>
-        <Header />
-        <Text style={{ fontSize: 30, fontWeight: 'bold', marginHorizontal:24, marginVertical:10 }}>Plant Libraries</Text>
-        <View style={homeStyles.gridContainer}>
-          {items.map(({ id, src, screen, label }) => (
-            <TouchableOpacity
-              key={id}
-              style={homeStyles.gridItem}
-              onPress={() => {
-                try {
-                  navigation.navigate(screen, { plantId: id });
-                } catch (err) {
-                  console.error(`Failed to navigate to ${screen}`, err);
-                }
-              }}
-            >
-              <Image source={src} style={homeStyles.image} />
-              <Text style={homeStyles.label}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+    <ScrollView style={PlantDetailsstyles.scrollContainer}>
+      <View style={PlantDetailsstyles.container}>
+        <Image source={image} style={PlantDetailsstyles.image} />
+        <Text style={PlantDetailsstyles.label}>{label}</Text>
+        <Text style={PlantDetailsstyles.description}>{description}</Text>
       </View>
     </ScrollView>
+
   );
 }
 
+
+
+
+
+
+const PlantDetailsstyles = StyleSheet.create({
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: {
+    padding: 20,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    marginBottom: 20,
+    resizeMode: 'contain',
+  },
+  label: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    textAlign: 'justify',
+    paddingHorizontal: 5,
+    marginBottom: 50,
+  },
+});
 
 // --- Styles ---
 

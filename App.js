@@ -8,8 +8,10 @@ import { StyleSheet, Text, ImageBackground, View, SafeAreaView, TextInput, Butto
 import { useState } from 'react';
 import { HomeStackScreen } from './HomeStack';
 import React from 'react';
-import QuizScreen from './QuizScreen';
+import QuizScreen from './QuizDifficultyScreen';
 import { WebView } from 'react-native-webview';
+import QuizDifficultyScreen from './QuizDifficultyScreen';
+
 
 
 // --- LoginScreen component (Logo + Green Card + Labels + Links) ---
@@ -109,9 +111,11 @@ export default function App() {
       <Stack.Screen name="WelcomeMessage" component={WelcomeMessage} />
       <Stack.Screen name="Homescreen" component={HomeStackScreen} />
       <Stack.Screen name="QuizScreen" component={QuizScreen} />
+      <Stack.Screen name="QuizDifficultyScreen" component={QuizDifficultyScreen} />
       
 
     </Stack.Navigator>
+    
   </NavigationContainer>
 
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+//Originally imported from './QuizMenuScreen.js'
 const questions = [
   {
     question: "What is the best light condition for a Rose plant?",
