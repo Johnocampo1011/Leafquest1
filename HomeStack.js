@@ -55,7 +55,11 @@ function LibraryStackNavigator() {
       <Stack.Screen
         name="Plant Library"
         component={LibraryScreen}
-        options={{ headerShown: true }}
+        options={{ headerShown: true, 
+        headerStyle: { backgroundColor: '#2E481E' }, 
+        headerTintColor: '#fff', // ✅ text and icon color
+        headerTitleStyle: { fontWeight: 'bold' },
+        headerTitleAlign: 'center' }}
       />
       <Stack.Screen
         name="PlantDetails"

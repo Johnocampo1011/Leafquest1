@@ -6,7 +6,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { WebView } from 'react-native-webview';
 
 
-
 const HomeStack = createNativeStackNavigator();
 const VideosStack = createNativeStackNavigator();
 
@@ -28,7 +27,7 @@ export function HomeScreenContent({ navigation }) {
    const items = [
     {
       id: 0,
-      src: require('./assets/pothos.png'),
+      src: require('./assets/POTHOS.png'),
       screen: 'Pothos',
       label: 'POTHOS',
     },
@@ -279,35 +278,32 @@ export function VideosScreen() {
   );
 }
 
-
-//DI PA NAGANA TO BE UPDATED
-
-
-
-
-
-
-
-
 export function PlantLibraryDetailsScreen({ route }) {
   const { label, description, image } = route.params;
+   const keywords = ["Size:", "Water:", "Fertilize:", "Description:",];
+  const parts = description.split(/(\bSize:|\bWater:|\bFertilize:|\bDescription:)/g);
 
-  return (
+   return (
     <ScrollView style={PlantDetailsstyles.scrollContainer}>
       <View style={PlantDetailsstyles.container}>
         <Image source={image} style={PlantDetailsstyles.image} />
         <Text style={PlantDetailsstyles.label}>{label}</Text>
-        <Text style={PlantDetailsstyles.description}>{description}</Text>
+
+        <View style={PlantDetailsstyles.descriptionBox}>
+          <Text style={PlantDetailsstyles.description}>
+            {parts.map((part, index) =>
+              keywords.includes(part) ? (
+                <Text key={index} style={PlantDetailsstyles.bold}>{part}</Text>
+              ) : (
+                <Text key={index}>{part}</Text>
+              )
+            )}
+          </Text>
+        </View>
       </View>
     </ScrollView>
-
   );
 }
-
-
-
-
-
 
 const PlantDetailsstyles = StyleSheet.create({
   scrollContainer: {
@@ -329,11 +325,23 @@ const PlantDetailsstyles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
+  descriptionBox: {
+    backgroundColor: '#cfe8b8',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#2E481E',
+    marginTop: 10,
+  },
   description: {
     fontSize: 16,
     textAlign: 'justify',
-    paddingHorizontal: 5,
-    marginBottom: 50,
+    fontFamily: 'sans-serif',
+  },
+  bold: {
+    fontWeight: 'bold',
+    fontSize: 17,
+    fontFamily: 'monospace',
   },
 });
 
