@@ -23,7 +23,7 @@ export function PothosDetail({ navigation }) {
           <Text style={plntstyles.titlelibrary}>POTHOS</Text>
         </View>
         <View style={plntstyles.content}>
-          <Image source={require('./assets/pothos.png')} style={plntstyles.plantImage} resizeMode="contain" />
+          <Image source={require('./assets/POTHOS.png')} style={plntstyles.plantImage} resizeMode="contain" />
         </View>
 
         <PlantStatusBar
