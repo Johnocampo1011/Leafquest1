@@ -11,6 +11,12 @@ import React from 'react';
 import QuizScreen from './QuizDifficultyScreen';
 import { WebView } from 'react-native-webview';
 import QuizDifficultyScreen from './QuizDifficultyScreen';
+import { auth } from "./firebaseConfig";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { sendPasswordResetEmail } from "firebase/auth";
+import HomeScreenContent from './Homescreen';
+
 
 
 
@@ -19,87 +25,98 @@ export function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    if (email.trim() === '' || password.trim() === '') {
-      Alert.alert('Error', 'Please fill in both email and password.');
-      return;
+  const handleLogin = async () => {
+  if (email.trim() === "" || password.trim() === "") {
+    Alert.alert("Error", "Please fill in both email and password.");
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    navigation.navigate("MessageScreen");
+  } catch (error) {
+    console.log(error);
+    if (error.code === "auth/invalid-email") {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+    } else if (error.code === "auth/user-not-found") {
+      Alert.alert("Account Not Found", "This email is not registered.");
+    } else if (error.code === "auth/wrong-password") {
+      Alert.alert("Incorrect Password", "Please try again.");
+    } else {
+      Alert.alert("Error", "Something went wrong. Please try again.");
     }
-
-    // Proceed to next screen if inputs are not blank
-    navigation.navigate('MessageScreen');
-  };
-
+  }
+  }
   return (
-    <View style={styles.loginOuterContainer}>
-      <StatusBar style="auto" />
-      <ImageBackground
-        style={styles.imagebg}
-        source={require('./assets/greenbg 1.png')}
-        resizeMode="cover"
-      >
-        <View style={styles.centeringContainer}>
-          <Image
-            source={require('./assets/udm-logo.jpg')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-
-          <Text style={styles.mainTitle1}>LEAFQUEST</Text>
-
-          <View style={styles.formContainer}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>EMAIL:</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="email-address"
-                placeholderTextColor="#999"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
+        <View style={styles.loginOuterContainer}>
+          <StatusBar style="auto" />
+          <ImageBackground
+            style={styles.imagebg}
+            source={require('./assets/greenbg 1.png')}
+            resizeMode="cover"
+          >
+            <View style={styles.centeringContainer}>
+              <Image
+                source={require('./assets/udm-logo.jpg')}
+                style={styles.logoImage}
+                resizeMode="contain"
               />
+    
+              <Text style={styles.mainTitle1}>LEAFQUEST</Text>
+    
+              <View style={styles.formContainer}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>EMAIL:</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="email-address"
+                    placeholderTextColor="#999"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                  />
+                </View>
+    
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>PASSWORD:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    autoCapitalize="none"
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                </View>
+    
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPasswordScreen')}>
+                  <Text style={styles.forgotPasswordLinkGreen}>Forgot your password?</Text>
+                </TouchableOpacity>
+    
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                  <Text style={styles.loginButtonText}>LOGIN</Text>
+                </TouchableOpacity>
+    
+                <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
+                  <Text style={styles.signUpLinkGreen}>
+                    Don't have an account?{' '}
+                    <Text style={styles.signUpLinkActionGreen}>Sign Up</Text>
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>PASSWORD:</Text>
-              <TextInput
-                style={styles.input}
-                placeholderTextColor="#999"
-                secureTextEntry
-                autoCapitalize="none"
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
-
-            <TouchableOpacity onPress={() => navigation.navigate('ForgotPasswordScreen')}>
-              <Text style={styles.forgotPasswordLinkGreen}>Forgot your password?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>LOGIN</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
-              <Text style={styles.signUpLinkGreen}>
-                Don't have an account?{' '}
-                <Text style={styles.signUpLinkActionGreen}>Sign Up</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </ImageBackground>
         </View>
-      </ImageBackground>
-    </View>
-  );
-}
+      );
+};
 
 const Stack = createNativeStackNavigator();
 
 // Main App Navigator Setup (Remains the same)
 export default function App() {
-  // ... Navigator setup ...
-  return (
+  return (  
     <NavigationContainer>
-    <Stack.Navigator initialRouteName="LoginScreen" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="LoginScreen" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
       <Stack.Screen name="MessageScreen" component={MessageScreen} /> 
       <Stack.Screen name="MessageScreen2" component={MessageScreen2} /> 
@@ -185,6 +202,22 @@ export function MessageScreen({ navigation }) {
 // --- Other Screen Component Definitions (Remain the same) ---
 export function ForgotPasswordScreen({ navigation }) { /* ... */
   const [username, setUsername] = useState(''); const [email, setEmail] = useState('');
+
+  const handlePasswordReset = async () => {
+  if (email.trim() === "") {
+    Alert.alert("Error", "Please enter your email.");
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, email);
+    Alert.alert("Success", "Password reset email sent!");
+  } catch (error) {
+    console.log(error);
+    Alert.alert("Error", "Failed to send reset email. Check your email address.");
+  }
+};
+
   return ( 
     <View style={styles.loginOuterContainer}>
       <StatusBar style="auto" />
@@ -376,35 +409,40 @@ export function SignUpScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
-  const validateAndSignUp = () => {
-    
-    if (!firstName || !lastName || !email || !username || !password || !confirm) {
-      Alert.alert('Error', 'Please fill in all fields.');
-      return;
-    }
+  const validateAndSignUp = async () => {
+  if (!firstName || !lastName || !email || !username || !password || !confirm) {
+    Alert.alert("Error", "Please fill in all fields.");
+    return;
+  }
 
-    // Email format check
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
-      return;
-    }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    Alert.alert("Invalid Email", "Please enter a valid email address.");
+    return;
+  }
 
-    // Password match check
-    if (password !== confirm) {
-      Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
-      return;
-    }
+  if (password !== confirm) {
+    Alert.alert("Password Mismatch", "Passwords do not match.");
+    return;
+  }
 
-    // Password length check (optional)
-    if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
-      return;
-    }
+  if (password.length < 6) {
+    Alert.alert("Weak Password", "Password must be at least 6 characters long.");
+    return;
+  }
 
-    // If all checks pass, proceed
-    navigation.navigate('WelcomeMessage');
-  };
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    navigation.navigate("WelcomeMessage");
+  } catch (error) {
+    console.log(error);
+    if (error.code === "auth/email-already-in-use") {
+      Alert.alert("Email In Use", "This email is already registered.");
+    } else {
+      Alert.alert("Signup Failed", error.message);
+    }
+  }
+};
 
   return (
     <View style={styles.loginOuterContainer}>

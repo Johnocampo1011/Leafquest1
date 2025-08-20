@@ -1235,3 +1235,195 @@ const styles = StyleSheet.create({
     fontSize: 13, 
     color: '#666' 
   },
+
+
+
+//const handleLogin = () => {
+
+  const handleLogin = () => {
+      if (email.trim() === '' || password.trim() === '') {
+        Alert.alert('Error', 'Please fill in both email and password.');
+        return;
+      }
+  
+      // Proceed to next screen if inputs are not blank
+      navigation.navigate('MessageScreen');
+    };
+  
+    return (
+      <View style={styles.loginOuterContainer}>
+        <StatusBar style="auto" />
+        <ImageBackground
+          style={styles.imagebg}
+          source={require('./assets/greenbg 1.png')}
+          resizeMode="cover"
+        >
+          <View style={styles.centeringContainer}>
+            <Image
+              source={require('./assets/udm-logo.jpg')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+  
+            <Text style={styles.mainTitle1}>LEAFQUEST</Text>
+  
+            <View style={styles.formContainer}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>EMAIL:</Text>
+                <TextInput
+                  style={styles.input}
+                  keyboardType="email-address"
+                  placeholderTextColor="#999"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+  
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>PASSWORD:</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
+  
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPasswordScreen')}>
+                <Text style={styles.forgotPasswordLinkGreen}>Forgot your password?</Text>
+              </TouchableOpacity>
+  
+              <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                <Text style={styles.loginButtonText}>LOGIN</Text>
+              </TouchableOpacity>
+  
+              <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
+                <Text style={styles.signUpLinkGreen}>
+                  Don't have an account?{' '}
+                  <Text style={styles.signUpLinkActionGreen}>Sign Up</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ImageBackground>
+      </View>
+    );
+  }
+
+
+  //signup
+  const validateAndSignUp = () => {
+      
+      if (!firstName || !lastName || !email || !username || !password || !confirm) {
+        Alert.alert('Error', 'Please fill in all fields.');
+        return;
+      }
+  
+      // Email format check
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        Alert.alert('Invalid Email', 'Please enter a valid email address.');
+        return;
+      }
+  
+      // Password match check
+      if (password !== confirm) {
+        Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
+        return;
+      }
+  
+      // Password length check (optional)
+      if (password.length < 6) {
+        Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
+        return;
+      }
+  
+      // If all checks pass, proceed
+      navigation.navigate('WelcomeMessage');
+    };
+
+
+    export function HomeScreenContent({ navigation }) {
+       const items = [
+        {
+          id: 0,
+          src: require('./assets/POTHOS.png'),
+          screen: 'Pothos',
+          label: 'POTHOS',
+        },
+        {
+          id: 1,
+          src: require('./assets/PHILODENDRON.png'),
+          screen: 'Philodenron',
+          label: 'PHILODENDRON',
+        },
+        {
+          id: 2,
+          src: require('./assets/PrayerPlant.png'),
+          screen: 'PrayerPlant',
+          label: 'PRAYER PLANT',
+        },
+        {
+          id: 3,
+          src: require('./assets/BirdNestFern.png'),
+          screen: 'BirdNestFern',
+          label: 'BIRD NEST FERN',
+        },
+        {
+          id: 4,
+          src: require('./assets/ZzPlant.png'),
+          screen: 'ZzPlant',
+          label: 'ZZ PLANT',
+        },
+        
+      ];
+    
+
+      <View style={homeStyles.container}>
+            <Header />
+            <ScrollView contentContainerStyle={homeStyles.scrollContent}>
+              <Text style={{ fontSize: 30, fontWeight: 'bold', marginHorizontal:24, marginVertical:4 }}>My Plants</Text>
+      
+              <View style={homeStyles.gridContainer}>
+                {items.map(({ id, src, screen, label }) => (
+        <TouchableOpacity
+          key={id}
+          style={homeStyles.gridItem}
+          onPress={() => navigation.navigate(screen, { plantId: id })}
+        >
+          <Image source={src} style={homeStyles.image} />
+          <Text style={homeStyles.label}>{label}</Text>
+        </TouchableOpacity>
+      ))}
+      
+      
+      <TouchableOpacity
+        style={[homeStyles.gridItem, { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ccc' }]}
+        onPress={() => handleAddPlant()}
+      >
+        <Ionicons name="add-circle-outline" size={40} color="#4CAF50" />
+        <Text style={homeStyles.label}>Add Plant</Text>
+      
+      </TouchableOpacity>
+              </View>
+            </ScrollView>
+            <TouchableOpacity
+                style={{
+                  backgroundColor: '#4CAF50',
+                  padding: 14,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  marginHorizontal: 14,
+                  marginTop: 10,
+                  marginBottom: 10,
+                }}
+                onPress={() => navigation.navigate('QuizScreen')}
+              >
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                  Take Plant Quiz
+                </Text>
+              </TouchableOpacity>
+          </View>
