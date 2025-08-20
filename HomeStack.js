@@ -35,10 +35,11 @@ function HomeStackNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen
-        name="Homefeed"
+        name="Homescreen"
         component={HomeScreenContent}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="AddPlant" component={PlantLibraryDetailsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Pothos" component={PothosDetail} options={{ headerShown: false }} />
       <Stack.Screen name="Philodenron" component={PhilodenronDetail} options={{ headerShown: false }} />
       <Stack.Screen name="PrayerPlant" component={PrayerPlantDetail} options={{ headerShown: false }} />

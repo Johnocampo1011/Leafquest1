@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { View,Text,StyleSheet,Image,ScrollView,TextInput,TouchableOpacity, Platform, Dimensions} from 'react-native';
-import { useNavigation,useRoute } from '@react-navigation/native';
+import React, { useState, useEffect } from "react";
+import { View,Text,StyleSheet,Image,ScrollView,TextInput,TouchableOpacity, Platform, Dimensions,ActivityIndicator,FlatList} from 'react-native';
+import { useNavigation,useRoute, } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { WebView } from 'react-native-webview';
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "./firebaseConfig"; // your Firebase setup file
+
 
 
 const HomeStack = createNativeStackNavigator();
@@ -23,91 +26,98 @@ function Header() {
   );
 }
 
+
+const localImages = {
+  "POTHOS.png": require("./assets/POTHOS.png"),
+  "PHILODENDRON.png": require("./assets/PHILODENDRON.png"),
+  "PrayerPlant.png": require("./assets/PrayerPlant.png"),
+  "BirdNestFern.png": require("./assets/BirdNestFern.png"),
+  "ZzPlant.png": require("./assets/ZzPlant.png"),
+};
+
 export function HomeScreenContent({ navigation }) {
-   const items = [
-    {
-      id: 0,
-      src: require('./assets/POTHOS.png'),
-      screen: 'Pothos',
-      label: 'POTHOS',
-    },
-    {
-      id: 1,
-      src: require('./assets/PHILODENDRON.png'),
-      screen: 'Philodenron',
-      label: 'PHILODENDRON',
-    },
-    {
-      id: 2,
-      src: require('./assets/PrayerPlant.png'),
-      screen: 'PrayerPlant',
-      label: 'PRAYER PLANT',
-    },
-    {
-      id: 3,
-      src: require('./assets/BirdNestFern.png'),
-      screen: 'BirdNestFern',
-      label: 'BIRD NEST FERN',
-    },
-    {
-      id: 4,
-      src: require('./assets/ZzPlant.png'),
-      screen: 'ZzPlant',
-      label: 'ZZ PLANT',
-    },
-    
-  ];
+  const [plants, setPlants] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch plants from Firestore
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "Plants"), (snapshot) => {
+      const list = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setPlants(list);
+      setLoading(false);
+    }, (error) => {
+      console.log("Error fetching plants:", error);
+      setLoading(false);
+    });
+
+    return () => unsub();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#2E481E" />
+        <Text>Loading plants...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={homeStyles.container}>
       <Header />
+
       <ScrollView contentContainerStyle={homeStyles.scrollContent}>
-        <Text style={{ fontSize: 30, fontWeight: 'bold', marginHorizontal:24, marginVertical:4 }}>My Plants</Text>
+        <Text style={{ fontSize: 30, fontWeight: "bold", marginHorizontal: 24, marginVertical: 4 }}>
+          My Plants
+        </Text>
 
         <View style={homeStyles.gridContainer}>
-          {items.map(({ id, src, screen, label }) => (
-  <TouchableOpacity
-    key={id}
-    style={homeStyles.gridItem}
-    onPress={() => navigation.navigate(screen, { plantId: id })}
-  >
-    <Image source={src} style={homeStyles.image} />
-    <Text style={homeStyles.label}>{label}</Text>
-  </TouchableOpacity>
-))}
+          {plants.map((item, index) => (
+            <TouchableOpacity
+              key={item.id}
+              style={homeStyles.gridItem}
+              onPress={() => navigation.navigate(item.screen || "PlantDetails", { plantId: item.id })}
+            >
+              {item.image && (
+                <Image
+                  source={item.image.startsWith("http") ? { uri: item.image } : localImages[item.image]}
+                  style={homeStyles.image}
+                />
+              )}
+              <Text style={homeStyles.label}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
 
-
-<TouchableOpacity
-  style={[homeStyles.gridItem, { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ccc' }]}
-  onPress={() => handleAddPlant()}
->
-  <Ionicons name="add-circle-outline" size={40} color="#4CAF50" />
-  <Text style={homeStyles.label}>Add Plant</Text>
-
-</TouchableOpacity>
+          <TouchableOpacity
+            style={[homeStyles.gridItem, { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#ccc" }]}
+            onPress={() => navigation.navigate("AddPlantScreen")}
+          >
+            <Ionicons name="add-circle-outline" size={40} color="#4CAF50" />
+            <Text style={homeStyles.label}>Add Plant</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
       <TouchableOpacity
-          style={{
-            backgroundColor: '#4CAF50',
-            padding: 14,
-            borderRadius: 12,
-            alignItems: 'center',
-            marginHorizontal: 14,
-            marginTop: 10,
-            marginBottom: 10,
-          }}
-          onPress={() => navigation.navigate('QuizScreen')}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
-            Take Plant Quiz
-          </Text>
-        </TouchableOpacity>
+        style={{
+          backgroundColor: "#4CAF50",
+          padding: 14,
+          borderRadius: 12,
+          alignItems: "center",
+          marginHorizontal: 14,
+          marginTop: 10,
+          marginBottom: 10,
+        }}
+        onPress={() => navigation.navigate("QuizScreen")}
+      >
+        <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>Take Plant Quiz</Text>
+      </TouchableOpacity>
     </View>
   );
 }
-
-
 
 export function MessageScreen() {
   return (
@@ -375,7 +385,7 @@ const homeStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'black',
     borderRadius: 8,
-    padding: 10,
+    padding: 50,
   },
   image: {
     width: '100%',
