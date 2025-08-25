@@ -28,7 +28,7 @@ function Header() {
 
 
 const localImages = {
-  "POTHOS.png": require("./assets/POTHOS.png"),
+  POTHOS: require("./assets/POTHOS.png"),
   "PHILODENDRON.png": require("./assets/PHILODENDRON.png"),
   "PrayerPlant.png": require("./assets/PrayerPlant.png"),
   "BirdNestFern.png": require("./assets/BirdNestFern.png"),
@@ -40,21 +40,29 @@ export function HomeScreenContent({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   // Fetch plants from Firestore
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "Plants"), (snapshot) => {
-      const list = snapshot.docs.map((doc) => ({
+useEffect(() => {
+  const plantsCollection = collection(db, "plants");
+
+  // Listen to real-time updates from Firestore
+  const unsubscribe = onSnapshot(
+    plantsCollection,
+    (snapshot) => {
+      const plantList = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setPlants(list);
+      setPlants(plantList);
       setLoading(false);
-    }, (error) => {
-      console.log("Error fetching plants:", error);
+    },
+    (error) => {
+      console.error("Error fetching plants:", error);
       setLoading(false);
-    });
+    }
+  );
 
-    return () => unsub();
-  }, []);
+  // Cleanup listener when component unmounts
+  return () => unsubscribe();
+}, []);
 
   if (loading) {
     return (
@@ -79,7 +87,11 @@ export function HomeScreenContent({ navigation }) {
             <TouchableOpacity
               key={item.id}
               style={homeStyles.gridItem}
-              onPress={() => navigation.navigate(item.screen || "PlantDetails", { plantId: item.id })}
+              onPress={() =>
+                navigation.navigate("PlantDetails", {
+                plantId: item.id,              
+  })
+}
             >
               {item.image && (
                 <Image
@@ -93,7 +105,7 @@ export function HomeScreenContent({ navigation }) {
 
           <TouchableOpacity
             style={[homeStyles.gridItem, { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#ccc" }]}
-            onPress={() => navigation.navigate("AddPlantScreen")}
+            onPress={() => navigation.navigate("Plantlibrary") }
           >
             <Ionicons name="add-circle-outline" size={40} color="#4CAF50" />
             <Text style={homeStyles.label}>Add Plant</Text>
@@ -377,26 +389,39 @@ const homeStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 10,
   },
-  gridItem: {
-    width: '48%', // 2 columns
+   gridItem: {
+    width: "48%",                // Two tiles per row
+    height: 180,                 // Fixed tile height ✅
     marginBottom: 15,
-    alignItems: 'center',
-    backgroundColor: 'fff',
+    backgroundColor: "#fff",     // Fixed missing '#' ✅
     borderWidth: 1,
-    borderColor: 'black',
-    borderRadius: 8,
-    padding: 50,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    overflow: "hidden",          // Ensures image corners are clipped ✅
+    alignItems: "center",
+    justifyContent: "flex-start", // Keeps content aligned properly ✅
+    elevation: 3,                 // Android shadow ✅
+    shadowColor: "#000",          // iOS shadow ✅
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
   image: {
-    width: '100%',
-    height: 120,
-    resizeMode: 'contain',
-    marginBottom: 8,
+    width: "100%",
+    height: 140,               // Bigger image ✅
+    resizeMode: "contain",       // Fills the tile ✅
   },
   label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    position: "absolute",      // Lock the label at bottom ✅
+    bottom: 8,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#2E481E",
+    backgroundColor: "rgba(255, 255, 255, 0.7)", // Semi-transparent background ✅
+    paddingVertical: 4,
   },
 });
 

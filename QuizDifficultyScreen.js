@@ -11,51 +11,65 @@ import { basicQuestions, hardQuestions, professionalQuestions } from './quizData
 export function HomeScreenWithQuiz({ navigation }) {
   return (
     <View style={styles.homeContainer}>
-      <Text style={styles.title}>Ready to take a quiz?</Text>
+      <Text style={styles.title}>🌱 Ready to take a quiz?</Text>
 
-      {/* START Button */}
-      <TouchableOpacity
-        style={styles.startButton}
-        onPress={() => navigation.navigate('QuizSelectionScreen')}
-      >
-        <Text style={styles.startButtonText}>START</Text>
-      </TouchableOpacity>
+      {/* START + History + Shop stacked with space */}
+      <View style={styles.buttonColumn}>
+        {/* START Button */}
+        <TouchableOpacity
+          style={styles.startButton}
+          onPress={() => navigation.navigate('QuizSelectionScreen')}
+        >
+          <Text style={styles.startButtonText}>START</Text>
+        </TouchableOpacity>
 
-      {/* History Button */}
-      <TouchableOpacity
-        style={styles.historyButton}
-        onPress={() => navigation.navigate('ScoreHistoryScreen')}
-      >
-        <Ionicons name="time-outline" size={20} color="#fff" />
-        <Text style={{ color: '#fff', marginLeft: 5 }}>History</Text>
-      </TouchableOpacity>
+        {/* HISTORY Button */}
+        <TouchableOpacity
+          style={styles.historyButton}
+          onPress={() => navigation.navigate('ScoreHistoryScreen')}
+        >
+          <Ionicons name="time-outline" size={20} color="#fff" />
+          <Text style={styles.historyText}>History</Text>
+        </TouchableOpacity>
+
+        {/* SHOP Button (placeholder) */}
+        <TouchableOpacity
+          style={styles.shopButton}
+          onPress={() => alert('Shop coming soon!')}
+        >
+          <Ionicons name="cart-outline" size={20} color="#fff" />
+          <Text style={styles.shopText}>Shop</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
-
 // --- Difficulty Selection ---
 export function QuizSelectionScreen({ navigation }) {
   return (
-    <View style={styles.quizContainer}>
-      <Text style={styles.quizTitle}>Choose Your Quiz Difficulty</Text>
+    <View style={styles.selectionContainer}>
+      <Text style={styles.selectionTitle}>🌿 Choose Your Quiz Difficulty</Text>
 
+      {/* Basic */}
       <TouchableOpacity
-        style={styles.difficultyButton}
+        style={[styles.difficultyCard, { backgroundColor: '#C8E6C9' }]}
         onPress={() => navigation.navigate('QuizScreen', { level: 'Basic' })}
       >
         <Text style={styles.difficultyText}>🌱 Basic</Text>
       </TouchableOpacity>
 
+      {/* Hard */}
       <TouchableOpacity
-        style={styles.difficultyButton}
+        style={[styles.difficultyCard, { backgroundColor: '#A5D6A7' }]}
         onPress={() => navigation.navigate('QuizScreen', { level: 'Hard' })}
       >
         <Text style={styles.difficultyText}>🌿 Hard</Text>
       </TouchableOpacity>
 
+      {/* Professional */}
       <TouchableOpacity
-        style={styles.difficultyButton}
+        style={[styles.difficultyCard, { backgroundColor: '#81C784' }]}
         onPress={() => navigation.navigate('QuizScreen', { level: 'Professional' })}
       >
         <Text style={styles.difficultyText}>🌳 Professional</Text>
@@ -63,6 +77,7 @@ export function QuizSelectionScreen({ navigation }) {
     </View>
   );
 }
+
 
 // --- Quiz Screen ---
 export function QuizScreen({ route, navigation }) {
@@ -249,44 +264,113 @@ export default function QuizFeatureStack() {
 
 // --- Styles ---
 const styles = StyleSheet.create({
+  // --- Home ---
   homeContainer: {
     flex: 1,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: '#E8F5E9',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingTop: 80,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 30,
+    marginBottom: 50,
+    color: '#2E7D32',
   },
-  buttonRow: {
-    flexDirection: 'row',
+  buttonColumn: {
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
+    width: '80%',
+    marginTop: 40,
+    gap: 20,
   },
-  iconButton: {
-    backgroundColor: '#2C5D1E',
-    padding: 15,
-    borderRadius: 50,
-    marginHorizontal: 10,
-    elevation: 5,
+  startButton: {
+    backgroundColor: '#388E3C',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    marginBottom: 20,
+    width: '100%',
+    alignItems: 'center',
+    elevation: 3,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   historyButton: {
     flexDirection: 'row',
-    backgroundColor: '#555',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
+    backgroundColor: '#6D4C41',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     alignItems: 'center',
-    marginHorizontal: 10,
+    marginBottom: 20,
+    width: '100%',
+    justifyContent: 'center',
+    elevation: 3,
   },
   historyText: {
     color: '#fff',
-    marginLeft: 5,
+    marginLeft: 8,
+    fontSize: 16,
     fontWeight: 'bold',
   },
+  shopButton: {
+    flexDirection: 'row',
+    backgroundColor: '#00796B',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'center',
+    elevation: 3,
+  },
+  shopText: {
+    color: '#fff',
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  // --- Difficulty Selection ---
+  selectionContainer: {
+    flex: 1,
+    backgroundColor: '#E8F5E9',
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#000000ff',
+    marginBottom: 30,
+    textAlign: 'center',
+  
+  },
+  difficultyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '80%',
+    paddingVertical: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+    elevation: 3,
+  },
+  difficultyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    color: '#000000ff',
+  },
+
+  // --- Quiz Page ---
   quizContainer: {
     flex: 1,
     padding: 20,
@@ -294,57 +378,58 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   quizTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 30,
-  },
-  difficultyButton: {
-    backgroundColor: '#97BD99',
+    marginBottom: 20,
+    color: '#1B5E20',
+    backgroundColor: '#E8F5E9',
     padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
-  },
-  difficultyText: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: '#fff',
-    fontWeight: 'bold',
+    borderRadius: 12,
+    elevation: 2,
   },
   quizPage: {
     flex: 1,
+    backgroundColor: '#DFF0D8',
     justifyContent: 'center',
     padding: 20,
   },
   questionCount: {
     fontSize: 16,
     marginBottom: 10,
-    color: '#555',
+    color: '#2E7D32',
     textAlign: 'center',
+    fontWeight: 'bold',
   },
   optionButton: {
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#888',
+    borderColor: '#4CAF50',
     marginBottom: 15,
+    backgroundColor: '#FFFFFF',
+    elevation: 2,
   },
   optionText: {
     fontSize: 18,
-    color: '#333',
+    color: '#000000ff',
+    fontWeight: '500',
   },
   nextButton: {
     marginTop: 20,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#388E3C',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    elevation: 3,
   },
   nextButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },
+
+  // --- History ---
   historyContainer: {
     flex: 1,
     padding: 20,
@@ -356,18 +441,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#ccc',
   },
-
-  startButton: {
-  backgroundColor: '#2C5D1E',
-  paddingVertical: 15,
-  paddingHorizontal: 40,
-  borderRadius: 10,
-  marginTop: 100,
-},
-startButtonText: {
-  color: '#fff',
-  fontSize: 20,
-  fontWeight: 'bold',
-  textAlign: 'center',
-},
 });
+
