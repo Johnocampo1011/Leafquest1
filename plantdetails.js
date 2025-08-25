@@ -1,204 +1,162 @@
-import PlantStatusBar from './PlantStatusBar'; // import the shared component
-import { SafeAreaView, ScrollView, View, Text, Image,StyleSheet,TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "./firebaseConfig"; // your Firebase setup file
 import { Ionicons } from '@expo/vector-icons';
+import PlantStatusBar from './PlantStatusBar';
 
 
-export default function CustomHeader({ onMenuPress }) {
+
+export function CustomHeader({ onMenuPress }) {
   return (
-    <View style={styles.header}>
-      <View style={{ width: 24 }} /> 
-      <TouchableOpacity onPress={onMenuPress}>
-        <Ionicons name="menu" size={28} color="green" />
+   <View style={styles.header}>
+      <View style={{ flex: 1 }} /> 
+      <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
+        <Ionicons name="menu" size={30} color="green" />
       </TouchableOpacity>
     </View>
   );
 }
 
-export function PothosDetail({ navigation }) {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <CustomHeader onMenuPress={() => navigation.navigate('Menu')} />
-      <ScrollView contentContainerStyle={plntstyles.container}>
-        <View style={plntstyles.headerlibrary}>
-          <Text style={plntstyles.titlelibrary}>POTHOS</Text>
-        </View>
-        <View style={plntstyles.content}>
-          <Image source={require('./assets/POTHOS.png')} style={plntstyles.plantImage} resizeMode="contain" />
-        </View>
 
-        <PlantStatusBar
-          initialValues={{ water: 0.2, light: 0.6, fertilizer: 0.3 }}
-        />
 
-          <View style={plntstyles.detailSectionlibrary}>
-          <Text style={plntstyles.sectionTitle}>(Epipremnum aureum)</Text>
-          <Text style={plntstyles.paragraph}>
-            • Botanical family: Araceae{'\n'}• Origin: Tropical rainforests
-          </Text>
-          <Text style={[plntstyles.paragraph, { marginTop: 20 }]}>
-            <Text style={{ fontWeight: 'bold' }}>Size:</Text> Vines 6 to 10 feet long {'\n'}
-            <Text style={{ fontWeight: 'bold' }}>Water</Text> Allow the top inch of soil to dry out between watering. {'\n'}
-            <Text style={{ fontWeight: 'bold' }}>Fertilizer</Text> Light feeders, so use a balanced liquid fertilizer every 1 to 3 months. {'\n'}{'\n'}
 
-            One of the easiest houseplants to grow. This tropical vine comes in a variety of foliage colors and patterns. Pothos can be trimmed and kept compact, allowed to trail from hanging baskets, or trained up vertical supports.
+// Local images mapping
+const localImages = {
+  POTHOS: require("./assets/POTHOS.png"),
+  aloe: require("./assets/ALOE.png"),
+  cactus: require("./assets/CROTON.png"),
+};
 
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-export function PhilodenronDetail({ navigation }) {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <CustomHeader onMenuPress={() => navigation.navigate('Menu')} />
-      <ScrollView contentContainerStyle={plntstyles.container}>
-        <View style={plntstyles.headerlibrary}>
-          <Text style={plntstyles.titlelibrary}>PHILODENDRON</Text>
-        </View>
-        <View style={plntstyles.content}>
-          <Image source={require('./assets/PHILODENDRON.png')} style={plntstyles.plantImage} resizeMode="contain" />
-        </View>
+export default function PlantDetailsScreen({ route }) {
+  const { plantId } = route.params;
+  const [plant, setPlant] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-        <PlantStatusBar
-          initialValues={{ water: 0.3, light: 0.5, fertilizer: 0.4 }}
-        />
+  // Fetch plant data from Firestore
+  useEffect(() => {
+    const fetchPlantDetails = async () => {
+      try {
+        const docRef = doc(db, "plants", plantId);
+        const docSnap = await getDoc(docRef);
 
-        <View style={plntstyles.detailSectionlibrary}>
-        <Text style={plntstyles.sectionTitle}>(Philodendron spp.)</Text>
-        <Text style={plntstyles.paragraph}><Text style={{ fontWeight: 'bold' }}>Size:</Text> Vines to 8 feet long {'\n'}
-        <Text style={{ fontWeight: 'bold' }}>Water:</Text> Prefers evenly moist soil, but not soggy. Water if top inch of soil is dry. {'\n'}
-        <Text style={{ fontWeight: 'bold' }}>Fertilizer:</Text>  Apply a water-soluble houseplant fertilizer from spring through fall.</Text>
-        <Text style={[plntstyles.paragraph, { marginTop: 20 }]}>Another very easy-to-grow houseplant, similar to pothos. Tolerates low light, but will grow faster in medium to bright light. Foliage comes in a variety of sizes, shapes, and colors. Philodendrons can also be grown outdoors in mild climates. 
-        </Text>
+        if (docSnap.exists()) {
+          setPlant({ id: docSnap.id, ...docSnap.data() });
+        } else {
+          console.error("No such plant document!");
+        }
+      } catch (error) {
+        console.error("Error fetching plant details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchPlantDetails();
+  }, [plantId]);
+
+  if (loading) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+        <Text>Loading plant details...</Text>
       </View>
-    </ScrollView>
-    </SafeAreaView>
-  );
-}
+    );
+  }
 
+  if (!plant) {
+    return (
+      <View style={styles.loader}>
+        <Text style={{ color: "red", fontSize: 18 }}>
+          Plant details not found.
+        </Text>
+      </View>
+    );
+  }
 
-export function PrayerPlantDetail({ navigation }) {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <ScrollView contentContainerStyle={styles.container}>
       <CustomHeader onMenuPress={() => navigation.navigate('Menu')} />
-      <ScrollView contentContainerStyle={plntstyles.container}>
-        <View style={plntstyles.headerlibrary}>
-          <Text style={plntstyles.titlelibrary}>PRAYER PLANT</Text>
-        </View>
-        <View style={plntstyles.content}>
-          <Image source={require('./assets/PrayerPlant.png')} style={plntstyles.plantImage} resizeMode="contain" />
-        </View>
+      <Text style={styles.title}>{plant.name}</Text>
+      <Image
+        source={
+          plant.image && !plant.image.startsWith("http")
+            ? localImages[plant.image] || require("./assets/icon.png")
+            : { uri: plant.image }
+        }
+        style={styles.image}
+      />
 
-        <PlantStatusBar
-          initialValues={{ water: 0.4, light: 0.5, fertilizer: 0.3 }}
+     
+         <PlantStatusBar
+          initialValues={{ water: 0.8, light: 0.8, fertilizer: 0.8 }}
         />
 
-        <View style={plntstyles.detailSectionlibrary}>
-        <Text style={plntstyles.sectionTitle}>Calathea spp.</Text>
-        <Text style={plntstyles.paragraph}><Text style={{ fontWeight: 'bold' }}>Size:</Text> Up to 3 feet tall {'\n'}
-            <Text style={{ fontWeight: 'bold' }}>Water:</Text> Keep evenly moist. Don't allow to become overly soggy or dry out completely. May be sensitive to tap water, so use distilled or filtered water. {'\n'}
-        <Text style={{ fontWeight: 'bold' }}>Fertilizer:</Text>  Once a month from spring through fall.</Text>
-        <Text style={[plntstyles.paragraph, { marginTop: 20 }]}>Also called rattlesnake plant, peacock plant, or zebra plant, this popular houseplant is grown for its decorative foliage in an assortment of patterns, colors, and shapes. Prayer plants don't like their roots disturbed, so repot in early spring only if rootbound. 
-        </Text>
+     
+      <Text style={styles.description}>
+        {plant.description || "No description available."}
+      </Text>
 
-      </View>
+     
     </ScrollView>
-    </SafeAreaView>
   );
 }
-
-
-export function BirdNestFernDetail({ navigation }) {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <CustomHeader onMenuPress={() => navigation.navigate('Menu')} />
-      <ScrollView contentContainerStyle={plntstyles.container}>
-        <View style={plntstyles.headerlibrary}>
-          <Text style={plntstyles.titlelibrary}>BIRD NEST FERN</Text>
-        </View>
-        <View style={plntstyles.content}>
-          <Image source={require('./assets/BirdNestFern.png')} style={plntstyles.plantImage} resizeMode="contain" />
-        </View>
-
-        <PlantStatusBar
-          initialValues={{ water: 0.5, light: 0.6, fertilizer: 0.4 }}
-        />
-
-        <View style={plntstyles.detailSectionlibrary}>
-        <Text style={plntstyles.sectionTitle}>Asplenium nidus</Text>
-        <Text style={plntstyles.paragraph}><Text style={{ fontWeight: 'bold' }}>Size:</Text> Up to 2 feet tall {'\n'}
-        <Text style={{ fontWeight: 'bold' }}>Water:</Text>  Keep soil evenly moist, but not soggy. Water at the edge of the rosette so water doesn't pool in the center and cause rot. Yellow leaves signal overwatering. {'\n'}
-        <Text style={{ fontWeight: 'bold' }}>Fertilizer:</Text>  Fertilize every 2 to 4 weeks from spring until fall with a diluted houseplant fertililzer. </Text>
-        <Text style={[plntstyles.paragraph, { marginTop: 20 }]}>Also called rattlesnake plant, peacock plant, or zebra plant, this popular houseplant is grown for its decorative foliage in an assortment of patterns, colors, and shapes. Prayer plants don't like their roots disturbed, so repot in early spring only if rootbound. 
-        </Text>
-
-      </View>
-    </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-
-export function ZzPlantDetail({ navigation }) {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <CustomHeader onMenuPress={() => navigation.navigate('Menu')} />
-      <ScrollView contentContainerStyle={plntstyles.container}>
-        <View style={plntstyles.headerlibrary}>
-          <Text style={plntstyles.titlelibrary}>ZZ PLANT</Text>
-        </View>
-        <View style={plntstyles.content}>
-          <Image source={require('./assets/ZzPlant.png')} style={plntstyles.plantImage} resizeMode="contain" />
-        </View>
-
-        <PlantStatusBar
-          initialValues={{ water: 0.2, light: 0.5, fertilizer: 0.3 }}
-        />
-
-        <View style={plntstyles.detailSectionlibrary}>
-        <Text style={plntstyles.sectionTitle}>Zamioculcas zamiifolia</Text>
-        <Text style={plntstyles.paragraph}><Text style={{ fontWeight: 'bold' }}>Size:</Text>  2 to 3 feet tall {'\n'}
-        <Text style={{ fontWeight: 'bold' }}>Water:</Text>  ZZ plants store water in their semi-succulent stems so you may only need to water every couple weeks. Overwatering can do more damage than underwatering, so don't allow the soil to become soggy. {'\n'}
-        <Text style={{ fontWeight: 'bold' }}>Fertilizer:</Text>  They are light feeders, so only fertilize every three months or so. </Text>
-        <Text style={[plntstyles.paragraph, { marginTop: 20 }]}>The naturally shiny leaves of the ZZ plant require little effort to maintain their good looks. Simply dust them off with a damp cloth (leaf sprays may damage the foliage). ZZ plants also do well in medium/bright, indirect light. Keep in mind that all parts of the plant are toxic, so keep away from children and pets.  
-        </Text>
-      
-      </View>
-    </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-
-
 
 const styles = StyleSheet.create({
-  header: {
+  nav: {
     height: 40,
+    backgroundColor: "#8b1616ff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end", // ✅ Aligns menu to far right
+    paddingHorizontal: 30,
+    marginTop: 20,
+  },
+  header: {
+    height: 30,
     backgroundColor: 'fff',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     marginTop: 40,
   },
-});
 
-
-const plntstyles = StyleSheet.create({ 
-
-container: { backgroundColor: '#fff', padding: 20, }, 
-headerlibrary: { alignItems: 'center', marginBottom: 20, marginTop: 15, }, 
-titlelibrary: { fontSize: 34, fontWeight: 'bold', color: '#333', }, 
-content: { alignItems: 'center', marginBottom: 30, }, 
-plantImage: { width: '80%', height: 240, resizeMode: 'contain', }, 
-circlesRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 30, }, 
-circleButton: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: '#3a7d44', alignItems: 'center', justifyContent: 'center', position: 'relative', }, 
-badge: { position: 'absolute', top: -6, right: -6, backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 4, paddingVertical: 2, borderWidth: 1, borderColor: 'black', }, 
-badgeText: { fontSize: 12, color: '#3a7d44', fontWeight: 'bold', }, 
-detailSectionlibrary: { paddingBottom: 40, }, 
-sectionTitle: { fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center',  }, 
-paragraph: { fontSize: 15, lineHeight: 20, color: '#555', textAlign: 'justify',marginHorizontal:15 },
+  container: {
+    padding: 16,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+  },
+  image: {
+    width: 200,
+    height: 200,
+    marginBottom: 0,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "#000000ff",
+    textAlign: "center",
+  },
+  description: {
+    fontSize: 16,
+    color: "#202020ff",
+    textAlign: "center",
+    marginBottom: 16,
+    paddingHorizontal: 10,
+    justifyContent: "left",
+  },
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

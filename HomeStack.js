@@ -18,13 +18,7 @@ import { LibraryScreen } from './PlantLibraryDetails';
 import CameraScreen from './CameraScreen';
 
 // Import plant detail screens
-import {
-  PothosDetail,
-  PhilodenronDetail,
-  PrayerPlantDetail,
-  BirdNestFernDetail,
-  ZzPlantDetail
-} from './plantdetails';
+import PlantDetailsScreen from './PlantDetails';
 
 // --- Create one shared Stack for all stacks in this file ---
 const Stack = createNativeStackNavigator();
@@ -40,11 +34,8 @@ function HomeStackNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="AddPlant" component={PlantLibraryDetailsScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Pothos" component={PothosDetail} options={{ headerShown: false }} />
-      <Stack.Screen name="Philodenron" component={PhilodenronDetail} options={{ headerShown: false }} />
-      <Stack.Screen name="PrayerPlant" component={PrayerPlantDetail} options={{ headerShown: false }} />
-      <Stack.Screen name="BirdNestFern" component={BirdNestFernDetail}  options={{ headerShown: false }}/>
-      <Stack.Screen name="ZzPlant" component={ZzPlantDetail} options={{ headerShown: false }} />
+      <Stack.Screen name="PlantDetails" component={PlantDetailsScreen} options={{ headerShown: false }} />
+
     </Stack.Navigator>
   );
 }
