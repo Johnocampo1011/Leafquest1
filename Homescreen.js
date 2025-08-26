@@ -4,9 +4,9 @@ import { useNavigation,useRoute, } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { WebView } from 'react-native-webview';
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "./firebaseConfig"; // your Firebase setup file
-
+import { collection, query, where, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { auth, db } from "./firebaseConfig";
+import { localImages } from "./localImages";
 
 
 const HomeStack = createNativeStackNavigator();
@@ -27,48 +27,55 @@ function Header() {
 }
 
 
-const localImages = {
-  POTHOS: require("./assets/POTHOS.png"),
-  "PHILODENDRON.png": require("./assets/PHILODENDRON.png"),
-  "PrayerPlant.png": require("./assets/PrayerPlant.png"),
-  "BirdNestFern.png": require("./assets/BirdNestFern.png"),
-  "ZzPlant.png": require("./assets/ZzPlant.png"),
-};
-
 export function HomeScreenContent({ navigation }) {
-  const [plants, setPlants] = useState([]);
+  const [myPlants, setMyPlants] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch plants from Firestore
-useEffect(() => {
-  const plantsCollection = collection(db, "plants");
-
-  // Listen to real-time updates from Firestore
-  const unsubscribe = onSnapshot(
-    plantsCollection,
-    (snapshot) => {
-      const plantList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setPlants(plantList);
+  useEffect(() => {
+    // Get the current user's ID
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("⚠️ No user logged in");
       setLoading(false);
-    },
-    (error) => {
-      console.error("Error fetching plants:", error);
-      setLoading(false);
+      return;
     }
-  );
 
-  // Cleanup listener when component unmounts
-  return () => unsubscribe();
-}, []);
+    // Listen to user's selected plants in userPlants collection
+    const userPlantsQuery = query(
+      collection(db, "userPlants"),
+      where("userId", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      userPlantsQuery,
+      async (snapshot) => {
+        const userPlantDocs = snapshot.docs.map((doc) => doc.data());
+
+        // Fetch full plant details for each added plant
+        const plantDetails = await Promise.all(
+          userPlantDocs.map(async (up) => {
+            const plantDoc = await getDoc(doc(db, "plants", up.plantId));
+            return { id: plantDoc.id, ...plantDoc.data() };
+          })
+        );
+
+        setMyPlants(plantDetails);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching user's plants:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color="#2E481E" />
-        <Text>Loading plants...</Text>
+        <Text>Loading your plants...</Text>
       </View>
     );
   }
@@ -83,29 +90,37 @@ useEffect(() => {
         </Text>
 
         <View style={homeStyles.gridContainer}>
-          {plants.map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
-              style={homeStyles.gridItem}
-              onPress={() =>
-                navigation.navigate("PlantDetails", {
-                plantId: item.id,              
-  })
-}
-            >
-              {item.image && (
-                <Image
-                  source={item.image.startsWith("http") ? { uri: item.image } : localImages[item.image]}
-                  style={homeStyles.image}
-                />
-              )}
-              <Text style={homeStyles.label}>{item.name}</Text>
-            </TouchableOpacity>
-          ))}
+          {myPlants.length > 0 ? (
+            myPlants.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={homeStyles.gridItem}
+                onPress={() =>
+                  navigation.navigate("PlantDetails", { plantId: item.id })
+                }
+              >
+                {item.image && (
+                  <Image
+                    source={item.image.startsWith("http") ? { uri: item.image } : localImages[item.image]}
+                    style={homeStyles.image}
+                  />
+                )}
+                <Text style={homeStyles.label}>{item.name}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={{ margin: 20, fontSize: 16, color: "gray" }}>
+              You haven't added any plants yet.
+            </Text>
+          )}
 
+          {/* Add Plant Button */}
           <TouchableOpacity
-            style={[homeStyles.gridItem, { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#ccc" }]}
-            onPress={() => navigation.navigate("Plantlibrary") }
+            style={[
+              homeStyles.gridItem,
+              { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#ccc" },
+            ]}
+            onPress={() => navigation.navigate("AddPlant") }
           >
             <Ionicons name="add-circle-outline" size={40} color="#4CAF50" />
             <Text style={homeStyles.label}>Add Plant</Text>
@@ -113,6 +128,7 @@ useEffect(() => {
         </View>
       </ScrollView>
 
+      {/* Quiz Button */}
       <TouchableOpacity
         style={{
           backgroundColor: "#4CAF50",
@@ -125,11 +141,14 @@ useEffect(() => {
         }}
         onPress={() => navigation.navigate("QuizScreen")}
       >
-        <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>Take Plant Quiz</Text>
+        <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
+          Take Plant Quiz
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
+
 
 export function MessageScreen() {
   return (
@@ -300,32 +319,7 @@ export function VideosScreen() {
   );
 }
 
-export function PlantLibraryDetailsScreen({ route }) {
-  const { label, description, image } = route.params;
-   const keywords = ["Size:", "Water:", "Fertilize:", "Description:",];
-  const parts = description.split(/(\bSize:|\bWater:|\bFertilize:|\bDescription:)/g);
 
-   return (
-    <ScrollView style={PlantDetailsstyles.scrollContainer}>
-      <View style={PlantDetailsstyles.container}>
-        <Image source={image} style={PlantDetailsstyles.image} />
-        <Text style={PlantDetailsstyles.label}>{label}</Text>
-
-        <View style={PlantDetailsstyles.descriptionBox}>
-          <Text style={PlantDetailsstyles.description}>
-            {parts.map((part, index) =>
-              keywords.includes(part) ? (
-                <Text key={index} style={PlantDetailsstyles.bold}>{part}</Text>
-              ) : (
-                <Text key={index}>{part}</Text>
-              )
-            )}
-          </Text>
-        </View>
-      </View>
-    </ScrollView>
-  );
-}
 
 const PlantDetailsstyles = StyleSheet.create({
   scrollContainer: {

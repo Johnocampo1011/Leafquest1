@@ -9,16 +9,15 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebaseConfig"; // your Firebase setup file
-import { Ionicons } from '@expo/vector-icons';
-import PlantStatusBar from './PlantStatusBar';
-
-
+import { db } from "./firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
+import PlantStatusBar from "./PlantStatusBar";
+import { localImages } from "./localImages";
 
 export function CustomHeader({ onMenuPress }) {
   return (
-   <View style={styles.header}>
-      <View style={{ flex: 1 }} /> 
+    <View style={styles.header}>
+      <View style={{ flex: 1 }} />
       <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
         <Ionicons name="menu" size={30} color="green" />
       </TouchableOpacity>
@@ -26,22 +25,13 @@ export function CustomHeader({ onMenuPress }) {
   );
 }
 
+  
 
-
-
-// Local images mapping
-const localImages = {
-  POTHOS: require("./assets/POTHOS.png"),
-  aloe: require("./assets/ALOE.png"),
-  cactus: require("./assets/CROTON.png"),
-};
-
-export default function PlantDetailsScreen({ route }) {
+export default function PlantDetailsScreen({ route, navigation }) {
   const { plantId } = route.params;
   const [plant, setPlant] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch plant data from Firestore
   useEffect(() => {
     const fetchPlantDetails = async () => {
       try {
@@ -84,8 +74,10 @@ export default function PlantDetailsScreen({ route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <CustomHeader onMenuPress={() => navigation.navigate('Menu')} />
+      <CustomHeader onMenuPress={() => navigation.navigate("Menu")} />
+
       <Text style={styles.title}>{plant.name}</Text>
+
       <Image
         source={
           plant.image && !plant.image.startsWith("http")
@@ -95,41 +87,29 @@ export default function PlantDetailsScreen({ route }) {
         style={styles.image}
       />
 
-     
-         <PlantStatusBar
-          initialValues={{ water: 0.8, light: 0.8, fertilizer: 0.8 }}
-        />
+      <PlantStatusBar plantId={route.params.plantId} />
 
-     
-      <Text style={styles.description}>
-        {plant.description || "No description available."}
-      </Text>
-
-     
+      {/* Description card */}
+      <View style={styles.descriptionContainer}>
+        <Text style={styles.descriptionHeader}>🌿 About This Plant</Text>
+        <Text style={styles.descriptionText}>
+          {plant.description || "No description available."}
+        </Text>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  nav: {
-    height: 40,
-    backgroundColor: "#8b1616ff",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end", // ✅ Aligns menu to far right
-    paddingHorizontal: 30,
-    marginTop: 20,
-  },
   header: {
     height: 30,
-    backgroundColor: 'fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: "transparent",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 10,
     marginTop: 40,
   },
-
   container: {
     padding: 16,
     backgroundColor: "#F5F5F5",
@@ -138,21 +118,41 @@ const styles = StyleSheet.create({
   image: {
     width: 200,
     height: 200,
-    marginBottom: 0,
+    marginBottom: 16,
+    borderRadius: 12,
+    resizeMode: "contain",
   },
   title: {
     fontSize: 30,
     fontWeight: "bold",
-    color: "#000000ff",
+    color: "#2E481E",
     textAlign: "center",
+    marginBottom: 10,
   },
-  description: {
+  descriptionContainer: {
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+    width: "100%",
+    elevation: 3, // Android shadow
+    shadowColor: "#000", // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  descriptionHeader: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#388E3C",
+    marginBottom: 8,
+  },
+  descriptionText: {
     fontSize: 16,
-    color: "#202020ff",
-    textAlign: "center",
-    marginBottom: 16,
-    paddingHorizontal: 10,
-    justifyContent: "left",
+    color: "#333",
+    lineHeight: 24,
+    textAlign: "justify",
+    marginHorizontal: 8,
   },
   loader: {
     flex: 1,
