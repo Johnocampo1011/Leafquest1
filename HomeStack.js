@@ -9,10 +9,9 @@ import {
   HomeScreenContent,
   PlantDetailScreen,
   VideosStackNavigator,
-  PlantLibraryDetailsScreen,
 } from './Homescreen';
 
-import { LibraryScreen } from './PlantLibraryDetails';
+import { LibraryScreen,PlantLibraryDetailsScreen, } from './PlantLibraryDetails';
 
 // Import the standard camera screen
 import CameraScreen from './CameraScreen';
@@ -33,7 +32,7 @@ function HomeStackNavigator() {
         component={HomeScreenContent}
         options={{ headerShown: false }}
       />
-      <Stack.Screen name="AddPlant" component={PlantLibraryDetailsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="AddPlant" component={LibraryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PlantDetails" component={PlantDetailsScreen} options={{ headerShown: false }} />
 
     </Stack.Navigator>
@@ -55,9 +54,10 @@ function LibraryStackNavigator() {
       />
       <Stack.Screen
         name="PlantDetails"
-        component={PlantLibraryDetailsScreen}
+        component={PlantDetailsScreen}
         options={{ headerShown: true, title: 'PLANT DETAILS', headerTitleAlign: 'center' }}
       />
+
     </Stack.Navigator>
   );
 }
