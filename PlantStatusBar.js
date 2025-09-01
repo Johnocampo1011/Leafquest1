@@ -33,7 +33,7 @@ export default function PlantStatusBar({ plantId, initialValues }) {
     ]).start();
   };
 
-  // Fetch plant data from Firestore when component mounts
+  // get plant data from Firestore when component mounts
   useEffect(() => {
     const fetchPlantData = async () => {
       try {

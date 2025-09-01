@@ -51,7 +51,8 @@ export function HomeScreenContent({ navigation }) {
       async (snapshot) => {
         const userPlantDocs = snapshot.docs.map((doc) => doc.data());
 
-        // Fetch full plant details for each added plant
+        // get all plant details for each added plant
+
         const plantDetails = await Promise.all(
           userPlantDocs.map(async (up) => {
             const plantDoc = await getDoc(doc(db, "plants", up.plantId));
@@ -59,6 +60,8 @@ export function HomeScreenContent({ navigation }) {
           })
         );
 
+        // Update state with full plant details
+        
         setMyPlants(plantDetails);
         setLoading(false);
       },
@@ -68,6 +71,8 @@ export function HomeScreenContent({ navigation }) {
       }
     );
 
+
+    // stop
     return () => unsubscribe();
   }, []);
 

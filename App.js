@@ -37,11 +37,11 @@ export function LoginScreen({ navigation }) {
   } catch (error) {
     console.log(error);
     if (error.code === "auth/invalid-email") {
-      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      Alert.alert("Invalid Credentials", "Please check your email and password and try again.");
     } else if (error.code === "auth/user-not-found") {
       Alert.alert("Account Not Found", "This email is not registered.");
-    } else if (error.code === "auth/wrong-password") {
-      Alert.alert("Incorrect Password", "Please try again.");
+    } else if (error.code === "auth/invalid-credential") {
+      Alert.alert("Invalid Credentials", "Invalid Password!.");
     } else {
       Alert.alert("Error", "Something went wrong. Please try again.");
     }
@@ -168,7 +168,7 @@ export function MessageScreen({ navigation }) {
           <Text style={messagestyle.buttonText}>CONTINUE</Text>
       </TouchableOpacity>
       </View>
-  );
+  ); 
   }
 
   export function MessageScreen2({ navigation }) {

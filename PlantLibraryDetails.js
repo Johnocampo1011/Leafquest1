@@ -1,25 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-} from "react-native";
+import {View,Text,Image,ScrollView,TouchableOpacity,ActivityIndicator,Alert,StyleSheet,} from "react-native";
 import { localImages } from "./localImages";
-import {
-  collection,
-  onSnapshot,
-  setDoc,
-  doc,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-} from "firebase/firestore";
+import {collection,onSnapshot,setDoc,doc,query,where,getDocs,deleteDoc,} from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
 //Nedd pa ayusin ung sa pag click ng plants to go to details page
@@ -29,7 +11,7 @@ export function LibraryScreen({ navigation }) {
   const [myPlants, setMyPlants] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch all available plants from Firestore
+  // Kunin list of Plants sa database
   useEffect(() => {
     const plantsCollection = collection(db, "plants");
     const unsubscribe = onSnapshot(plantsCollection, (snapshot) => {
@@ -44,7 +26,7 @@ export function LibraryScreen({ navigation }) {
     return () => unsubscribe();
   }, []);
 
-  // Fetch user's plants
+  // my plants list
   useEffect(() => {
     const fetchUserPlants = async () => {
       const user = auth.currentUser;
