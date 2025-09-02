@@ -17,7 +17,9 @@ import { LibraryScreen,PlantLibraryDetailsScreen, } from './PlantLibraryDetails'
 import CameraScreen from './CameraScreen';
 
 // Import plant detail screens
-import PlantDetailsScreen from './PlantDetails';
+import PlantDetailsScreen from './plantdetails';
+
+import PlantlibraryDetailsScreen from './plantlibrary';
 
 // --- Create one shared Stack for all stacks in this file ---
 const Stack = createNativeStackNavigator();
@@ -54,8 +56,8 @@ function LibraryStackNavigator() {
       />
       <Stack.Screen
         name="PlantDetails"
-        component={PlantDetailsScreen}
-        options={{ headerShown: true, title: 'PLANT DETAILS', headerTitleAlign: 'center' }}
+        component={PlantlibraryDetailsScreen}
+        options={{ headerShown: false, }}
       />
 
     </Stack.Navigator>
