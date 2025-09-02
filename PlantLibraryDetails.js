@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  RefreshControl,
 } from "react-native";
 import { localImages } from "./localImages";
 import {
@@ -22,12 +23,30 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
-//Nedd pa ayusin ung sa pag click ng plants to go to details page
-
 export function LibraryScreen({ navigation }) {
   const [plants, setPlants] = useState([]);
   const [myPlants, setMyPlants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Pull-to-refresh handler
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const plantsCollection = collection(db, "plants");
+      const snapshot = await getDocs(plantsCollection);
+      const plantList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setPlants(plantList);
+    } catch (error) {
+      console.error("Error refreshing plants:", error);
+      Alert.alert("Error", "Couldn't refresh plants. Please try again.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Fetch all available plants from Firestore
   useEffect(() => {
@@ -79,7 +98,7 @@ export function LibraryScreen({ navigation }) {
       const newDocRef = doc(collection(db, "userPlants"));
       await setDoc(newDocRef, {
         userId: user.uid,
-        plantId: plantId,
+        plantId,
         addedAt: new Date().toISOString(),
       });
 
@@ -126,8 +145,18 @@ export function LibraryScreen({ navigation }) {
 
   return (
     <View style={homeStyles.container}>
-      <ScrollView contentContainerStyle={homeStyles.scrollContent}>
-
+      <ScrollView
+        contentContainerStyle={homeStyles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#4CAF50"]}
+            tintColor="#4CAF50"
+            title="Refreshing plants..."
+          />
+        }
+      >
         <View style={homeStyles.gridContainer}>
           {plants.map((item) => {
             const isAdded = myPlants.some((p) => p.plantId === item.id);
@@ -136,7 +165,9 @@ export function LibraryScreen({ navigation }) {
               <TouchableOpacity
                 key={item.id}
                 style={homeStyles.gridItem}
-                onPress={() => navigation.navigate("PlantDetails", { plant: item })}
+                onPress={() =>
+                  navigation.navigate("PlantDetails", { plantId: item.id }) // ✅ FIXED
+                }
               >
                 {item.image && (
                   <Image
@@ -152,7 +183,7 @@ export function LibraryScreen({ navigation }) {
 
                 <TouchableOpacity
                   onPress={(e) => {
-                    e.stopPropagation(); // Prevent triggering plant detail navigation
+                    e.stopPropagation();
                     isAdded
                       ? handleRemovePlant(item.id)
                       : handleAddPlant(item.id);
@@ -177,147 +208,6 @@ export function LibraryScreen({ navigation }) {
     </View>
   );
 }
-
-export function PlantLibraryDetailsScreen({ route, navigation }) {
-  const { plantId } = route.params;
-  const [plant, setPlant] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPlantDetails = async () => {
-      try {
-        const docRef = doc(db, "plants", plantId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setPlant({ id: docSnap.id, ...docSnap.data() });
-        } else {
-          console.error("No such plant document!");
-        }
-      } catch (error) {
-        console.error("Error fetching plant details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlantDetails();
-  }, [plantId]);
-
-  if (loading) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-        <Text>Loading plant details...</Text>
-      </View>
-    );
-  }
-
-  if (!plant) {
-    return (
-      <View style={styles.loader}>
-        <Text style={{ color: "red", fontSize: 18 }}>
-          Plant details not found.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <CustomHeader onMenuPress={() => navigation.navigate("Menu")} />
-
-      <Text style={styles.title}>{plant.name}</Text>
-
-    {plant.image && (
-        <Image
-          source={
-            plant.image.startsWith("http")
-              ? { uri: plant.image }
-              : localImages[plant.image] // <-- Make sure localImages has this key
-          }
-          style={{ width: 200, height: 200, borderRadius: 10 }}
-        />
-      )}
-
-      {/* Description card */}
-      <View style={styles.descriptionContainer}>
-        <Text style={styles.descriptionHeader}>🌿 About This Plant</Text>
-        <Text style={styles.descriptionText}>
-          {plant.description || "No description available."}
-        </Text>
-      </View>
-    </ScrollView>
-  );
-}
-
-const styles = StyleSheet.create({
-  header: {
-    height: 30,
-    backgroundColor: "transparent",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    marginTop: 40,
-  },
-  container: {
-    padding: 16,
-    backgroundColor: "#F5F5F5",
-    alignItems: "center",
-  },
-  image: {
-    width: 200,
-    height: 200,
-    marginBottom: 16,
-    borderRadius: 12,
-    resizeMode: "contain",
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "bold",
-    color: "#2E481E",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  descriptionContainer: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 16,
-    width: "100%",
-    elevation: 3, // Android shadow
-    shadowColor: "#000", // iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  descriptionHeader: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#388E3C",
-    marginBottom: 8,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: "#333",
-    lineHeight: 24,
-    textAlign: "justify",
-    marginHorizontal: 8,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
-
-
-
-
-
-
-
 
 const homeStyles = StyleSheet.create({
   container: {
@@ -356,3 +246,4 @@ const homeStyles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
