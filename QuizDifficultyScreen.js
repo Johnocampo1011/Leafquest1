@@ -118,7 +118,6 @@ export function QuizScreen({ route, navigation }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [score, setScore] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -357,35 +356,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginLeft: 8,
-  },
-  selectionContainer: {
-    flex: 1,
-    backgroundColor: "#E8F5E9",
-    padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  selectionTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 30,
-    color: "#1B5E20",
-  },
-  difficultyCard: {
-    width: "80%",
-    padding: 20,
-    borderRadius: 12,
-    alignItems: "center",
-    marginBottom: 20,
-    flexDirection: "row",
-    justifyContent: "center",
-    elevation: 3,
-  },
-  difficultyText: {
-    fontSize: 18,
-    marginLeft: 10,
-    fontWeight: "bold",
-    color: "#2E7D32",
   },
   quizPage: {
     flex: 1,
