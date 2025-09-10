@@ -1,11 +1,11 @@
 // QuizFeature.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList, ActivityIndicator } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { basicQuestions, hardQuestions, professionalQuestions } from './quizData';
+import { fetchQuestions } from './quizData'; // ✅ Firebase fetch helper
 
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
@@ -13,32 +13,31 @@ export function HomeScreenWithQuiz({ navigation }) {
     <View style={styles.homeContainer}>
       <Text style={styles.title}>🌱 Ready to take a quiz?</Text>
 
-      {/* START + History + Shop stacked with space */}
       <View style={styles.buttonColumn}>
         {/* START Button */}
         <TouchableOpacity
-          style={styles.startButton}
+          style={[styles.mainButton, { backgroundColor: '#388E3C' }]}
           onPress={() => navigation.navigate('QuizSelectionScreen')}
         >
-          <Text style={styles.startButtonText}>START</Text>
+          <Text style={styles.mainButtonText}>START</Text>
         </TouchableOpacity>
 
         {/* HISTORY Button */}
         <TouchableOpacity
-          style={styles.historyButton}
+          style={[styles.mainButton, { backgroundColor: '#6D4C41', flexDirection: 'row' }]}
           onPress={() => navigation.navigate('ScoreHistoryScreen')}
         >
           <Ionicons name="time-outline" size={20} color="#fff" />
-          <Text style={styles.historyText}>History</Text>
+          <Text style={styles.mainButtonText}>History</Text>
         </TouchableOpacity>
 
-        {/* SHOP Button (placeholder) */}
+        {/* SHOP Button */}
         <TouchableOpacity
-          style={styles.shopButton}
+          style={[styles.mainButton, { backgroundColor: '#00796B', flexDirection: 'row' }]}
           onPress={() => alert('Shop coming soon!')}
         >
           <Ionicons name="cart-outline" size={20} color="#fff" />
-          <Text style={styles.shopText}>Shop</Text>
+          <Text style={styles.mainButtonText}>Shop</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -56,6 +55,7 @@ export function QuizSelectionScreen({ navigation }) {
         style={[styles.difficultyCard, { backgroundColor: '#C8E6C9' }]}
         onPress={() => navigation.navigate('QuizScreen', { level: 'Basic' })}
       >
+        <Ionicons name="leaf-outline" size={28} color="#01bb0aff" />
         <Text style={styles.difficultyText}>🌱 Basic</Text>
       </TouchableOpacity>
 
@@ -64,6 +64,7 @@ export function QuizSelectionScreen({ navigation }) {
         style={[styles.difficultyCard, { backgroundColor: '#A5D6A7' }]}
         onPress={() => navigation.navigate('QuizScreen', { level: 'Hard' })}
       >
+        <Ionicons name="flower-outline" size={28} color="#01bb0aff" />
         <Text style={styles.difficultyText}>🌿 Hard</Text>
       </TouchableOpacity>
 
@@ -72,12 +73,12 @@ export function QuizSelectionScreen({ navigation }) {
         style={[styles.difficultyCard, { backgroundColor: '#81C784' }]}
         onPress={() => navigation.navigate('QuizScreen', { level: 'Professional' })}
       >
+        <Ionicons name="tree-outline" size={28} color="#004D40" />
         <Text style={styles.difficultyText}>🌳 Professional</Text>
       </TouchableOpacity>
     </View>
   );
 }
-
 
 // --- Quiz Screen ---
 export function QuizScreen({ route, navigation }) {
@@ -88,21 +89,43 @@ export function QuizScreen({ route, navigation }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [score, setScore] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let questionPool = [];
-    if (level === 'Basic') questionPool = basicQuestions;
-    else if (level === 'Hard') questionPool = hardQuestions;
-    else if (level === 'Professional') questionPool = professionalQuestions;
-
-    const shuffled = [...questionPool].sort(() => Math.random() - 0.5);
-    setQuestions(shuffled.slice(0, 10));
+    const loadQuestions = async () => {
+      try {
+        const questionPool = await fetchQuestions(level); // ✅ fetch from Firebase
+        if (questionPool && questionPool.length > 0) {
+          const shuffled = [...questionPool].sort(() => Math.random() - 0.5);
+          setQuestions(shuffled.slice(0, 10)); // pick 10 random questions
+        } else {
+          Alert.alert("No Questions", "No quiz data found for this difficulty.");
+          navigation.goBack();
+        }
+      } catch (error) {
+        console.error("Error loading questions:", error);
+        Alert.alert("Error", "Failed to load quiz data.");
+        navigation.goBack();
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadQuestions();
   }, [level]);
+
+  if (loading) {
+    return (
+      <View style={styles.quizPage}>
+        <ActivityIndicator size="large" color="#388E3C" />
+        <Text style={styles.quizTitle}>Loading {level} Quiz...</Text>
+      </View>
+    );
+  }
 
   if (questions.length === 0) {
     return (
       <View style={styles.quizPage}>
-        <Text style={styles.quizTitle}>Loading {level} Quiz...</Text>
+        <Text style={styles.quizTitle}>No questions available.</Text>
       </View>
     );
   }
@@ -177,7 +200,7 @@ export function QuizScreen({ route, navigation }) {
   );
 }
 
-// --- Save Score ---
+// --- Save Score (still local AsyncStorage for now) ---
 async function saveScore(level, score) {
   try {
     const stored = await AsyncStorage.getItem('quizHistory');
@@ -188,8 +211,6 @@ async function saveScore(level, score) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           history = parsed;
-        } else {
-          history = [{ date: new Date().toLocaleString(), level: 'Unknown', score: Number(parsed) }];
         }
       } catch (e) {
         history = [];
@@ -216,8 +237,6 @@ export function ScoreHistoryScreen() {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
             setHistory(parsed);
-          } else {
-            setHistory([{ date: new Date().toLocaleString(), level: 'Unknown', score: Number(parsed) }]);
           }
         }
       } catch (e) {
@@ -229,7 +248,7 @@ export function ScoreHistoryScreen() {
 
   return (
     <View style={styles.historyContainer}>
-      <Text style={styles.quizTitle}>Score History</Text>
+      <Text style={styles.quizTitle}>📜 Score History</Text>
       {history.length === 0 ? (
         <Text style={{ textAlign: 'center' }}>No history yet.</Text>
       ) : (
@@ -264,7 +283,6 @@ export default function QuizFeatureStack() {
 
 // --- Styles ---
 const styles = StyleSheet.create({
-  // --- Home ---
   homeContainer: {
     flex: 1,
     backgroundColor: '#E8F5E9',
@@ -285,97 +303,49 @@ const styles = StyleSheet.create({
     marginTop: 40,
     gap: 20,
   },
-  startButton: {
-    backgroundColor: '#388E3C',
+  mainButton: {
+    width: '100%',
     paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 12,
-    marginBottom: 20,
-    width: '100%',
-    alignItems: 'center',
-    elevation: 3,
-  },
-  startButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  historyButton: {
-    flexDirection: 'row',
-    backgroundColor: '#6D4C41',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 20,
-    width: '100%',
     justifyContent: 'center',
     elevation: 3,
+    marginBottom: 20,
   },
-  historyText: {
+  mainButtonText: {
     color: '#fff',
-    marginLeft: 8,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-  },
-  shopButton: {
-    flexDirection: 'row',
-    backgroundColor: '#00796B',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    width: '100%',
-    justifyContent: 'center',
-    elevation: 3,
-  },
-  shopText: {
-    color: '#fff',
     marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
   },
-
-  // --- Difficulty Selection ---
   selectionContainer: {
     flex: 1,
     backgroundColor: '#E8F5E9',
     padding: 20,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   selectionTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#000000ff',
     marginBottom: 30,
-    textAlign: 'center',
-  
+    color: '#1B5E20',
   },
   difficultyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     width: '80%',
-    paddingVertical: 15,
+    padding: 20,
     borderRadius: 12,
+    alignItems: 'center',
     marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
     elevation: 3,
   },
   difficultyText: {
     fontSize: 18,
-    fontWeight: 'bold',
     marginLeft: 10,
-    color: '#000000ff',
-  },
-
-  // --- Quiz Page ---
-  quizContainer: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
+    fontWeight: 'bold',
+    color: '#2E7D32',
   },
   quizTitle: {
     fontSize: 20,
@@ -383,10 +353,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
     color: '#1B5E20',
-    backgroundColor: '#E8F5E9',
-    padding: 15,
-    borderRadius: 12,
-    elevation: 2,
   },
   quizPage: {
     flex: 1,
@@ -412,7 +378,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 18,
-    color: '#000000ff',
+    color: '#000',
     fontWeight: '500',
   },
   nextButton: {
@@ -428,8 +394,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-
-  // --- History ---
   historyContainer: {
     flex: 1,
     padding: 20,
@@ -442,4 +406,3 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
   },
 });
-
