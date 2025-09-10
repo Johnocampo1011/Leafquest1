@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebaseConfig"; // ✅ Firebase setup
-import TicTacToeScreen from "./TicTacToeScreen"; // ✅ TicTacToe component
+import TicTacToeScreen from "./TicTacToeScreen"; 
 
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
