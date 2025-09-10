@@ -12,8 +12,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebaseConfig"; // ✅ your Firebase setup
-import TicTacToeScreen from "./TicTacToeScreen"; // ✅ Tic Tac Toe game
+import { db } from "./firebaseConfig"; // ✅ Firebase setup
+import TicTacToeScreen from "./TicTacToeScreen"; // ✅ TicTacToe component
 
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
@@ -21,7 +21,6 @@ export function HomeScreenWithQuiz({ navigation }) {
     <View style={styles.homeContainer}>
       <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
 
-      {/* Buttons stacked with equal sizing */}
       <View style={styles.buttonColumn}>
         {/* START QUIZ */}
         <TouchableOpacity
@@ -53,7 +52,7 @@ export function HomeScreenWithQuiz({ navigation }) {
         {/* MINI-GAMES */}
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#8E44AD" }]}
-          onPress={() => navigation.navigate("TicTacToeScreen")}
+          onPress={() => navigation.navigate("MiniGamesScreen")}
         >
           <Ionicons name="game-controller-outline" size={22} color="#fff" />
           <Text style={styles.mainButtonText}>Mini-Games</Text>
@@ -139,25 +138,21 @@ export function QuizScreen({ navigation }) {
       </Text>
       <Text style={styles.quizTitle}>{currentQuestion.question}</Text>
 
-      {currentQuestion.options.map((option, index) => {
-        let buttonStyle = [styles.optionButton];
-        if (showFeedback) {
-          if (option.isCorrect) buttonStyle.push({ backgroundColor: "#C8E6C9" });
-          else if (selectedOption && !option.isCorrect && option.text === currentQuestion.options.find(o => o.isCorrect).text) {
-            buttonStyle.push({ backgroundColor: "#FFCDD2" });
-          }
-        }
-
-        return (
-          <TouchableOpacity
-            key={index}
-            style={buttonStyle}
-            onPress={() => handleOptionPress(option.isCorrect)}
-          >
-            <Text style={styles.optionText}>{option.text}</Text>
-          </TouchableOpacity>
-        );
-      })}
+      {currentQuestion.options.map((option, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.optionButton,
+            showFeedback && option.isCorrect ? { backgroundColor: "#C8E6C9" } : null,
+            showFeedback && selectedOption && !option.isCorrect && option.text === selectedOption
+              ? { backgroundColor: "#FFCDD2" }
+              : null,
+          ]}
+          onPress={() => handleOptionPress(option.isCorrect)}
+        >
+          <Text style={styles.optionText}>{option.text}</Text>
+        </TouchableOpacity>
+      ))}
 
       {showFeedback && (
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
@@ -233,6 +228,33 @@ export function ScoreHistoryScreen() {
   );
 }
 
+// --- MiniGames Screen ---
+export function MiniGamesScreen({ navigation }) {
+  return (
+    <View style={styles.quizPage}>
+      <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
+
+      {/* Tic Tac Toe */}
+      <TouchableOpacity
+        style={[styles.optionButton, { backgroundColor: "#C8E6C9" }]}
+        onPress={() => navigation.navigate("TicTacToeScreen")}
+      >
+        <Ionicons name="grid-outline" size={20} color="#2E7D32" />
+        <Text style={styles.optionText}>Tic Tac Toe</Text>
+      </TouchableOpacity>
+
+      {/* Coming Soon Placeholder */}
+      <TouchableOpacity
+        style={[styles.optionButton, { backgroundColor: "#E0E0E0" }]}
+        onPress={() => Alert.alert("Coming Soon", "This mini-game is under development!")}
+      >
+        <Ionicons name="help-circle-outline" size={20} color="#555" />
+        <Text style={styles.optionText}>Coming Soon...</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // --- Navigation ---
 const Stack = createNativeStackNavigator();
 
@@ -249,6 +271,11 @@ export default function QuizFeatureStack() {
         name="ScoreHistoryScreen"
         component={ScoreHistoryScreen}
         options={{ title: "Score History" }}
+      />
+      <Stack.Screen
+        name="MiniGamesScreen"
+        component={MiniGamesScreen}
+        options={{ title: "Mini-Games" }}
       />
       <Stack.Screen
         name="TicTacToeScreen"
@@ -316,12 +343,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   optionButton: {
+    flexDirection: "row",
     padding: 15,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#4CAF50",
     marginBottom: 15,
     backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     elevation: 2,
   },
   optionText: {
@@ -354,3 +385,4 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
   },
 });
+
