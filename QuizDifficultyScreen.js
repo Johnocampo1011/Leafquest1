@@ -1,11 +1,32 @@
 // QuizFeature.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList, ActivityIndicator } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  FlatList,
+} from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { fetchQuestions } from './quizData'; // ✅ Firebase fetch helper
+import { db } from "./firebaseConfig";
+import { collection, getDocs } from "firebase/firestore";
+
+// --- Fetch questions from Firestore ---
+async function fetchQuestions(level) {
+  try {
+    const colRef = collection(db, "quizQuestions", level, "questions");
+    const snapshot = await getDocs(colRef);
+    const questions = snapshot.docs.map((doc) => doc.data());
+    return questions;
+  } catch (e) {
+    console.log("Error fetching questions:", e);
+    return [];
+  }
+}
 
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
@@ -16,16 +37,19 @@ export function HomeScreenWithQuiz({ navigation }) {
       <View style={styles.buttonColumn}>
         {/* START Button */}
         <TouchableOpacity
-          style={[styles.mainButton, { backgroundColor: '#388E3C' }]}
-          onPress={() => navigation.navigate('QuizSelectionScreen')}
+          style={[styles.mainButton, { backgroundColor: "#388E3C" }]}
+          onPress={() => navigation.navigate("QuizSelectionScreen")}
         >
           <Text style={styles.mainButtonText}>START</Text>
         </TouchableOpacity>
 
         {/* HISTORY Button */}
         <TouchableOpacity
-          style={[styles.mainButton, { backgroundColor: '#6D4C41', flexDirection: 'row' }]}
-          onPress={() => navigation.navigate('ScoreHistoryScreen')}
+          style={[
+            styles.mainButton,
+            { backgroundColor: "#6D4C41", flexDirection: "row" },
+          ]}
+          onPress={() => navigation.navigate("ScoreHistoryScreen")}
         >
           <Ionicons name="time-outline" size={20} color="#fff" />
           <Text style={styles.mainButtonText}>History</Text>
@@ -33,8 +57,11 @@ export function HomeScreenWithQuiz({ navigation }) {
 
         {/* SHOP Button */}
         <TouchableOpacity
-          style={[styles.mainButton, { backgroundColor: '#00796B', flexDirection: 'row' }]}
-          onPress={() => alert('Shop coming soon!')}
+          style={[
+            styles.mainButton,
+            { backgroundColor: "#00796B", flexDirection: "row" },
+          ]}
+          onPress={() => alert("Shop coming soon!")}
         >
           <Ionicons name="cart-outline" size={20} color="#fff" />
           <Text style={styles.mainButtonText}>Shop</Text>
@@ -52,8 +79,8 @@ export function QuizSelectionScreen({ navigation }) {
 
       {/* Basic */}
       <TouchableOpacity
-        style={[styles.difficultyCard, { backgroundColor: '#C8E6C9' }]}
-        onPress={() => navigation.navigate('QuizScreen', { level: 'Basic' })}
+        style={[styles.difficultyCard, { backgroundColor: "#C8E6C9" }]}
+        onPress={() => navigation.navigate("QuizScreen", { level: "Basic" })}
       >
         <Ionicons name="leaf-outline" size={28} color="#01bb0aff" />
         <Text style={styles.difficultyText}>🌱 Basic</Text>
@@ -61,8 +88,8 @@ export function QuizSelectionScreen({ navigation }) {
 
       {/* Hard */}
       <TouchableOpacity
-        style={[styles.difficultyCard, { backgroundColor: '#A5D6A7' }]}
-        onPress={() => navigation.navigate('QuizScreen', { level: 'Hard' })}
+        style={[styles.difficultyCard, { backgroundColor: "#A5D6A7" }]}
+        onPress={() => navigation.navigate("QuizScreen", { level: "Hard" })}
       >
         <Ionicons name="flower-outline" size={28} color="#01bb0aff" />
         <Text style={styles.difficultyText}>🌿 Hard</Text>
@@ -70,8 +97,10 @@ export function QuizSelectionScreen({ navigation }) {
 
       {/* Professional */}
       <TouchableOpacity
-        style={[styles.difficultyCard, { backgroundColor: '#81C784' }]}
-        onPress={() => navigation.navigate('QuizScreen', { level: 'Professional' })}
+        style={[styles.difficultyCard, { backgroundColor: "#81C784" }]}
+        onPress={() =>
+          navigation.navigate("QuizScreen", { level: "Professional" })
+        }
       >
         <Ionicons name="tree-outline" size={28} color="#004D40" />
         <Text style={styles.difficultyText}>🌳 Professional</Text>
@@ -93,30 +122,21 @@ export function QuizScreen({ route, navigation }) {
 
   useEffect(() => {
     const loadQuestions = async () => {
-      try {
-        const questionPool = await fetchQuestions(level); // ✅ fetch from Firebase
-        if (questionPool && questionPool.length > 0) {
-          const shuffled = [...questionPool].sort(() => Math.random() - 0.5);
-          setQuestions(shuffled.slice(0, 10)); // pick 10 random questions
-        } else {
-          Alert.alert("No Questions", "No quiz data found for this difficulty.");
-          navigation.goBack();
-        }
-      } catch (error) {
-        console.error("Error loading questions:", error);
-        Alert.alert("Error", "Failed to load quiz data.");
-        navigation.goBack();
-      } finally {
-        setLoading(false);
+      setLoading(true);
+      const fetched = await fetchQuestions(level);
+      if (fetched.length > 0) {
+        const shuffled = [...fetched].sort(() => Math.random() - 0.5);
+        setQuestions(shuffled.slice(0, 10)); // pick 10 random questions
       }
+      setLoading(false);
     };
+
     loadQuestions();
   }, [level]);
 
   if (loading) {
     return (
       <View style={styles.quizPage}>
-        <ActivityIndicator size="large" color="#388E3C" />
         <Text style={styles.quizTitle}>Loading {level} Quiz...</Text>
       </View>
     );
@@ -125,7 +145,9 @@ export function QuizScreen({ route, navigation }) {
   if (questions.length === 0) {
     return (
       <View style={styles.quizPage}>
-        <Text style={styles.quizTitle}>No questions available.</Text>
+        <Text style={styles.quizTitle}>
+          ❌ No questions found for {level} level.
+        </Text>
       </View>
     );
   }
@@ -149,11 +171,9 @@ export function QuizScreen({ route, navigation }) {
       setCurrentIndex(currentIndex + 1);
     } else {
       await saveScore(level, score);
-      Alert.alert(
-        "Quiz Finished!",
-        `You scored ${score} out of ${questions.length}`,
-        [{ text: "OK", onPress: () => navigation.navigate('HomeScreenWithQuiz') }]
-      );
+      Alert.alert("Quiz Finished!", `You scored ${score} out of ${questions.length}`, [
+        { text: "OK", onPress: () => navigation.navigate("HomeScreenWithQuiz") },
+      ]);
     }
   };
 
@@ -167,13 +187,13 @@ export function QuizScreen({ route, navigation }) {
       {currentQuestion.options.map((option, index) => {
         const isSelected = index === selectedOption;
         const isCorrect = option.isCorrect;
-        let backgroundColor = '#fff';
+        let backgroundColor = "#fff";
 
         if (showFeedback) {
           if (isSelected) {
-            backgroundColor = isCorrect ? '#4CAF50' : '#F44336';
+            backgroundColor = isCorrect ? "#4CAF50" : "#F44336";
           } else if (isCorrect) {
-            backgroundColor = '#4CAF50';
+            backgroundColor = "#4CAF50";
           }
         }
 
@@ -192,7 +212,9 @@ export function QuizScreen({ route, navigation }) {
       {showFeedback && (
         <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
           <Text style={styles.nextButtonText}>
-            {currentIndex + 1 === questions.length ? 'Finish Quiz' : 'Next Question'}
+            {currentIndex + 1 === questions.length
+              ? "Finish Quiz"
+              : "Next Question"}
           </Text>
         </TouchableOpacity>
       )}
@@ -200,10 +222,10 @@ export function QuizScreen({ route, navigation }) {
   );
 }
 
-// --- Save Score (still local AsyncStorage for now) ---
+// --- Save Score ---
 async function saveScore(level, score) {
   try {
-    const stored = await AsyncStorage.getItem('quizHistory');
+    const stored = await AsyncStorage.getItem("quizHistory");
     let history = [];
 
     if (stored) {
@@ -219,9 +241,9 @@ async function saveScore(level, score) {
 
     const newEntry = { date: new Date().toLocaleString(), level, score };
     history.push(newEntry);
-    await AsyncStorage.setItem('quizHistory', JSON.stringify(history));
+    await AsyncStorage.setItem("quizHistory", JSON.stringify(history));
   } catch (e) {
-    console.log('Error saving score', e);
+    console.log("Error saving score", e);
   }
 }
 
@@ -232,7 +254,7 @@ export function ScoreHistoryScreen() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const stored = await AsyncStorage.getItem('quizHistory');
+        const stored = await AsyncStorage.getItem("quizHistory");
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -240,7 +262,7 @@ export function ScoreHistoryScreen() {
           }
         }
       } catch (e) {
-        console.log('Error loading history', e);
+        console.log("Error loading history", e);
       }
     };
     fetchHistory();
@@ -250,7 +272,7 @@ export function ScoreHistoryScreen() {
     <View style={styles.historyContainer}>
       <Text style={styles.quizTitle}>📜 Score History</Text>
       {history.length === 0 ? (
-        <Text style={{ textAlign: 'center' }}>No history yet.</Text>
+        <Text style={{ textAlign: "center" }}>No history yet.</Text>
       ) : (
         <FlatList
           data={history}
@@ -258,7 +280,9 @@ export function ScoreHistoryScreen() {
           renderItem={({ item }) => (
             <View style={styles.historyItem}>
               <Text>{item.date}</Text>
-              <Text>{item.level} - {item.score} pts</Text>
+              <Text>
+                {item.level} - {item.score} pts
+              </Text>
             </View>
           )}
         />
@@ -273,10 +297,26 @@ const Stack = createNativeStackNavigator();
 export default function QuizFeatureStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="HomeScreenWithQuiz" component={HomeScreenWithQuiz} options={{ title: 'Home' }} />
-      <Stack.Screen name="QuizSelectionScreen" component={QuizSelectionScreen} options={{ title: 'Select Quiz' }} />
-      <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ title: 'Quiz' }} />
-      <Stack.Screen name="ScoreHistoryScreen" component={ScoreHistoryScreen} options={{ title: 'Score History' }} />
+      <Stack.Screen
+        name="HomeScreenWithQuiz"
+        component={HomeScreenWithQuiz}
+        options={{ title: "Home" }}
+      />
+      <Stack.Screen
+        name="QuizSelectionScreen"
+        component={QuizSelectionScreen}
+        options={{ title: "Select Quiz" }}
+      />
+      <Stack.Screen
+        name="QuizScreen"
+        component={QuizScreen}
+        options={{ title: "Quiz" }}
+      />
+      <Stack.Screen
+        name="ScoreHistoryScreen"
+        component={ScoreHistoryScreen}
+        options={{ title: "Score History" }}
+      />
     </Stack.Navigator>
   );
 }
@@ -285,124 +325,124 @@ export default function QuizFeatureStack() {
 const styles = StyleSheet.create({
   homeContainer: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
-    alignItems: 'center',
+    backgroundColor: "#E8F5E9",
+    alignItems: "center",
     paddingTop: 80,
   },
   title: {
     fontSize: 26,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 50,
-    color: '#2E7D32',
+    color: "#2E7D32",
   },
   buttonColumn: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '80%',
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "80%",
     marginTop: 40,
     gap: 20,
   },
   mainButton: {
-    width: '100%',
+    width: "100%",
     paddingVertical: 15,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 3,
     marginBottom: 20,
   },
   mainButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 8,
   },
   selectionContainer: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: "#E8F5E9",
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   selectionTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 30,
-    color: '#1B5E20',
+    color: "#1B5E20",
   },
   difficultyCard: {
-    width: '80%',
+    width: "80%",
     padding: 20,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     elevation: 3,
   },
   difficultyText: {
     fontSize: 18,
     marginLeft: 10,
-    fontWeight: 'bold',
-    color: '#2E7D32',
-  },
-  quizTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#1B5E20',
+    fontWeight: "bold",
+    color: "#2E7D32",
   },
   quizPage: {
     flex: 1,
-    backgroundColor: '#DFF0D8',
-    justifyContent: 'center',
+    backgroundColor: "#DFF0D8",
+    justifyContent: "center",
     padding: 20,
+  },
+  quizTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#1B5E20",
   },
   questionCount: {
     fontSize: 16,
     marginBottom: 10,
-    color: '#2E7D32',
-    textAlign: 'center',
-    fontWeight: 'bold',
+    color: "#2E7D32",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   optionButton: {
     padding: 15,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
     marginBottom: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     elevation: 2,
   },
   optionText: {
     fontSize: 18,
-    color: '#000',
-    fontWeight: '500',
+    color: "#000",
+    fontWeight: "500",
   },
   nextButton: {
     marginTop: 20,
-    backgroundColor: '#388E3C',
+    backgroundColor: "#388E3C",
     padding: 15,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 3,
   },
   nextButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   historyContainer: {
     flex: 1,
     padding: 20,
   },
   historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
 });
