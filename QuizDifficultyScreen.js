@@ -12,7 +12,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebaseConfig"; // ✅ Firebase setup
+import { db } from "./firebaseConfig"; // ✅ your Firebase setup
+import TicTacToeScreen from "./TicTacToeScreen"; // ✅ Tic Tac Toe game
 
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
@@ -43,9 +44,7 @@ export function HomeScreenWithQuiz({ navigation }) {
         {/* SHOP */}
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#00796B" }]}
-          onPress={() =>
-            Alert.alert("Coming Soon", "Shop feature not ready yet!")
-          }
+          onPress={() => Alert.alert("Coming Soon", "Shop feature not ready yet!")}
         >
           <Ionicons name="cart-outline" size={22} color="#fff" />
           <Text style={styles.mainButtonText}>Shop</Text>
@@ -54,9 +53,7 @@ export function HomeScreenWithQuiz({ navigation }) {
         {/* MINI-GAMES */}
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#8E44AD" }]}
-          onPress={() =>
-            Alert.alert("Coming Soon", "Mini-Games will be available soon!")
-          }
+          onPress={() => navigation.navigate("TicTacToeScreen")}
         >
           <Ionicons name="game-controller-outline" size={22} color="#fff" />
           <Text style={styles.mainButtonText}>Mini-Games</Text>
@@ -72,17 +69,18 @@ export function QuizScreen({ navigation }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [score, setScore] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "quizQuestions")); // ✅ your Firestore collection
+        const querySnapshot = await getDocs(collection(db, "quizQuestions"));
         const fetched = querySnapshot.docs.map((doc) => doc.data());
 
         if (fetched.length > 0) {
           const shuffled = [...fetched].sort(() => Math.random() - 0.5);
-          setQuestions(shuffled.slice(0, 10)); // pick 10 random
+          setQuestions(shuffled.slice(0, 10));
         } else {
           console.log("⚠️ No questions found in Firestore!");
         }
@@ -114,36 +112,22 @@ export function QuizScreen({ navigation }) {
 
   const currentQuestion = questions[currentIndex];
 
-  // --- Handle Next Button ---
-  const handleNext = () => {
-    if (selectedOption === null) {
-      Alert.alert("Select an option first!");
-      return;
-    }
+  const handleOptionPress = (isCorrect) => {
+    if (showFeedback) return;
+    setSelectedOption(isCorrect);
+    if (isCorrect) setScore(score + 1);
+    setShowFeedback(true);
+  };
 
-    let newScore = score;
-    if (currentQuestion.options[selectedOption].isCorrect) {
-      newScore = score + 1;
-      setScore(newScore);
-    }
-
+  const handleNext = async () => {
     if (currentIndex + 1 < questions.length) {
-      // Go to next question
       setCurrentIndex(currentIndex + 1);
       setSelectedOption(null);
+      setShowFeedback(false);
     } else {
-      // Finish quiz
-      saveScore(newScore);
-      Alert.alert("Quiz Finished!", `You scored ${newScore} / ${questions.length}`, [
-        {
-          text: "OK",
-          onPress: () => {
-            setCurrentIndex(0); // reset quiz
-            setSelectedOption(null);
-            setScore(0);
-            navigation.navigate("HomeScreenWithQuiz");
-          },
-        },
+      await saveScore(score);
+      Alert.alert("Quiz Finished!", `You scored ${score} out of ${questions.length}`, [
+        { text: "OK", onPress: () => navigation.navigate("HomeScreenWithQuiz") },
       ]);
     }
   };
@@ -151,34 +135,37 @@ export function QuizScreen({ navigation }) {
   return (
     <View style={styles.quizPage}>
       <Text style={styles.questionCount}>
-        Question {currentIndex + 1} of {questions.length}
+        Question {currentIndex + 1} / {questions.length}
       </Text>
       <Text style={styles.quizTitle}>{currentQuestion.question}</Text>
 
       {currentQuestion.options.map((option, index) => {
-        const isSelected = index === selectedOption;
-        let backgroundColor = "#fff";
-
-        if (isSelected) {
-          backgroundColor = option.isCorrect ? "#4CAF50" : "#F44336";
+        let buttonStyle = [styles.optionButton];
+        if (showFeedback) {
+          if (option.isCorrect) buttonStyle.push({ backgroundColor: "#C8E6C9" });
+          else if (selectedOption && !option.isCorrect && option.text === currentQuestion.options.find(o => o.isCorrect).text) {
+            buttonStyle.push({ backgroundColor: "#FFCDD2" });
+          }
         }
 
         return (
           <TouchableOpacity
             key={index}
-            style={[styles.optionButton, { backgroundColor }]}
-            onPress={() => setSelectedOption(index)}
+            style={buttonStyle}
+            onPress={() => handleOptionPress(option.isCorrect)}
           >
             <Text style={styles.optionText}>{option.text}</Text>
           </TouchableOpacity>
         );
       })}
 
-      <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-        <Text style={styles.nextButtonText}>
-          {currentIndex + 1 === questions.length ? "Finish Quiz" : "Next Question"}
-        </Text>
-      </TouchableOpacity>
+      {showFeedback && (
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {currentIndex + 1 === questions.length ? "Finish" : "Next"}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -257,15 +244,16 @@ export default function QuizFeatureStack() {
         component={HomeScreenWithQuiz}
         options={{ title: "Home" }}
       />
-      <Stack.Screen
-        name="QuizScreen"
-        component={QuizScreen}
-        options={{ title: "Quiz" }}
-      />
+      <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ title: "Quiz" }} />
       <Stack.Screen
         name="ScoreHistoryScreen"
         component={ScoreHistoryScreen}
         options={{ title: "Score History" }}
+      />
+      <Stack.Screen
+        name="TicTacToeScreen"
+        component={TicTacToeScreen}
+        options={{ title: "Tic Tac Toe" }}
       />
     </Stack.Navigator>
   );
