@@ -115,10 +115,10 @@ export function QuizScreen({ navigation }) {
   const handleOptionPress = (option) => {
     if (showFeedback) return;
 
-    const selectedText = option?.text || "unknown"; // fallback
+    const selectedText = option?.text || "unknown"; 
     setSelectedOption(selectedText);
 
-    const correct = option?.isCorrect === true; // safe boolean check
+    const correct = option?.isCorrect === true; 
     if (correct) setScore(score + 1);
 
     setShowFeedback(true);
@@ -127,7 +127,7 @@ export function QuizScreen({ navigation }) {
   // Handle next question or finish
   const handleNext = () => {
     if (!showFeedback) {
-      // If user didn't select, just mark feedback
+      
       setShowFeedback(true);
       return;
     }
