@@ -81,7 +81,7 @@ export function QuizScreen({ navigation }) {
           const shuffled = [...fetched].sort(() => Math.random() - 0.5);
           setQuestions(shuffled.slice(0, 10));
         } else {
-          console.log("⚠️ No questions found in Firestore!");
+          console.log("⚠️ No questions found!");
         }
       } catch (error) {
         console.error("Error fetching questions:", error);
