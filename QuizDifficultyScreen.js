@@ -111,23 +111,52 @@ export function QuizScreen({ navigation }) {
 
   const currentQuestion = questions[currentIndex];
 
-  const handleOptionPress = (isCorrect) => {
+  // Handle option selection
+  const handleOptionPress = (option) => {
     if (showFeedback) return;
-    setSelectedOption(isCorrect);
-    if (isCorrect) setScore(score + 1);
+
+    const selectedText = option?.text || "unknown"; // fallback
+    setSelectedOption(selectedText);
+
+    const correct = option?.isCorrect === true; // safe boolean check
+    if (correct) setScore(score + 1);
+
     setShowFeedback(true);
   };
 
-  const handleNext = async () => {
+  // Handle next question or finish
+  const handleNext = () => {
+    if (!showFeedback) {
+      // If user didn't select, just mark feedback
+      setShowFeedback(true);
+      return;
+    }
+
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(currentIndex + 1);
       setSelectedOption(null);
       setShowFeedback(false);
     } else {
-      await saveScore(score);
-      Alert.alert("Quiz Finished!", `You scored ${score} out of ${questions.length}`, [
-        { text: "OK", onPress: () => navigation.navigate("HomeScreenWithQuiz") },
-      ]);
+      // Save score asynchronously
+      saveScore(score);
+
+      // Show alert and navigate with small delay
+      Alert.alert(
+        "Quiz Finished!",
+        `You scored ${score} out of ${questions.length}`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setShowFeedback(false);
+              setSelectedOption(null);
+              setTimeout(() => {
+                navigation.navigate("HomeScreenWithQuiz");
+              }, 100);
+            },
+          },
+        ]
+      );
     }
   };
 
@@ -143,18 +172,23 @@ export function QuizScreen({ navigation }) {
           key={index}
           style={[
             styles.optionButton,
-            showFeedback && option.isCorrect ? { backgroundColor: "#C8E6C9" } : null,
-            showFeedback && selectedOption && !option.isCorrect && option.text === selectedOption
-              ? { backgroundColor: "#FFCDD2" }
+            showFeedback && option.isCorrect
+              ? { backgroundColor: "#C8E6C9" } // green for correct
+              : null,
+            showFeedback &&
+            selectedOption === option.text &&
+            !option.isCorrect
+              ? { backgroundColor: "#FFCDD2" } // red for wrong
               : null,
           ]}
-          onPress={() => handleOptionPress(option.isCorrect)}
+          onPress={() => handleOptionPress(option)}
         >
           <Text style={styles.optionText}>{option.text}</Text>
         </TouchableOpacity>
       ))}
 
-      {showFeedback && (
+      {/* Show Next/Finish button if feedback shown or last question */}
+      {(showFeedback || currentIndex + 1 === questions.length) && (
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>
             {currentIndex + 1 === questions.length ? "Finish" : "Next"}
@@ -187,6 +221,7 @@ async function saveScore(score) {
     console.log("Error saving score", e);
   }
 }
+
 
 // --- Score History Screen ---
 export function ScoreHistoryScreen() {
