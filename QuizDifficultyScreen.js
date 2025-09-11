@@ -74,7 +74,7 @@ export function QuizScreen({ navigation }) {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "quizQuestions"));
+        const querySnapshot = await getDocs(collection(db, "Quiz"));
         const fetched = querySnapshot.docs.map((doc) => doc.data());
 
         if (fetched.length > 0) {
