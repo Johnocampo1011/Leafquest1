@@ -2,9 +2,9 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 
-// Fetch questions for a given level (Basic, Hard, Professional)
+// Fetch questions f
 export async function fetchQuestions(level) {
-  const docRef = doc(db, "quizzes", level); // collection: quizzes, doc: Basic/Hard/Professional
+  const docRef = doc(db, "quizzes", level); 
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
