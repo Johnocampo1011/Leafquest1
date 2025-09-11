@@ -1,0 +1,497 @@
+[
+  {
+    "question": "How often should you water a succulent?",
+    "options": [
+      { "text": "Once a week", "isCorrect": true },
+      { "text": "Every day", "isCorrect": false },
+      { "text": "Every hour", "isCorrect": false },
+      { "text": "Never", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which soil type is best for cacti?",
+    "options": [
+      { "text": "Sandy", "isCorrect": true },
+      { "text": "Clay", "isCorrect": false },
+      { "text": "Peat", "isCorrect": false },
+      { "text": "Loamy", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What kind of light do most indoor plants need?",
+    "options": [
+      { "text": "Indirect sunlight", "isCorrect": true },
+      { "text": "No light", "isCorrect": false },
+      { "text": "Direct harsh sunlight", "isCorrect": false },
+      { "text": "Fluorescent only", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you prune plants?",
+    "options": [
+      { "text": "To encourage new growth", "isCorrect": true },
+      { "text": "To make them smaller for no reason", "isCorrect": false },
+      { "text": "To stop them from flowering", "isCorrect": false },
+      { "text": "It’s never necessary", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant thrives in low light?",
+    "options": [
+      { "text": "Snake plant", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best way to water most houseplants?",
+    "options": [
+      { "text": "Water the soil, not the leaves", "isCorrect": true },
+      { "text": "Water only the leaves", "isCorrect": false },
+      { "text": "Keep soil dry always", "isCorrect": false },
+      { "text": "Sprinkle once a month", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you rotate your potted plants?",
+    "options": [
+      { "text": "To ensure even light distribution", "isCorrect": true },
+      { "text": "To confuse the plant", "isCorrect": false },
+      { "text": "To make the leaves fall off", "isCorrect": false },
+      { "text": "It is not necessary", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How can you tell if a plant needs water?",
+    "options": [
+      { "text": "Soil feels dry", "isCorrect": true },
+      { "text": "Leaves are green and firm", "isCorrect": false },
+      { "text": "Pot is heavy", "isCorrect": false },
+      { "text": "Plant is flowering", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which fertilizer is best for flowering plants?",
+    "options": [
+      { "text": "High phosphorus", "isCorrect": true },
+      { "text": "High nitrogen", "isCorrect": false },
+      { "text": "High potassium only", "isCorrect": false },
+      { "text": "No fertilizer needed", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the ideal humidity for tropical plants?",
+    "options": [
+      { "text": "High humidity", "isCorrect": true },
+      { "text": "Low humidity", "isCorrect": false },
+      { "text": "No humidity", "isCorrect": false },
+      { "text": "It does not matter", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What should you do if plant leaves turn yellow?",
+    "options": [
+      { "text": "Check watering and nutrients", "isCorrect": true },
+      { "text": "Leave it, it will recover", "isCorrect": false },
+      { "text": "Cut all leaves off", "isCorrect": false },
+      { "text": "Move to dark room", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the purpose of drainage holes in pots?",
+    "options": [
+      { "text": "Prevent waterlogging", "isCorrect": true },
+      { "text": "To let roots escape", "isCorrect": false },
+      { "text": "To decorate the pot", "isCorrect": false },
+      { "text": "To store fertilizer", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant prefers dry soil?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Bamboo", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How often should you repot most houseplants?",
+    "options": [
+      { "text": "Every 1–2 years", "isCorrect": true },
+      { "text": "Every month", "isCorrect": false },
+      { "text": "Never", "isCorrect": false },
+      { "text": "Every 5–10 years", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best temperature range for most houseplants?",
+    "options": [
+      { "text": "18–24°C (65–75°F)", "isCorrect": true },
+      { "text": "5–10°C (41–50°F)", "isCorrect": false },
+      { "text": "30–40°C (86–104°F)", "isCorrect": false },
+      { "text": "Below 0°C (32°F)", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can survive neglect easily?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What should you do if a plant has pests?",
+    "options": [
+      { "text": "Use appropriate insecticide or remove manually", "isCorrect": true },
+      { "text": "Water it heavily", "isCorrect": false },
+      { "text": "Move to dark room", "isCorrect": false },
+      { "text": "Ignore it", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is safe for pets?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Dieffenbachia", "isCorrect": false },
+      { "text": "Oleander", "isCorrect": false },
+      { "text": "Pothos", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the benefit of misting plants?",
+    "options": [
+      { "text": "Increase humidity around the leaves", "isCorrect": true },
+      { "text": "Wash soil nutrients away", "isCorrect": false },
+      { "text": "Cause leaves to fall", "isCorrect": false },
+      { "text": "Prevent growth", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How can you propagate a plant?",
+    "options": [
+      { "text": "Using cuttings or seeds", "isCorrect": true },
+      { "text": "By shouting at it", "isCorrect": false },
+      { "text": "By removing leaves only", "isCorrect": false },
+      { "text": "Planting rocks", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best way to prevent root rot?",
+    "options": [
+      { "text": "Ensure proper drainage and avoid overwatering", "isCorrect": true },
+      { "text": "Water excessively", "isCorrect": false },
+      { "text": "Keep in dark and wet", "isCorrect": false },
+      { "text": "Use clay pots only", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant needs the most sunlight?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Snake plant", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the main purpose of fertilizing plants?",
+    "options": [
+      { "text": "Provide essential nutrients for growth", "isCorrect": true },
+      { "text": "Decorate leaves", "isCorrect": false },
+      { "text": "Make soil heavier", "isCorrect": false },
+      { "text": "Change plant color", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is known for air purification?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Tomato", "isCorrect": false },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How do you know if a plant is getting too much sun?",
+    "options": [
+      { "text": "Leaves get scorched or turn brown", "isCorrect": true },
+      { "text": "Leaves grow faster", "isCorrect": false },
+      { "text": "Plant flowers quickly", "isCorrect": false },
+      { "text": "Soil dries normally", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why is mulching useful for plants?",
+    "options": [
+      { "text": "Helps retain soil moisture and regulate temperature", "isCorrect": true },
+      { "text": "Prevents photosynthesis", "isCorrect": false },
+      { "text": "Blocks air circulation", "isCorrect": false },
+      { "text": "Attracts pests", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant prefers consistently moist soil?",
+    "options": [
+      { "text": "Fern", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Succulent", "isCorrect": false },
+      { "text": "Aloe vera", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best way to increase humidity for indoor plants?",
+    "options": [
+      { "text": "Use a pebble tray or humidifier", "isCorrect": true },
+      { "text": "Keep them in dry air", "isCorrect": false },
+      { "text": "Spray once a month", "isCorrect": false },
+      { "text": "Move outdoors", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What happens if you water plants too much?",
+    "options": [
+      { "text": "Roots may rot", "isCorrect": true },
+      { "text": "Leaves grow greener", "isCorrect": false },
+      { "text": "Plant flowers faster", "isCorrect": false },
+      { "text": "Soil stays healthy", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can survive in shade?",
+    "options": [
+      { "text": "Peace lily", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you remove dead leaves?",
+    "options": [
+      { "text": "To prevent disease and encourage growth", "isCorrect": true },
+      { "text": "It is not necessary", "isCorrect": false },
+      { "text": "To make the pot lighter", "isCorrect": false },
+      { "text": "For decoration only", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can tolerate neglect?",
+    "options": [
+      { "text": "Snake plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best way to propagate a succulent?",
+    "options": [
+      { "text": "Leaf or stem cuttings", "isCorrect": true },
+      { "text": "Water it more", "isCorrect": false },
+      { "text": "Plant flowers", "isCorrect": false },
+      { "text": "Remove soil", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why is indirect light better for many indoor plants?",
+    "options": [
+      { "text": "Prevents leaf burn", "isCorrect": true },
+      { "text": "It makes plants grow slower", "isCorrect": false },
+      { "text": "It dries the soil faster", "isCorrect": false },
+      { "text": "It attracts pests", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is best for beginners?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Cactus with flowers", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the easiest way to check soil moisture?",
+    "options": [
+      { "text": "Stick your finger 2–3 cm into soil", "isCorrect": true },
+      { "text": "Look at leaves only", "isCorrect": false },
+      { "text": "Weigh the pot", "isCorrect": false },
+      { "text": "Shake the pot", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How do you encourage flowering in indoor plants?",
+    "options": [
+      { "text": "Provide adequate light and fertilizer", "isCorrect": true },
+      { "text": "Keep in complete darkness", "isCorrect": false },
+      { "text": "Water excessively", "isCorrect": false },
+      { "text": "Remove all leaves", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant needs the least water?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Spider plant", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you avoid over-fertilizing?",
+    "options": [
+      { "text": "Can burn roots and damage the plant", "isCorrect": true },
+      { "text": "Makes leaves greener", "isCorrect": false },
+      { "text": "Encourages flowering", "isCorrect": false },
+      { "text": "It has no effect", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant prefers high humidity?",
+    "options": [
+      { "text": "Fern", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Aloe vera", "isCorrect": false },
+      { "text": "Snake plant", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the main cause of leaf drop in indoor plants?",
+    "options": [
+      { "text": "Watering issues or stress", "isCorrect": true },
+      { "text": "Too much fertilizer", "isCorrect": false },
+      { "text": "Using clay pots", "isCorrect": false },
+      { "text": "Pruning too often", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why is aeration of soil important?",
+    "options": [
+      { "text": "Allows roots to get oxygen", "isCorrect": true },
+      { "text": "Prevents photosynthesis", "isCorrect": false },
+      { "text": "Makes soil heavier", "isCorrect": false },
+      { "text": "Prevents watering", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can be grown from a single leaf?",
+    "options": [
+      { "text": "Succulent", "isCorrect": true },
+      { "text": "Tomato", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you clean indoor plant leaves?",
+    "options": [
+      { "text": "Remove dust to help photosynthesis", "isCorrect": true },
+      { "text": "It is not necessary", "isCorrect": false },
+      { "text": "To make them shiny only", "isCorrect": false },
+      { "text": "To kill the plant slowly", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is a sign of underwatering?",
+    "options": [
+      { "text": "Wilted or dry leaves", "isCorrect": true },
+      { "text": "Green, firm leaves", "isCorrect": false },
+      { "text": "Rapid growth", "isCorrect": false },
+      { "text": "Flowers bloom", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is best for low maintenance?",
+    "options": [
+      { "text": "Snake plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the effect of too much direct sunlight?",
+    "options": [
+      { "text": "Leaves can get scorched", "isCorrect": true },
+      { "text": "Plant grows faster", "isCorrect": false },
+      { "text": "Flowers bloom faster", "isCorrect": false },
+      { "text": "Roots grow stronger", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant thrives in partial shade?",
+    "options": [
+      { "text": "Peace lily", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best way to encourage root growth?",
+    "options": [
+      { "text": "Use rooting hormone and proper soil", "isCorrect": true },
+      { "text": "Water leaves only", "isCorrect": false },
+      { "text": "Place in dark cupboard", "isCorrect": false },
+      { "text": "Use sand only", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can survive in dry air indoors?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Ficus", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why is soil aeration important?",
+    "options": [
+      { "text": "Provides oxygen to roots", "isCorrect": true },
+      { "text": "Prevents photosynthesis", "isCorrect": false },
+      { "text": "Keeps soil heavy", "isCorrect": false },
+      { "text": "Prevents watering", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant grows well in hanging baskets?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Bamboo", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How can you prevent fungal growth?",
+    "options": [
+      { "text": "Avoid overwatering and ensure airflow", "isCorrect": true },
+      { "text": "Water excessively", "isCorrect": false },
+      { "text": "Cover leaves with soil", "isCorrect": false },
+      { "text": "Keep plant in darkness", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is edible and easy to grow indoors?",
+    "options": [
+      { "text": "Basil", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Snake plant", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you avoid cold drafts for tropical plants?",
+    "options": [
+      { "text": "They can damage leaves and stunt growth", "isCorrect": true },
+      { "text": "It helps growth", "isCorrect": false },
+      { "text": "It improves flowering", "isCorrect": false },
+      { "text": "It prevents pests", "isCorrect": false }
+    ]
+  }
+]
