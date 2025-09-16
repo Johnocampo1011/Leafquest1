@@ -17,7 +17,7 @@ export async function fetchQuestions(limit = 10) {
       if (data && data.question && Array.isArray(data.options)) {
         questions.push({
           ...data,
-          options: shuffle(data.options), // ✅ shuffle choices every time
+          options: shuffle(data.options), // ✅ shuffle choices
         });
       }
     });
@@ -27,7 +27,7 @@ export async function fetchQuestions(limit = 10) {
       return [];
     }
 
-    // ✅ shuffle the question set itself
+    // ✅ shuffle questions
     return shuffle(questions).slice(0, limit);
   } catch (error) {
     console.error("❌ Error fetching quiz data:", error);

@@ -14,11 +14,50 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import TicTacToeScreen from "./TicTacToeScreen";
 import { fetchQuestions } from "./quizData"; // ✅ use new fetch function
 
+// --- Leaf Points Helpers ---
+async function getLeafPoints() {
+  try {
+    const stored = await AsyncStorage.getItem("leafPoints");
+    return stored ? parseInt(stored, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function addLeafPoints(points) {
+  try {
+    const current = await getLeafPoints();
+    const updated = current + points;
+    await AsyncStorage.setItem("leafPoints", updated.toString());
+    return updated;
+  } catch {
+    return 0;
+  }
+}
+
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
+  const [leafPoints, setLeafPoints] = useState(0);
+
+  useEffect(() => {
+    const loadPoints = async () => {
+      const points = await getLeafPoints();
+      setLeafPoints(points);
+    };
+    const unsubscribe = navigation.addListener("focus", loadPoints);
+    return unsubscribe;
+  }, [navigation]);
+
   return (
     <View style={styles.homeContainer}>
-      <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
+      {/* Top bar with title + points */}
+      <View style={styles.topBar}>
+        <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
+        <View style={styles.pointsContainer}>
+          <Ionicons name="leaf-outline" size={20} color="#2E7D32" />
+          <Text style={styles.pointsText}>{leafPoints}</Text>
+        </View>
+      </View>
 
       <View style={styles.buttonColumn}>
         <TouchableOpacity
@@ -97,24 +136,21 @@ export function QuizScreen({ navigation }) {
     if (showFeedback) return;
 
     setSelectedOption(option.text);
-
-    if (option.isCorrect) {
-      setScore((prev) => prev + 1);
-    }
-
+    if (option.isCorrect) setScore((prev) => prev + 1);
     setShowFeedback(true);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
       setShowFeedback(false);
     } else {
-      saveScore(score);
+      await saveScore(score);
+      await addLeafPoints(10); // ✅ reward 10 points after each quiz
       Alert.alert(
         "Quiz Finished!",
-        `You scored ${score} out of ${questions.length}`,
+        `You scored ${score} out of ${questions.length}\n+10 Leaf Points 🌿`,
         [
           {
             text: "OK",
@@ -277,12 +313,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#E8F5E9",
     alignItems: "center",
-    paddingTop: 80,
+    paddingTop: 60,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "90%",
+    alignItems: "center",
+    marginBottom: 40,
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 50,
+    color: "#2E7D32",
+  },
+  pointsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#C8E6C9",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  pointsText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 6,
     color: "#2E7D32",
   },
   buttonColumn: {
