@@ -11,9 +11,8 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebaseConfig"; // ✅ Firebase setup
-import TicTacToeScreen from "./TicTacToeScreen"; 
+import TicTacToeScreen from "./TicTacToeScreen";
+import { fetchQuestions } from "./quizData"; // ✅ use new fetch function
 
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
@@ -22,7 +21,6 @@ export function HomeScreenWithQuiz({ navigation }) {
       <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
 
       <View style={styles.buttonColumn}>
-        {/* START QUIZ */}
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#388E3C" }]}
           onPress={() => navigation.navigate("QuizScreen")}
@@ -31,7 +29,6 @@ export function HomeScreenWithQuiz({ navigation }) {
           <Text style={styles.mainButtonText}>Start Quiz</Text>
         </TouchableOpacity>
 
-        {/* HISTORY */}
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#6D4C41" }]}
           onPress={() => navigation.navigate("ScoreHistoryScreen")}
@@ -40,7 +37,6 @@ export function HomeScreenWithQuiz({ navigation }) {
           <Text style={styles.mainButtonText}>History</Text>
         </TouchableOpacity>
 
-        {/* SHOP */}
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#00796B" }]}
           onPress={() => Alert.alert("Coming Soon", "Shop feature not ready yet!")}
@@ -49,7 +45,6 @@ export function HomeScreenWithQuiz({ navigation }) {
           <Text style={styles.mainButtonText}>Shop</Text>
         </TouchableOpacity>
 
-        {/* MINI-GAMES */}
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#8E44AD" }]}
           onPress={() => navigation.navigate("MiniGamesScreen")}
@@ -72,25 +67,12 @@ export function QuizScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "Quiz"));
-        const fetched = querySnapshot.docs.map((doc) => doc.data());
-
-        if (fetched.length > 0) {
-          const shuffled = [...fetched].sort(() => Math.random() - 0.5);
-          setQuestions(shuffled.slice(0, 10));
-        } else {
-          console.log("⚠️ No questions found!");
-        }
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-      } finally {
-        setLoading(false);
-      }
+    const loadQuestions = async () => {
+      const data = await fetchQuestions(10); // ✅ pulls 10 randomized
+      setQuestions(data);
+      setLoading(false);
     };
-
-    fetchQuestions();
+    loadQuestions();
   }, []);
 
   if (loading) {
@@ -111,49 +93,32 @@ export function QuizScreen({ navigation }) {
 
   const currentQuestion = questions[currentIndex];
 
-  // Handle option selection
   const handleOptionPress = (option) => {
     if (showFeedback) return;
 
-    const selectedText = option?.text || "unknown"; 
-    setSelectedOption(selectedText);
+    setSelectedOption(option.text);
 
-    const correct = option?.isCorrect === true; 
-    if (correct) setScore(score + 1);
+    if (option.isCorrect) {
+      setScore((prev) => prev + 1);
+    }
 
     setShowFeedback(true);
   };
 
-  // Handle next question or finish
   const handleNext = () => {
-    if (!showFeedback) {
-      
-      setShowFeedback(true);
-      return;
-    }
-
     if (currentIndex + 1 < questions.length) {
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
       setShowFeedback(false);
     } else {
-      // Save score asynchronously
       saveScore(score);
-
-      // Show alert and navigate with small delay
       Alert.alert(
         "Quiz Finished!",
         `You scored ${score} out of ${questions.length}`,
         [
           {
             text: "OK",
-            onPress: () => {
-              setShowFeedback(false);
-              setSelectedOption(null);
-              setTimeout(() => {
-                navigation.navigate("HomeScreenWithQuiz");
-              }, 100);
-            },
+            onPress: () => navigation.navigate("HomeScreenWithQuiz"),
           },
         ]
       );
@@ -173,12 +138,12 @@ export function QuizScreen({ navigation }) {
           style={[
             styles.optionButton,
             showFeedback && option.isCorrect
-              ? { backgroundColor: "#C8E6C9" } // green for correct
+              ? { backgroundColor: "#C8E6C9" }
               : null,
             showFeedback &&
-            selectedOption === option.text &&
-            !option.isCorrect
-              ? { backgroundColor: "#FFCDD2" } // red for wrong
+              selectedOption === option.text &&
+              !option.isCorrect
+              ? { backgroundColor: "#FFCDD2" }
               : null,
           ]}
           onPress={() => handleOptionPress(option)}
@@ -187,8 +152,7 @@ export function QuizScreen({ navigation }) {
         </TouchableOpacity>
       ))}
 
-      {/* Show Next/Finish button if feedback shown or last question */}
-      {(showFeedback || currentIndex + 1 === questions.length) && (
+      {showFeedback && (
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>
             {currentIndex + 1 === questions.length ? "Finish" : "Next"}
@@ -203,17 +167,7 @@ export function QuizScreen({ navigation }) {
 async function saveScore(score) {
   try {
     const stored = await AsyncStorage.getItem("quizHistory");
-    let history = [];
-
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) history = parsed;
-      } catch (e) {
-        history = [];
-      }
-    }
-
+    let history = stored ? JSON.parse(stored) : [];
     const newEntry = { date: new Date().toLocaleString(), score };
     history.push(newEntry);
     await AsyncStorage.setItem("quizHistory", JSON.stringify(history));
@@ -221,7 +175,6 @@ async function saveScore(score) {
     console.log("Error saving score", e);
   }
 }
-
 
 // --- Score History Screen ---
 export function ScoreHistoryScreen() {
@@ -231,10 +184,7 @@ export function ScoreHistoryScreen() {
     const fetchHistory = async () => {
       try {
         const stored = await AsyncStorage.getItem("quizHistory");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) setHistory(parsed);
-        }
+        if (stored) setHistory(JSON.parse(stored));
       } catch (e) {
         console.log("Error loading history", e);
       }
@@ -269,7 +219,6 @@ export function MiniGamesScreen({ navigation }) {
     <View style={styles.quizPage}>
       <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
 
-      {/* Tic Tac Toe */}
       <TouchableOpacity
         style={[styles.optionButton, { backgroundColor: "#C8E6C9" }]}
         onPress={() => navigation.navigate("TicTacToeScreen")}
@@ -278,10 +227,11 @@ export function MiniGamesScreen({ navigation }) {
         <Text style={styles.optionText}>Tic Tac Toe</Text>
       </TouchableOpacity>
 
-      {/* Coming Soon Placeholder */}
       <TouchableOpacity
         style={[styles.optionButton, { backgroundColor: "#E0E0E0" }]}
-        onPress={() => Alert.alert("Coming Soon", "This mini-game is under development!")}
+        onPress={() =>
+          Alert.alert("Coming Soon", "This mini-game is under development!")
+        }
       >
         <Ionicons name="help-circle-outline" size={20} color="#555" />
         <Text style={styles.optionText}>Coming Soon...</Text>
@@ -420,4 +370,3 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
   },
 });
-
