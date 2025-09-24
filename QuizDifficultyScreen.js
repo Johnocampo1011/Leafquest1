@@ -12,7 +12,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TicTacToeScreen from "./TicTacToeScreen";
-import { fetchQuestions } from "./quizData"; // ✅ use new fetch function
+import { fetchQuestions } from "./quizData"; 
 
 // --- Leaf Points Helpers ---
 async function getLeafPoints() {
