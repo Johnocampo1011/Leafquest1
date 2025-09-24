@@ -29,4 +29,5 @@ export const localImages = {
   "PEACE LILY": require("./assets/PEACE_LILY.png"),
   "PRAYER PLANT": require("./assets/PRAYER_PLANT.png"),
   "AFRICAN VIOLET": require("./assets/AFRICAN_VIOLET.png"),
+  
 };

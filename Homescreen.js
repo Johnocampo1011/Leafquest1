@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View,Text,StyleSheet,Image,ScrollView,TextInput,TouchableOpacity, Platform, Dimensions,ActivityIndicator,FlatList} from 'react-native';
+import React, { useState, useEffect, useLayoutEffect } from "react";
+import { View,Text,StyleSheet,Image,ScrollView,TextInput,TouchableOpacity, Platform, Dimensions,ActivityIndicator,FlatList,} from 'react-native';
 import { useNavigation,useRoute, } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { WebView } from 'react-native-webview';
 import { collection, query, where, onSnapshot, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 import { localImages } from "./localImages";
+import { MenuHeaderScreen,MenuButton } from "./MenuButton";
 
 
 const HomeStack = createNativeStackNavigator();
@@ -14,14 +15,10 @@ const VideosStack = createNativeStackNavigator();
 
 
 function Header() {
-  const navigation = useNavigation();
   return (
     <View style={headerStyles.container}>
       <Text style={{fontSize:20, fontWeight:"bold"}}>LEAFQUEST</Text>
-      <TouchableOpacity style={{marginLeft:200}} onPress={() => {}}>
-        <Ionicons name="menu" size={24} color="#000"/> 
-      </TouchableOpacity>
-      <View />
+      <MenuButton />  
     </View>
   );
 }
@@ -31,45 +28,35 @@ export function HomeScreenContent({ navigation }) {
   const [myPlants, setMyPlants] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Get the current user's ID
-    const user = auth.currentUser;
-    if (!user) {
-      console.error("⚠️ No user logged in");
+useEffect(() => {
+  const user = auth.currentUser;
+  if (!user) {
+    console.error("⚠️ No user logged in");
+    setLoading(false);
+    return;
+  }
+
+  // ✅ Listen to user's personal plant collection
+  const userPlantsRef = collection(db, "users", user.uid, "plants");
+
+  const unsubscribe = onSnapshot(
+    userPlantsRef,
+    (snapshot) => {
+      const userPlants = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setMyPlants(userPlants);
       setLoading(false);
-      return;
+    },
+    (error) => {
+      console.error("Error getting user's plants:", error);
+      setLoading(false);
     }
+  );
 
-    // Listen to user's selected plants in userPlants collection
-    const userPlantsQuery = query(
-      collection(db, "userPlants"),
-      where("userId", "==", user.uid)
-    );
-
-    const unsubscribe = onSnapshot(
-      userPlantsQuery,
-      async (snapshot) => {
-        const userPlantDocs = snapshot.docs.map((doc) => doc.data());
-
-        // Fetch full plant details for each added plant
-        const plantDetails = await Promise.all(
-          userPlantDocs.map(async (up) => {
-            const plantDoc = await getDoc(doc(db, "plants", up.plantId));
-            return { id: plantDoc.id, ...plantDoc.data() };
-          })
-        );
-
-        setMyPlants(plantDetails);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching user's plants:", error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, []);
 
   if (loading) {
     return (
@@ -81,8 +68,11 @@ export function HomeScreenContent({ navigation }) {
   }
 
   return (
+    
     <View style={homeStyles.container}>
       <Header />
+
+
 
       <ScrollView contentContainerStyle={homeStyles.scrollContent}>
         <Text style={{ fontSize: 30, fontWeight: "bold", marginHorizontal: 24, marginVertical: 4 }}>
@@ -110,17 +100,17 @@ export function HomeScreenContent({ navigation }) {
             ))
           ) : (
             <Text style={{ margin: 20, fontSize: 16, color: "gray" }}>
-              You haven't added any plants yet.
+              You don't have your Plants yet
             </Text>
           )}
 
-          {/* Add Plant Button */}
+          
           <TouchableOpacity
             style={[
               homeStyles.gridItem,
               { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#ccc" },
             ]}
-            onPress={() => navigation.navigate("AddPlant") }
+            onPress={() => navigation.navigate("Library") }
           >
             <Ionicons name="add-circle-outline" size={40} color="#4CAF50" />
             <Text style={homeStyles.label}>Add Plant</Text>
@@ -128,7 +118,7 @@ export function HomeScreenContent({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* Quiz Button */}
+      
       <TouchableOpacity
         style={{
           backgroundColor: "#4CAF50",

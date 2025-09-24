@@ -89,7 +89,7 @@ export default function PlantDetailsScreen({ route, navigation }) {
 
       <PlantStatusBar plantId={route.params.plantId} />
 
-      {/* Description card */}
+      
       <View style={styles.descriptionContainer}>
         <Text style={styles.descriptionHeader}>🌿 About This Plant</Text>
         <Text style={styles.descriptionText}>

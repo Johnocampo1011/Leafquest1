@@ -16,6 +16,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
 import HomeScreenContent from './Homescreen';
+import { MenuProvider } from 'react-native-popup-menu';
 
 
 
@@ -40,7 +41,7 @@ export function LoginScreen({ navigation }) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
     } else if (error.code === "auth/user-not-found") {
       Alert.alert("Account Not Found", "This email is not registered.");
-    } else if (error.code === "auth/wrong-password") {
+    } else if (error.code === "auth/invalid-credential") {
       Alert.alert("Incorrect Password", "Please try again.");
     } else {
       Alert.alert("Error", "Something went wrong. Please try again.");
@@ -115,6 +116,7 @@ const Stack = createNativeStackNavigator();
 // Main App Navigator Setup (Remains the same)
 export default function App() {
   return (  
+    <MenuProvider>
     <NavigationContainer>
       <Stack.Navigator initialRouteName="LoginScreen" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
@@ -134,7 +136,7 @@ export default function App() {
     </Stack.Navigator>
     
   </NavigationContainer>
-
+    </MenuProvider>
 
 
   );

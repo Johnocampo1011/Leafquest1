@@ -9,10 +9,11 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+import { auth, db } from "./firebaseConfig"; //
 import { Ionicons } from "@expo/vector-icons";
 import PlantStatusBar from "./PlantStatusBar";
 import { localImages } from "./localImages";
+import { getAuth } from "firebase/auth";  // ✅ import auth
 
 export function CustomHeader({ onMenuPress }) {
   return (
@@ -32,26 +33,27 @@ export default function PlantlibraryDetailsScreen({ route, navigation }) {
   const [plant, setPlant] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPlantDetails = async () => {
-      try {
-        const docRef = doc(db, "plants", plantId);
-        const docSnap = await getDoc(docRef);
+ useEffect(() => {
+  const fetchPlantDetails = async () => {
+    try {
+      // 🌍 Fetch from global catalog (shared)
+      const docRef = doc(db, "plants", plantId);
+      const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          setPlant({ id: docSnap.id, ...docSnap.data() });
-        } else {
-          console.error("No such plant document!");
-        }
-      } catch (error) {
-        console.error("Error fetching plant details:", error);
-      } finally {
-        setLoading(false);
+      if (docSnap.exists()) {
+        setPlant({ id: docSnap.id, ...docSnap.data() });
+      } else {
+        console.error("❌ Plant not found in global library!");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching plant details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchPlantDetails();
-  }, [plantId]);
+  fetchPlantDetails();
+}, [plantId]);
 
   if (loading) {
     return (

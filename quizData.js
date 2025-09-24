@@ -1,604 +1,498 @@
 // quizData.js
-export const basicQuestions = [
+export const Questions = [
   {
-    question: "What is the best light condition for a Rose plant?",
-    options: [
-      { text: "Full sunlight", isCorrect: true },
-      { text: "Full shade", isCorrect: false },
-      { text: "No light needed", isCorrect: false },
-      { text: "Artificial light only", isCorrect: false },
-    ],
+    "question": "How often should you water a succulent?",
+    "options": [
+      { "text": "Once a week", "isCorrect": true },
+      { "text": "Every day", "isCorrect": false },
+      { "text": "Every hour", "isCorrect": false },
+      { "text": "Never", "isCorrect": false }
+    ]
   },
   {
-    question: "How often should you water a Sunflower?",
-    options: [
-      { text: "Once a week", isCorrect: false },
-      { text: "Every day", isCorrect: false },
-      { text: "When soil is dry", isCorrect: true },
-      { text: "Never", isCorrect: false },
-    ],
+    "question": "Which soil type is best for cacti?",
+    "options": [
+      { "text": "Sandy", "isCorrect": true },
+      { "text": "Clay", "isCorrect": false },
+      { "text": "Peat", "isCorrect": false },
+      { "text": "Loamy", "isCorrect": false }
+    ]
   },
   {
-    question: "Which family does Tulip belong to?",
-    options: [
-      { text: "Rosaceae", isCorrect: false },
-      { text: "Liliaceae", isCorrect: true },
-      { text: "Asteraceae", isCorrect: false },
-      { text: "Fabaceae", isCorrect: false },
-    ],
+    "question": "What kind of light do most indoor plants need?",
+    "options": [
+      { "text": "Indirect sunlight", "isCorrect": true },
+      { "text": "No light", "isCorrect": false },
+      { "text": "Direct harsh sunlight", "isCorrect": false },
+      { "text": "Fluorescent only", "isCorrect": false }
+    ]
   },
   {
-    question: "What do plants need for photosynthesis?",
-    options: [
-      { text: "Sunlight, water, and carbon dioxide", isCorrect: true },
-      { text: "Only water", isCorrect: false },
-      { text: "Only soil", isCorrect: false },
-      { text: "Only fertilizer", isCorrect: false },
-    ],
+    "question": "Why should you prune plants?",
+    "options": [
+      { "text": "To encourage new growth", "isCorrect": true },
+      { "text": "To make them smaller for no reason", "isCorrect": false },
+      { "text": "To stop them from flowering", "isCorrect": false },
+      { "text": "It’s never necessary", "isCorrect": false }
+    ]
   },
   {
-    question: "Which part of the plant absorbs water and nutrients?",
-    options: [
-      { text: "Roots", isCorrect: true },
-      { text: "Leaves", isCorrect: false },
-      { text: "Flowers", isCorrect: false },
-      { text: "Stems", isCorrect: false },
-    ],
+    "question": "Which plant thrives in low light?",
+    "options": [
+      { "text": "Snake plant", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
   },
   {
-    question: "Which pigment makes plants green?",
-    options: [
-      { text: "Chlorophyll", isCorrect: true },
-      { text: "Carotene", isCorrect: false },
-      { text: "Xanthophyll", isCorrect: false },
-      { text: "Melanin", isCorrect: false },
-    ],
+    "question": "What is the best way to water most houseplants?",
+    "options": [
+      { "text": "Water the soil, not the leaves", "isCorrect": true },
+      { "text": "Water only the leaves", "isCorrect": false },
+      { "text": "Keep soil dry always", "isCorrect": false },
+      { "text": "Sprinkle once a month", "isCorrect": false }
+    ]
   },
   {
-    question: "Cacti are adapted to which type of environment?",
-    options: [
-      { text: "Deserts", isCorrect: true },
-      { text: "Rainforests", isCorrect: false },
-      { text: "Mountains", isCorrect: false },
-      { text: "Swamps", isCorrect: false },
-    ],
+    "question": "Why should you rotate your potted plants?",
+    "options": [
+      { "text": "To ensure even light distribution", "isCorrect": true },
+      { "text": "To confuse the plant", "isCorrect": false },
+      { "text": "To make the leaves fall off", "isCorrect": false },
+      { "text": "It is not necessary", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant is famous for closing its leaves when touched?",
-    options: [
-      { text: "Mimosa pudica", isCorrect: true },
-      { text: "Sunflower", isCorrect: false },
-      { text: "Lotus", isCorrect: false },
-      { text: "Venus flytrap", isCorrect: false },
-    ],
+    "question": "How can you tell if a plant needs water?",
+    "options": [
+      { "text": "Soil feels dry", "isCorrect": true },
+      { "text": "Leaves are green and firm", "isCorrect": false },
+      { "text": "Pot is heavy", "isCorrect": false },
+      { "text": "Plant is flowering", "isCorrect": false }
+    ]
   },
   {
-    question: "Which of these is NOT a type of root?",
-    options: [
-      { text: "Taproot", isCorrect: false },
-      { text: "Fibrous root", isCorrect: false },
-      { text: "Anchor root", isCorrect: true },
-      { text: "Adventitious root", isCorrect: false },
-    ],
+    "question": "Which fertilizer is best for flowering plants?",
+    "options": [
+      { "text": "High phosphorus", "isCorrect": true },
+      { "text": "High nitrogen", "isCorrect": false },
+      { "text": "High potassium only", "isCorrect": false },
+      { "text": "No fertilizer needed", "isCorrect": false }
+    ]
   },
   {
-    question: "What part of the plant makes seeds?",
-    options: [
-      { text: "Flower", isCorrect: true },
-      { text: "Leaf", isCorrect: false },
-      { text: "Stem", isCorrect: false },
-      { text: "Root", isCorrect: false },
-    ],
+    "question": "What is the ideal humidity for tropical plants?",
+    "options": [
+      { "text": "High humidity", "isCorrect": true },
+      { "text": "Low humidity", "isCorrect": false },
+      { "text": "No humidity", "isCorrect": false },
+      { "text": "It does not matter", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant is used to make paper?",
-    options: [
-      { text: "Bamboo", isCorrect: false },
-      { text: "Pine tree", isCorrect: true },
-      { text: "Rose", isCorrect: false },
-      { text: "Coconut tree", isCorrect: false },
-    ],
+    "question": "What should you do if plant leaves turn yellow?",
+    "options": [
+      { "text": "Check watering and nutrients", "isCorrect": true },
+      { "text": "Leave it, it will recover", "isCorrect": false },
+      { "text": "Cut all leaves off", "isCorrect": false },
+      { "text": "Move to dark room", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant is known as the 'king of fruits' in Southeast Asia?",
-    options: [
-      { text: "Durian", isCorrect: true },
-      { text: "Mango", isCorrect: false },
-      { text: "Banana", isCorrect: false },
-      { text: "Rambutan", isCorrect: false },
-    ],
+    "question": "What is the purpose of drainage holes in pots?",
+    "options": [
+      { "text": "Prevent waterlogging", "isCorrect": true },
+      { "text": "To let roots escape", "isCorrect": false },
+      { "text": "To decorate the pot", "isCorrect": false },
+      { "text": "To store fertilizer", "isCorrect": false }
+    ]
   },
   {
-    question: "What do we call plants that grow back every year?",
-    options: [
-      { text: "Annuals", isCorrect: false },
-      { text: "Perennials", isCorrect: true },
-      { text: "Biennials", isCorrect: false },
-      { text: "Seasonals", isCorrect: false },
-    ],
+    "question": "Which plant prefers dry soil?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Bamboo", "isCorrect": false }
+    ]
   },
   {
-    question: "Banana plants reproduce mainly through?",
-    options: [
-      { text: "Seeds", isCorrect: false },
-      { text: "Runners", isCorrect: false },
-      { text: "Suckers", isCorrect: true },
-      { text: "Cuttings", isCorrect: false },
-    ],
+    "question": "How often should you repot most houseplants?",
+    "options": [
+      { "text": "Every 1–2 years", "isCorrect": true },
+      { "text": "Every month", "isCorrect": false },
+      { "text": "Never", "isCorrect": false },
+      { "text": "Every 5–10 years", "isCorrect": false }
+    ]
   },
   {
-    question: "Which gas do plants release during photosynthesis?",
-    options: [
-      { text: "Oxygen", isCorrect: true },
-      { text: "Carbon dioxide", isCorrect: false },
-      { text: "Nitrogen", isCorrect: false },
-      { text: "Hydrogen", isCorrect: false },
-    ],
+    "question": "What is the best temperature range for most houseplants?",
+    "options": [
+      { "text": "18–24°C (65–75°F)", "isCorrect": true },
+      { "text": "5–10°C (41–50°F)", "isCorrect": false },
+      { "text": "30–40°C (86–104°F)", "isCorrect": false },
+      { "text": "Below 0°C (32°F)", "isCorrect": false }
+    ]
   },
   {
-    question: "What is the main purpose of flowers in plants?",
-    options: [
-      { text: "To make leaves", isCorrect: false },
-      { text: "To attract pollinators", isCorrect: true },
-      { text: "To absorb water", isCorrect: false },
-      { text: "To produce oxygen", isCorrect: false },
-    ],
+    "question": "Which plant can survive neglect easily?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant traps and digests insects?",
-    options: [
-      { text: "Venus flytrap", isCorrect: true },
-      { text: "Mimosa pudica", isCorrect: false },
-      { text: "Rose", isCorrect: false },
-      { text: "Tulip", isCorrect: false },
-    ],
+    "question": "What should you do if a plant has pests?",
+    "options": [
+      { "text": "Use appropriate insecticide or remove manually", "isCorrect": true },
+      { "text": "Water it heavily", "isCorrect": false },
+      { "text": "Move to dark room", "isCorrect": false },
+      { "text": "Ignore it", "isCorrect": false }
+    ]
   },
   {
-    question: "Aloe vera is best known for which property?",
-    options: [
-      { text: "Medicinal use", isCorrect: true },
-      { text: "Strong wood", isCorrect: false },
-      { text: "Fragrance", isCorrect: false },
-      { text: "Producing oil", isCorrect: false },
-    ],
+    "question": "Which plant is safe for pets?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Dieffenbachia", "isCorrect": false },
+      { "text": "Oleander", "isCorrect": false },
+      { "text": "Pothos", "isCorrect": false }
+    ]
   },
   {
-    question: "What type of plant is rice?",
-    options: [
-      { text: "Cereal grain", isCorrect: true },
-      { text: "Fruit", isCorrect: false },
-      { text: "Root vegetable", isCorrect: false },
-      { text: "Legume", isCorrect: false },
-    ],
+    "question": "What is the benefit of misting plants?",
+    "options": [
+      { "text": "Increase humidity around the leaves", "isCorrect": true },
+      { "text": "Wash soil nutrients away", "isCorrect": false },
+      { "text": "Cause leaves to fall", "isCorrect": false },
+      { "text": "Prevent growth", "isCorrect": false }
+    ]
   },
   {
-    question: "Which part of a plant conducts water?",
-    options: [
-      { text: "Xylem", isCorrect: true },
-      { text: "Phloem", isCorrect: false },
-      { text: "Root hairs", isCorrect: false },
-      { text: "Leaves", isCorrect: false },
-    ],
+    "question": "How can you propagate a plant?",
+    "options": [
+      { "text": "Using cuttings or seeds", "isCorrect": true },
+      { "text": "By shouting at it", "isCorrect": false },
+      { "text": "By removing leaves only", "isCorrect": false },
+      { "text": "Planting rocks", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant is commonly grown to improve indoor air quality?",
-    options: [
-      { text: "Snake plant", isCorrect: true },
-      { text: "Cactus", isCorrect: false },
-      { text: "Mango tree", isCorrect: false },
-      { text: "Corn", isCorrect: false },
-    ],
+    "question": "What is the best way to prevent root rot?",
+    "options": [
+      { "text": "Ensure proper drainage and avoid overwatering", "isCorrect": true },
+      { "text": "Water excessively", "isCorrect": false },
+      { "text": "Keep in dark and wet", "isCorrect": false },
+      { "text": "Use clay pots only", "isCorrect": false }
+    ]
   },
   {
-    question: "Which of these plants produces coffee beans?",
-    options: [
-      { text: "Coffea arabica", isCorrect: true },
-      { text: "Theobroma cacao", isCorrect: false },
-      { text: "Camellia sinensis", isCorrect: false },
-      { text: "Capsicum annuum", isCorrect: false },
-    ],
+    "question": "Which plant needs the most sunlight?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Snake plant", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant is the main source of natural rubber?",
-    options: [
-      { text: "Hevea brasiliensis", isCorrect: true },
-      { text: "Bamboo", isCorrect: false },
-      { text: "Coconut tree", isCorrect: false },
-      { text: "Neem", isCorrect: false },
-    ],
+    "question": "What is the main purpose of fertilizing plants?",
+    "options": [
+      { "text": "Provide essential nutrients for growth", "isCorrect": true },
+      { "text": "Decorate leaves", "isCorrect": false },
+      { "text": "Make soil heavier", "isCorrect": false },
+      { "text": "Change plant color", "isCorrect": false }
+    ]
   },
   {
-    question: "What part of a carrot do we eat?",
-    options: [
-      { text: "Root", isCorrect: true },
-      { text: "Stem", isCorrect: false },
-      { text: "Leaf", isCorrect: false },
-      { text: "Flower", isCorrect: false },
-    ],
+    "question": "Which plant is known for air purification?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Tomato", "isCorrect": false },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant is used to produce chocolate?",
-    options: [
-      { text: "Theobroma cacao", isCorrect: true },
-      { text: "Coffea arabica", isCorrect: false },
-      { text: "Capsicum annuum", isCorrect: false },
-      { text: "Oryza sativa", isCorrect: false },
-    ],
+    "question": "How do you know if a plant is getting too much sun?",
+    "options": [
+      { "text": "Leaves get scorched or turn brown", "isCorrect": true },
+      { "text": "Leaves grow faster", "isCorrect": false },
+      { "text": "Plant flowers quickly", "isCorrect": false },
+      { "text": "Soil dries normally", "isCorrect": false }
+    ]
   },
   {
-    question: "What type of plant is wheat?",
-    options: [
-      { text: "Cereal grain", isCorrect: true },
-      { text: "Legume", isCorrect: false },
-      { text: "Fruit", isCorrect: false },
-      { text: "Root vegetable", isCorrect: false },
-    ],
+    "question": "Why is mulching useful for plants?",
+    "options": [
+      { "text": "Helps retain soil moisture and regulate temperature", "isCorrect": true },
+      { "text": "Prevents photosynthesis", "isCorrect": false },
+      { "text": "Blocks air circulation", "isCorrect": false },
+      { "text": "Attracts pests", "isCorrect": false }
+    ]
   },
   {
-    question: "What is the process by which plants lose water vapor through leaves?",
-    options: [
-      { text: "Transpiration", isCorrect: true },
-      { text: "Evaporation", isCorrect: false },
-      { text: "Respiration", isCorrect: false },
-      { text: "Condensation", isCorrect: false },
-    ],
+    "question": "Which plant prefers consistently moist soil?",
+    "options": [
+      { "text": "Fern", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Succulent", "isCorrect": false },
+      { "text": "Aloe vera", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant part stores food in potatoes?",
-    options: [
-      { text: "Tuber", isCorrect: true },
-      { text: "Root", isCorrect: false },
-      { text: "Leaf", isCorrect: false },
-      { text: "Seed", isCorrect: false },
-    ],
+    "question": "What is the best way to increase humidity for indoor plants?",
+    "options": [
+      { "text": "Use a pebble tray or humidifier", "isCorrect": true },
+      { "text": "Keep them in dry air", "isCorrect": false },
+      { "text": "Spray once a month", "isCorrect": false },
+      { "text": "Move outdoors", "isCorrect": false }
+    ]
   },
   {
-    question: "Which plant is known as 'Queen of Flowers'?",
-    options: [
-      { text: "Rose", isCorrect: true },
-      { text: "Tulip", isCorrect: false },
-      { text: "Lily", isCorrect: false },
-      { text: "Orchid", isCorrect: false },
-    ],
+    "question": "What happens if you water plants too much?",
+    "options": [
+      { "text": "Roots may rot", "isCorrect": true },
+      { "text": "Leaves grow greener", "isCorrect": false },
+      { "text": "Plant flowers faster", "isCorrect": false },
+      { "text": "Soil stays healthy", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can survive in shade?",
+    "options": [
+      { "text": "Peace lily", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you remove dead leaves?",
+    "options": [
+      { "text": "To prevent disease and encourage growth", "isCorrect": true },
+      { "text": "It is not necessary", "isCorrect": false },
+      { "text": "To make the pot lighter", "isCorrect": false },
+      { "text": "For decoration only", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can tolerate neglect?",
+    "options": [
+      { "text": "Snake plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best way to propagate a succulent?",
+    "options": [
+      { "text": "Leaf or stem cuttings", "isCorrect": true },
+      { "text": "Water it more", "isCorrect": false },
+      { "text": "Plant flowers", "isCorrect": false },
+      { "text": "Remove soil", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why is indirect light better for many indoor plants?",
+    "options": [
+      { "text": "Prevents leaf burn", "isCorrect": true },
+      { "text": "It makes plants grow slower", "isCorrect": false },
+      { "text": "It dries the soil faster", "isCorrect": false },
+      { "text": "It attracts pests", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is best for beginners?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Cactus with flowers", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the easiest way to check soil moisture?",
+    "options": [
+      { "text": "Stick your finger 2–3 cm into soil", "isCorrect": true },
+      { "text": "Look at leaves only", "isCorrect": false },
+      { "text": "Weigh the pot", "isCorrect": false },
+      { "text": "Shake the pot", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How do you encourage flowering in indoor plants?",
+    "options": [
+      { "text": "Provide adequate light and fertilizer", "isCorrect": true },
+      { "text": "Keep in complete darkness", "isCorrect": false },
+      { "text": "Water excessively", "isCorrect": false },
+      { "text": "Remove all leaves", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant needs the least water?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Spider plant", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you avoid over-fertilizing?",
+    "options": [
+      { "text": "Can burn roots and damage the plant", "isCorrect": true },
+      { "text": "Makes leaves greener", "isCorrect": false },
+      { "text": "Encourages flowering", "isCorrect": false },
+      { "text": "It has no effect", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant prefers high humidity?",
+    "options": [
+      { "text": "Fern", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Aloe vera", "isCorrect": false },
+      { "text": "Snake plant", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the main cause of leaf drop in indoor plants?",
+    "options": [
+      { "text": "Watering issues or stress", "isCorrect": true },
+      { "text": "Too much fertilizer", "isCorrect": false },
+      { "text": "Using clay pots", "isCorrect": false },
+      { "text": "Pruning too often", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why is aeration of soil important?",
+    "options": [
+      { "text": "Allows roots to get oxygen", "isCorrect": true },
+      { "text": "Prevents photosynthesis", "isCorrect": false },
+      { "text": "Makes soil heavier", "isCorrect": false },
+      { "text": "Prevents watering", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can be grown from a single leaf?",
+    "options": [
+      { "text": "Succulent", "isCorrect": true },
+      { "text": "Tomato", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you clean indoor plant leaves?",
+    "options": [
+      { "text": "Remove dust to help photosynthesis", "isCorrect": true },
+      { "text": "It is not necessary", "isCorrect": false },
+      { "text": "To make them shiny only", "isCorrect": false },
+      { "text": "To kill the plant slowly", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is a sign of underwatering?",
+    "options": [
+      { "text": "Wilted or dry leaves", "isCorrect": true },
+      { "text": "Green, firm leaves", "isCorrect": false },
+      { "text": "Rapid growth", "isCorrect": false },
+      { "text": "Flowers bloom", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is best for low maintenance?",
+    "options": [
+      { "text": "Snake plant", "isCorrect": true },
+      { "text": "Orchid", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the effect of too much direct sunlight?",
+    "options": [
+      { "text": "Leaves can get scorched", "isCorrect": true },
+      { "text": "Plant grows faster", "isCorrect": false },
+      { "text": "Flowers bloom faster", "isCorrect": false },
+      { "text": "Roots grow stronger", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant thrives in partial shade?",
+    "options": [
+      { "text": "Peace lily", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Basil", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "What is the best way to encourage root growth?",
+    "options": [
+      { "text": "Use rooting hormone and proper soil", "isCorrect": true },
+      { "text": "Water leaves only", "isCorrect": false },
+      { "text": "Place in dark cupboard", "isCorrect": false },
+      { "text": "Use sand only", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant can survive in dry air indoors?",
+    "options": [
+      { "text": "Cactus", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Peace lily", "isCorrect": false },
+      { "text": "Ficus", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why is soil aeration important?",
+    "options": [
+      { "text": "Provides oxygen to roots", "isCorrect": true },
+      { "text": "Prevents photosynthesis", "isCorrect": false },
+      { "text": "Keeps soil heavy", "isCorrect": false },
+      { "text": "Prevents watering", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant grows well in hanging baskets?",
+    "options": [
+      { "text": "Spider plant", "isCorrect": true },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Bamboo", "isCorrect": false },
+      { "text": "Tomato", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "How can you prevent fungal growth?",
+    "options": [
+      { "text": "Avoid overwatering and ensure airflow", "isCorrect": true },
+      { "text": "Water excessively", "isCorrect": false },
+      { "text": "Cover leaves with soil", "isCorrect": false },
+      { "text": "Keep plant in darkness", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Which plant is edible and easy to grow indoors?",
+    "options": [
+      { "text": "Basil", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Cactus", "isCorrect": false },
+      { "text": "Snake plant", "isCorrect": false }
+    ]
+  },
+  {
+    "question": "Why should you avoid cold drafts for tropical plants?",
+    "options": [
+      { "text": "They can damage leaves and stunt growth", "isCorrect": true },
+      { "text": "It helps growth", "isCorrect": false },
+      { "text": "It improves flowering", "isCorrect": false },
+      { "text": "It prevents pests", "isCorrect": false }
+    ]
   }
-];
-
-export const hardQuestions = [
-  // --- HARD POOL (30 QUESTIONS) ---
-  {
-    question: "Which plant family does the cacao tree belong to?",
-    options: [
-      { text: "Malvaceae", isCorrect: true },
-      { text: "Fabaceae", isCorrect: false },
-      { text: "Rutaceae", isCorrect: false },
-      { text: "Rosaceae", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the botanical term for a plant that completes its life cycle in two years?",
-    options: [
-      { text: "Annual", isCorrect: false },
-      { text: "Perennial", isCorrect: false },
-      { text: "Biennial", isCorrect: true },
-      { text: "Ephemeral", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which plant hormone is responsible for cell elongation?",
-    options: [
-      { text: "Auxin", isCorrect: true },
-      { text: "Cytokinin", isCorrect: false },
-      { text: "Ethylene", isCorrect: false },
-      { text: "Gibberellin", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which macronutrient is most important for root development?",
-    options: [
-      { text: "Nitrogen", isCorrect: false },
-      { text: "Phosphorus", isCorrect: true },
-      { text: "Potassium", isCorrect: false },
-      { text: "Calcium", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the process where a plant bends towards light called?",
-    options: [
-      { text: "Phototropism", isCorrect: true },
-      { text: "Gravitropism", isCorrect: false },
-      { text: "Thigmotropism", isCorrect: false },
-      { text: "Heliotropism", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which plant structure regulates gas exchange?",
-    options: [
-      { text: "Stomata", isCorrect: true },
-      { text: "Cuticle", isCorrect: false },
-      { text: "Xylem", isCorrect: false },
-      { text: "Phloem", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the main role of potassium in plants?",
-    options: [
-      { text: "Protein synthesis", isCorrect: false },
-      { text: "Water regulation & enzyme activation", isCorrect: true },
-      { text: "DNA replication", isCorrect: false },
-      { text: "Chlorophyll production", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which type of photosynthesis is used by succulents like cacti?",
-    options: [
-      { text: "C3", isCorrect: false },
-      { text: "C4", isCorrect: false },
-      { text: "CAM", isCorrect: true },
-      { text: "Mixed", isCorrect: false },
-    ],
-  },
-  {
-    question: "In plant breeding, what does F1 generation mean?",
-    options: [
-      { text: "First filial generation", isCorrect: true },
-      { text: "Final flowering generation", isCorrect: false },
-      { text: "First fruiting generation", isCorrect: false },
-      { text: "Filament stage", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the botanical name for the mango tree?",
-    options: [
-      { text: "Mangifera indica", isCorrect: true },
-      { text: "Mangifera mango", isCorrect: false },
-      { text: "Citrus indica", isCorrect: false },
-      { text: "Anacardium occidentale", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the function of phloem in plants?",
-    options: [
-      { text: "Transport sugars", isCorrect: true },
-      { text: "Transport water", isCorrect: false },
-      { text: "Gas exchange", isCorrect: false },
-      { text: "Photosynthesis", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which mineral deficiency causes chlorosis in plants?",
-    options: [
-      { text: "Iron", isCorrect: true },
-      { text: "Magnesium", isCorrect: false },
-      { text: "Calcium", isCorrect: false },
-      { text: "Sulfur", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the scientific name for rice?",
-    options: [
-      { text: "Oryza sativa", isCorrect: true },
-      { text: "Zea mays", isCorrect: false },
-      { text: "Triticum aestivum", isCorrect: false },
-      { text: "Hordeum vulgare", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which type of plant tissue is responsible for secondary growth?",
-    options: [
-      { text: "Vascular cambium", isCorrect: true },
-      { text: "Epidermis", isCorrect: false },
-      { text: "Xylem", isCorrect: false },
-      { text: "Phloem", isCorrect: false },
-    ],
-  },
-  {
-    question: "In horticulture, grafting is used to?",
-    options: [
-      { text: "Combine traits of two plants", isCorrect: true },
-      { text: "Increase leaf size", isCorrect: false },
-      { text: "Speed up photosynthesis", isCorrect: false },
-      { text: "Enhance root absorption", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which gas is used by plants during respiration at night?",
-    options: [
-      { text: "Oxygen", isCorrect: true },
-      { text: "Carbon dioxide", isCorrect: false },
-      { text: "Nitrogen", isCorrect: false },
-      { text: "Methane", isCorrect: false },
-    ],
-  },
-  {
-    question: "What type of plant is coconut?",
-    options: [
-      { text: "Drupe", isCorrect: true },
-      { text: "Nut", isCorrect: false },
-      { text: "Berry", isCorrect: false },
-      { text: "Seed pod", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which vitamin is most abundant in citrus fruits?",
-    options: [
-      { text: "Vitamin C", isCorrect: true },
-      { text: "Vitamin A", isCorrect: false },
-      { text: "Vitamin D", isCorrect: false },
-      { text: "Vitamin K", isCorrect: false },
-    ],
-  },
-  {
-    question: "The swelling of plant cells due to water intake is called?",
-    options: [
-      { text: "Turgor pressure", isCorrect: true },
-      { text: "Osmosis", isCorrect: false },
-      { text: "Diffusion", isCorrect: false },
-      { text: "Plasmolysis", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the scientific name for tomato?",
-    options: [
-      { text: "Solanum lycopersicum", isCorrect: true },
-      { text: "Capsicum annuum", isCorrect: false },
-      { text: "Cucumis sativus", isCorrect: false },
-      { text: "Brassica oleracea", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which nutrient helps plants resist diseases?",
-    options: [
-      { text: "Potassium", isCorrect: true },
-      { text: "Phosphorus", isCorrect: false },
-      { text: "Nitrogen", isCorrect: false },
-      { text: "Calcium", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which plant structure produces pollen?",
-    options: [
-      { text: "Anther", isCorrect: true },
-      { text: "Stigma", isCorrect: false },
-      { text: "Sepal", isCorrect: false },
-      { text: "Ovary", isCorrect: false },
-    ],
-  },
-  {
-    question: "The movement of water through a plant is driven mainly by?",
-    options: [
-      { text: "Transpiration pull", isCorrect: true },
-      { text: "Osmosis", isCorrect: false },
-      { text: "Capillary action", isCorrect: false },
-      { text: "Root pressure", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the largest flower in the world?",
-    options: [
-      { text: "Rafflesia arnoldii", isCorrect: true },
-      { text: "Amorphophallus titanum", isCorrect: false },
-      { text: "Sunflower", isCorrect: false },
-      { text: "Lotus", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which layer of soil contains the most nutrients?",
-    options: [
-      { text: "Topsoil", isCorrect: true },
-      { text: "Subsoil", isCorrect: false },
-      { text: "Parent rock", isCorrect: false },
-      { text: "Bedrock", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which crop is most sensitive to frost?",
-    options: [
-      { text: "Tomato", isCorrect: true },
-      { text: "Potato", isCorrect: false },
-      { text: "Barley", isCorrect: false },
-      { text: "Wheat", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which plant produces the spice saffron?",
-    options: [
-      { text: "Crocus sativus", isCorrect: true },
-      { text: "Curcuma longa", isCorrect: false },
-      { text: "Zingiber officinale", isCorrect: false },
-      { text: "Cinnamomum verum", isCorrect: false },
-    ],
-  }
-];
-
-export const professionalQuestions = [
-  {
-    question: "Which plant hormone is primarily responsible for fruit ripening?",
-    options: [
-      { text: "Ethylene", isCorrect: true },
-      { text: "Auxin", isCorrect: false },
-      { text: "Gibberellin", isCorrect: false },
-      { text: "Cytokinin", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the botanical name for the coffee plant?",
-    options: [
-      { text: "Coffea arabica", isCorrect: true },
-      { text: "Camellia sinensis", isCorrect: false },
-      { text: "Theobroma cacao", isCorrect: false },
-      { text: "Capsicum annuum", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which process converts atmospheric nitrogen into a form usable by plants?",
-    options: [
-      { text: "Nitrogen fixation", isCorrect: true },
-      { text: "Denitrification", isCorrect: false },
-      { text: "Ammonification", isCorrect: false },
-      { text: "Nitrification", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which plant has the highest recorded photosynthetic efficiency?",
-    options: [
-      { text: "Sugarcane", isCorrect: true },
-      { text: "Wheat", isCorrect: false },
-      { text: "Rice", isCorrect: false },
-      { text: "Corn", isCorrect: false },
-    ],
-  },
-  {
-    question: "In which plant tissue does most secondary thickening occur?",
-    options: [
-      { text: "Vascular cambium", isCorrect: true },
-      { text: "Epidermis", isCorrect: false },
-      { text: "Cork cambium", isCorrect: false },
-      { text: "Phloem", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which rare orchid emits a smell similar to rotting meat to attract pollinators?",
-    options: [
-      { text: "Bulbophyllum phalaenopsis", isCorrect: true },
-      { text: "Phalaenopsis amabilis", isCorrect: false },
-      { text: "Vanda coerulea", isCorrect: false },
-      { text: "Cymbidium ensifolium", isCorrect: false },
-    ],
-  },
-  {
-    question: "The process of vernalization in plants promotes:",
-    options: [
-      { text: "Flowering after cold exposure", isCorrect: true },
-      { text: "Root development", isCorrect: false },
-      { text: "Fruit ripening", isCorrect: false },
-      { text: "Seed dormancy", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which plant is known as the ‘miracle tree’ due to its highly nutritious leaves?",
-    options: [
-      { text: "Moringa oleifera", isCorrect: true },
-      { text: "Azadirachta indica", isCorrect: false },
-      { text: "Ficus religiosa", isCorrect: false },
-      { text: "Aloe vera", isCorrect: false },
-    ],
-  },
-  {
-    question: "Which photosynthetic pathway is most efficient in high temperature, arid environments?",
-    options: [
-      { text: "CAM", isCorrect: true },
-      { text: "C3", isCorrect: false },
-      { text: "C4", isCorrect: false },
-      { text: "Mixed", isCorrect: false },
-    ],
-  },
-  {
-    question: "What is the world's tallest tree species?",
-    options: [
-      { text: "Sequoia sempervirens", isCorrect: true },
-      { text: "Sequoiadendron giganteum", isCorrect: false },
-      { text: "Eucalyptus regnans", isCorrect: false },
-      { text: "Pinus lambertiana", isCorrect: false },
-    ],
-  }
-];
+]

@@ -1,30 +1,12 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  RefreshControl,
-} from "react-native";
-import { localImages } from "./localImages";
-import {
-  collection,
-  onSnapshot,
-  setDoc,
-  doc,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-} from "firebase/firestore";
-import { auth, db } from "./firebaseConfig";
+import React, { useEffect, useState } from "react"; 
+import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, RefreshControl, } from "react-native";
+ import { localImages } from "./localImages"; 
+ import { getAuth } from "firebase/auth"; 
+ import { collection, onSnapshot, setDoc, doc, getDoc, getDocs, deleteDoc } from "firebase/firestore"; 
+ import { auth,db } from "./firebaseConfig";
 
 export function LibraryScreen({ navigation }) {
-  const [plants, setPlants] = useState([]);
+  const [catalog, setCatalog] = useState([]);
   const [myPlants, setMyPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,7 +21,7 @@ export function LibraryScreen({ navigation }) {
         id: doc.id,
         ...doc.data(),
       }));
-      setPlants(plantList);
+      setCatalog(plantList);
     } catch (error) {
       console.error("Error refreshing plants:", error);
       Alert.alert("Error", "Couldn't refresh plants. Please try again.");
@@ -48,89 +30,76 @@ export function LibraryScreen({ navigation }) {
     }
   };
 
-  // Fetch all available plants from Firestore
+  // Get global plant catalog
   useEffect(() => {
-    const plantsCollection = collection(db, "plants");
-    const unsubscribe = onSnapshot(plantsCollection, (snapshot) => {
-      const plantList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setPlants(plantList);
+    const catalogRef = collection(db, "plants");
+    const unsubCatalog = onSnapshot(catalogRef, (snapshot) => {
+      setCatalog(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => unsubCatalog();
+  }, []);
+
+  // Get user's plants
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userPlantsRef = collection(db, "users", user.uid, "plants");
+    const unsubUserPlants = onSnapshot(userPlantsRef, (snapshot) => {
+      setMyPlants(snapshot.docs.map((doc) => doc.id)); // store IDs only
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubUserPlants();
   }, []);
 
-  // Fetch user's plants
-  useEffect(() => {
-    const fetchUserPlants = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const userPlantsQuery = query(
-        collection(db, "userPlants"),
-        where("userId", "==", user.uid)
-      );
-
-      const snapshot = await getDocs(userPlantsQuery);
-      const userPlantsList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        plantId: doc.data().plantId,
-      }));
-
-      setMyPlants(userPlantsList);
-    };
-
-    fetchUserPlants();
-  }, []);
-
-  // Add plant to user's collection
+  // Add plant
   const handleAddPlant = async (plantId) => {
-    const user = auth.currentUser;
+    const user = getAuth().currentUser;
     if (!user) {
       Alert.alert("Not Logged In", "Please log in to add plants.");
       return;
     }
 
     try {
-      const newDocRef = doc(collection(db, "userPlants"));
-      await setDoc(newDocRef, {
-        userId: user.uid,
-        plantId,
-        addedAt: new Date().toISOString(),
+      const plantRef = doc(db, "plants", plantId);
+      const plantSnap = await getDoc(plantRef);
+
+      if (!plantSnap.exists()) {
+        Alert.alert("Error", "Plant not found in catalog.");
+        return;
+      }
+
+      const userPlantRef = doc(db, "users", user.uid, "plants", plantId);
+      await setDoc(userPlantRef, {
+        ...plantSnap.data(),
+        addedAt: new Date(),
       });
 
-      setMyPlants((prev) => [...prev, { id: newDocRef.id, plantId }]);
-
-      Alert.alert("Success", "Plant added to your collection!");
+      Alert.alert("Success", "Plant has been added to your collection!");
     } catch (error) {
       console.error("Error adding plant:", error);
-      Alert.alert("Error", "Couldn't add plant. Please try again.");
+      Alert.alert("Error", "Couldn't add the plant. Please try again.");
     }
   };
 
-  // Remove plant from user's collection
+  // Remove plant
   const handleRemovePlant = async (plantId) => {
-    const user = auth.currentUser;
+    const user = getAuth().currentUser;
     if (!user) {
       Alert.alert("Not Logged In", "Please log in to remove plants.");
       return;
     }
 
     try {
-      const plantToRemove = myPlants.find((p) => p.plantId === plantId);
-      if (!plantToRemove) return;
+      const userPlantRef = doc(db, "users", user.uid, "plants", plantId);
+      await deleteDoc(userPlantRef);
 
-      await deleteDoc(doc(db, "userPlants", plantToRemove.id));
-
-      setMyPlants((prev) => prev.filter((p) => p.plantId !== plantId));
-
-      Alert.alert("Removed", "Plant removed from your collection!");
+      Alert.alert("Removed", "Plant has been removed from your collection.");
     } catch (error) {
       console.error("Error removing plant:", error);
-      Alert.alert("Error", "Couldn't remove plant. Please try again.");
+      Alert.alert("Error", "Couldn't remove the plant. Please try again.");
     }
   };
 
@@ -158,15 +127,15 @@ export function LibraryScreen({ navigation }) {
         }
       >
         <View style={homeStyles.gridContainer}>
-          {plants.map((item) => {
-            const isAdded = myPlants.some((p) => p.plantId === item.id);
+          {catalog.map((item) => {
+            const isAdded = myPlants.includes(item.id); // ✅ fixed check
 
             return (
               <TouchableOpacity
                 key={item.id}
                 style={homeStyles.gridItem}
                 onPress={() =>
-                  navigation.navigate("PlantDetails", { plantId: item.id }) // ✅ FIXED
+                  navigation.navigate("PlantDetails", { plantId: item.id })
                 }
               >
                 {item.image && (
@@ -208,6 +177,7 @@ export function LibraryScreen({ navigation }) {
     </View>
   );
 }
+
 
 const homeStyles = StyleSheet.create({
   container: {

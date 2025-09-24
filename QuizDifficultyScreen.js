@@ -1,135 +1,161 @@
 // QuizFeature.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import { basicQuestions, hardQuestions, professionalQuestions } from './quizData';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  FlatList,
+} from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./firebaseConfig"; // ✅ Firebase setup
+import TicTacToeScreen from "./TicTacToeScreen"; 
 
 // --- Home Screen ---
 export function HomeScreenWithQuiz({ navigation }) {
   return (
     <View style={styles.homeContainer}>
-      <Text style={styles.title}>🌱 Ready to take a quiz?</Text>
+      <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
 
-      {/* START + History + Shop stacked with space */}
       <View style={styles.buttonColumn}>
-        {/* START Button */}
+        {/* START QUIZ */}
         <TouchableOpacity
-          style={styles.startButton}
-          onPress={() => navigation.navigate('QuizSelectionScreen')}
+          style={[styles.mainButton, { backgroundColor: "#388E3C" }]}
+          onPress={() => navigation.navigate("QuizScreen")}
         >
-          <Text style={styles.startButtonText}>START</Text>
+          <Ionicons name="play-circle-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>Start Quiz</Text>
         </TouchableOpacity>
 
-        {/* HISTORY Button */}
+        {/* HISTORY */}
         <TouchableOpacity
-          style={styles.historyButton}
-          onPress={() => navigation.navigate('ScoreHistoryScreen')}
+          style={[styles.mainButton, { backgroundColor: "#6D4C41" }]}
+          onPress={() => navigation.navigate("ScoreHistoryScreen")}
         >
-          <Ionicons name="time-outline" size={20} color="#fff" />
-          <Text style={styles.historyText}>History</Text>
+          <Ionicons name="time-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>History</Text>
         </TouchableOpacity>
 
-        {/* SHOP Button (placeholder) */}
+        {/* SHOP */}
         <TouchableOpacity
-          style={styles.shopButton}
-          onPress={() => alert('Shop coming soon!')}
+          style={[styles.mainButton, { backgroundColor: "#00796B" }]}
+          onPress={() => Alert.alert("Coming Soon", "Shop feature not ready yet!")}
         >
-          <Ionicons name="cart-outline" size={20} color="#fff" />
-          <Text style={styles.shopText}>Shop</Text>
+          <Ionicons name="cart-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>Shop</Text>
+        </TouchableOpacity>
+
+        {/* MINI-GAMES */}
+        <TouchableOpacity
+          style={[styles.mainButton, { backgroundColor: "#8E44AD" }]}
+          onPress={() => navigation.navigate("MiniGamesScreen")}
+        >
+          <Ionicons name="game-controller-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>Mini-Games</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-// --- Difficulty Selection ---
-export function QuizSelectionScreen({ navigation }) {
-  return (
-    <View style={styles.selectionContainer}>
-      <Text style={styles.selectionTitle}>🌿 Choose Your Quiz Difficulty</Text>
-
-      {/* Basic */}
-      <TouchableOpacity
-        style={[styles.difficultyCard, { backgroundColor: '#C8E6C9' }]}
-        onPress={() => navigation.navigate('QuizScreen', { level: 'Basic' })}
-      >
-        <Text style={styles.difficultyText}>🌱 Basic</Text>
-      </TouchableOpacity>
-
-      {/* Hard */}
-      <TouchableOpacity
-        style={[styles.difficultyCard, { backgroundColor: '#A5D6A7' }]}
-        onPress={() => navigation.navigate('QuizScreen', { level: 'Hard' })}
-      >
-        <Text style={styles.difficultyText}>🌿 Hard</Text>
-      </TouchableOpacity>
-
-      {/* Professional */}
-      <TouchableOpacity
-        style={[styles.difficultyCard, { backgroundColor: '#81C784' }]}
-        onPress={() => navigation.navigate('QuizScreen', { level: 'Professional' })}
-      >
-        <Text style={styles.difficultyText}>🌳 Professional</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-
 // --- Quiz Screen ---
-export function QuizScreen({ route, navigation }) {
-  const { level } = route.params;
-
+export function QuizScreen({ navigation }) {
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [score, setScore] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let questionPool = [];
-    if (level === 'Basic') questionPool = basicQuestions;
-    else if (level === 'Hard') questionPool = hardQuestions;
-    else if (level === 'Professional') questionPool = professionalQuestions;
+    const fetchQuestions = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "Quiz"));
+        const fetched = querySnapshot.docs.map((doc) => doc.data());
 
-    const shuffled = [...questionPool].sort(() => Math.random() - 0.5);
-    setQuestions(shuffled.slice(0, 10));
-  }, [level]);
+        if (fetched.length > 0) {
+          const shuffled = [...fetched].sort(() => Math.random() - 0.5);
+          setQuestions(shuffled.slice(0, 10));
+        } else {
+          console.log("⚠️ No questions found in Firestore!");
+        }
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.quizPage}>
+        <Text style={styles.quizTitle}>Loading Quiz...</Text>
+      </View>
+    );
+  }
 
   if (questions.length === 0) {
     return (
       <View style={styles.quizPage}>
-        <Text style={styles.quizTitle}>Loading {level} Quiz...</Text>
+        <Text style={styles.quizTitle}>⚠️ No questions found in Firestore</Text>
       </View>
     );
   }
 
   const currentQuestion = questions[currentIndex];
 
-  const handleOptionPress = (index) => {
+  // Handle option selection
+  const handleOptionPress = (option) => {
     if (showFeedback) return;
-    setSelectedOption(index);
+
+    const selectedText = option?.text || "unknown"; // fallback
+    setSelectedOption(selectedText);
+
+    const correct = option?.isCorrect === true; // safe boolean check
+    if (correct) setScore(score + 1);
+
     setShowFeedback(true);
-    if (currentQuestion.options[index].isCorrect) {
-      setScore(score + 1);
-    }
   };
 
-  const handleNextPress = async () => {
-    setSelectedOption(null);
-    setShowFeedback(false);
+  // Handle next question or finish
+  const handleNext = () => {
+    if (!showFeedback) {
+      // If user didn't select, just mark feedback
+      setShowFeedback(true);
+      return;
+    }
 
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex(currentIndex + 1);
+      setSelectedOption(null);
+      setShowFeedback(false);
     } else {
-      await saveScore(level, score);
+      // Save score asynchronously
+      saveScore(score);
+
+      // Show alert and navigate with small delay
       Alert.alert(
         "Quiz Finished!",
         `You scored ${score} out of ${questions.length}`,
-        [{ text: "OK", onPress: () => navigation.navigate('HomeScreenWithQuiz') }]
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setShowFeedback(false);
+              setSelectedOption(null);
+              setTimeout(() => {
+                navigation.navigate("HomeScreenWithQuiz");
+              }, 100);
+            },
+          },
+        ]
       );
     }
   };
@@ -137,39 +163,35 @@ export function QuizScreen({ route, navigation }) {
   return (
     <View style={styles.quizPage}>
       <Text style={styles.questionCount}>
-        Question {currentIndex + 1} of {questions.length}
+        Question {currentIndex + 1} / {questions.length}
       </Text>
       <Text style={styles.quizTitle}>{currentQuestion.question}</Text>
 
-      {currentQuestion.options.map((option, index) => {
-        const isSelected = index === selectedOption;
-        const isCorrect = option.isCorrect;
-        let backgroundColor = '#fff';
+      {currentQuestion.options.map((option, index) => (
+        <TouchableOpacity
+          key={index}
+          style={[
+            styles.optionButton,
+            showFeedback && option.isCorrect
+              ? { backgroundColor: "#C8E6C9" } // green for correct
+              : null,
+            showFeedback &&
+            selectedOption === option.text &&
+            !option.isCorrect
+              ? { backgroundColor: "#FFCDD2" } // red for wrong
+              : null,
+          ]}
+          onPress={() => handleOptionPress(option)}
+        >
+          <Text style={styles.optionText}>{option.text}</Text>
+        </TouchableOpacity>
+      ))}
 
-        if (showFeedback) {
-          if (isSelected) {
-            backgroundColor = isCorrect ? '#4CAF50' : '#F44336';
-          } else if (isCorrect) {
-            backgroundColor = '#4CAF50';
-          }
-        }
-
-        return (
-          <TouchableOpacity
-            key={index}
-            style={[styles.optionButton, { backgroundColor }]}
-            onPress={() => handleOptionPress(index)}
-            disabled={showFeedback}
-          >
-            <Text style={styles.optionText}>{option.text}</Text>
-          </TouchableOpacity>
-        );
-      })}
-
-      {showFeedback && (
-        <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
+      {/* Show Next/Finish button if feedback shown or last question */}
+      {(showFeedback || currentIndex + 1 === questions.length) && (
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>
-            {currentIndex + 1 === questions.length ? 'Finish Quiz' : 'Next Question'}
+            {currentIndex + 1 === questions.length ? "Finish" : "Next"}
           </Text>
         </TouchableOpacity>
       )}
@@ -178,31 +200,28 @@ export function QuizScreen({ route, navigation }) {
 }
 
 // --- Save Score ---
-async function saveScore(level, score) {
+async function saveScore(score) {
   try {
-    const stored = await AsyncStorage.getItem('quizHistory');
+    const stored = await AsyncStorage.getItem("quizHistory");
     let history = [];
 
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          history = parsed;
-        } else {
-          history = [{ date: new Date().toLocaleString(), level: 'Unknown', score: Number(parsed) }];
-        }
+        if (Array.isArray(parsed)) history = parsed;
       } catch (e) {
         history = [];
       }
     }
 
-    const newEntry = { date: new Date().toLocaleString(), level, score };
+    const newEntry = { date: new Date().toLocaleString(), score };
     history.push(newEntry);
-    await AsyncStorage.setItem('quizHistory', JSON.stringify(history));
+    await AsyncStorage.setItem("quizHistory", JSON.stringify(history));
   } catch (e) {
-    console.log('Error saving score', e);
+    console.log("Error saving score", e);
   }
 }
+
 
 // --- Score History Screen ---
 export function ScoreHistoryScreen() {
@@ -211,17 +230,13 @@ export function ScoreHistoryScreen() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const stored = await AsyncStorage.getItem('quizHistory');
+        const stored = await AsyncStorage.getItem("quizHistory");
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setHistory(parsed);
-          } else {
-            setHistory([{ date: new Date().toLocaleString(), level: 'Unknown', score: Number(parsed) }]);
-          }
+          if (Array.isArray(parsed)) setHistory(parsed);
         }
       } catch (e) {
-        console.log('Error loading history', e);
+        console.log("Error loading history", e);
       }
     };
     fetchHistory();
@@ -229,9 +244,9 @@ export function ScoreHistoryScreen() {
 
   return (
     <View style={styles.historyContainer}>
-      <Text style={styles.quizTitle}>Score History</Text>
+      <Text style={styles.quizTitle}>📜 Score History</Text>
       {history.length === 0 ? (
-        <Text style={{ textAlign: 'center' }}>No history yet.</Text>
+        <Text style={{ textAlign: "center" }}>No history yet.</Text>
       ) : (
         <FlatList
           data={history}
@@ -239,11 +254,38 @@ export function ScoreHistoryScreen() {
           renderItem={({ item }) => (
             <View style={styles.historyItem}>
               <Text>{item.date}</Text>
-              <Text>{item.level} - {item.score} pts</Text>
+              <Text>{item.score} pts</Text>
             </View>
           )}
         />
       )}
+    </View>
+  );
+}
+
+// --- MiniGames Screen ---
+export function MiniGamesScreen({ navigation }) {
+  return (
+    <View style={styles.quizPage}>
+      <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
+
+      {/* Tic Tac Toe */}
+      <TouchableOpacity
+        style={[styles.optionButton, { backgroundColor: "#C8E6C9" }]}
+        onPress={() => navigation.navigate("TicTacToeScreen")}
+      >
+        <Ionicons name="grid-outline" size={20} color="#2E7D32" />
+        <Text style={styles.optionText}>Tic Tac Toe</Text>
+      </TouchableOpacity>
+
+      {/* Coming Soon Placeholder */}
+      <TouchableOpacity
+        style={[styles.optionButton, { backgroundColor: "#E0E0E0" }]}
+        onPress={() => Alert.alert("Coming Soon", "This mini-game is under development!")}
+      >
+        <Ionicons name="help-circle-outline" size={20} color="#555" />
+        <Text style={styles.optionText}>Coming Soon...</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -254,192 +296,127 @@ const Stack = createNativeStackNavigator();
 export default function QuizFeatureStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="HomeScreenWithQuiz" component={HomeScreenWithQuiz} options={{ title: 'Home' }} />
-      <Stack.Screen name="QuizSelectionScreen" component={QuizSelectionScreen} options={{ title: 'Select Quiz' }} />
-      <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ title: 'Quiz' }} />
-      <Stack.Screen name="ScoreHistoryScreen" component={ScoreHistoryScreen} options={{ title: 'Score History' }} />
+      <Stack.Screen
+        name="HomeScreenWithQuiz"
+        component={HomeScreenWithQuiz}
+        options={{ title: "Home" }}
+      />
+      <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ title: "Quiz" }} />
+      <Stack.Screen
+        name="ScoreHistoryScreen"
+        component={ScoreHistoryScreen}
+        options={{ title: "Score History" }}
+      />
+      <Stack.Screen
+        name="MiniGamesScreen"
+        component={MiniGamesScreen}
+        options={{ title: "Mini-Games" }}
+      />
+      <Stack.Screen
+        name="TicTacToeScreen"
+        component={TicTacToeScreen}
+        options={{ title: "Tic Tac Toe" }}
+      />
     </Stack.Navigator>
   );
 }
 
 // --- Styles ---
 const styles = StyleSheet.create({
-  // --- Home ---
   homeContainer: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
-    alignItems: 'center',
+    backgroundColor: "#E8F5E9",
+    alignItems: "center",
     paddingTop: 80,
   },
   title: {
     fontSize: 26,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 50,
-    color: '#2E7D32',
+    color: "#2E7D32",
   },
   buttonColumn: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '80%',
-    marginTop: 40,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "80%",
     gap: 20,
   },
-  startButton: {
-    backgroundColor: '#388E3C',
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 12,
-    marginBottom: 20,
-    width: '100%',
-    alignItems: 'center',
-    elevation: 3,
-  },
-  startButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  historyButton: {
-    flexDirection: 'row',
-    backgroundColor: '#6D4C41',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 20,
-    width: '100%',
-    justifyContent: 'center',
-    elevation: 3,
-  },
-  historyText: {
-    color: '#fff',
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  shopButton: {
-    flexDirection: 'row',
-    backgroundColor: '#00796B',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    width: '100%',
-    justifyContent: 'center',
-    elevation: 3,
-  },
-  shopText: {
-    color: '#fff',
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
-  // --- Difficulty Selection ---
-  selectionContainer: {
-    flex: 1,
-    backgroundColor: '#E8F5E9',
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#000000ff',
-    marginBottom: 30,
-    textAlign: 'center',
-  
-  },
-  difficultyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '80%',
+  mainButton: {
+    flexDirection: "row",
+    width: "100%",
     paddingVertical: 15,
     borderRadius: 12,
-    marginBottom: 20,
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 3,
   },
-  difficultyText: {
+  mainButtonText: {
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
-    color: '#000000ff',
-  },
-
-  // --- Quiz Page ---
-  quizContainer: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-  },
-  quizTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#1B5E20',
-    backgroundColor: '#E8F5E9',
-    padding: 15,
-    borderRadius: 12,
-    elevation: 2,
+    fontWeight: "bold",
+    marginLeft: 8,
   },
   quizPage: {
     flex: 1,
-    backgroundColor: '#DFF0D8',
-    justifyContent: 'center',
+    backgroundColor: "#DFF0D8",
+    justifyContent: "center",
     padding: 20,
+  },
+  quizTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#1B5E20",
   },
   questionCount: {
     fontSize: 16,
     marginBottom: 10,
-    color: '#2E7D32',
-    textAlign: 'center',
-    fontWeight: 'bold',
+    color: "#2E7D32",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   optionButton: {
+    flexDirection: "row",
     padding: 15,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#4CAF50',
+    borderColor: "#4CAF50",
     marginBottom: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     elevation: 2,
   },
   optionText: {
     fontSize: 18,
-    color: '#000000ff',
-    fontWeight: '500',
+    color: "#000",
+    fontWeight: "500",
   },
   nextButton: {
     marginTop: 20,
-    backgroundColor: '#388E3C',
+    backgroundColor: "#388E3C",
     padding: 15,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 3,
   },
   nextButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
-
-  // --- History ---
   historyContainer: {
     flex: 1,
     padding: 20,
   },
   historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
 });
-
