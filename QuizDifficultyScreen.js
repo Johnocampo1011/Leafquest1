@@ -5,11 +5,8 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   FlatList,
 } from "react-native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TicTacToeScreen from "./TicTacToeScreen";
 import { fetchQuestions } from "./quizData"; 
@@ -359,7 +356,6 @@ const styles = StyleSheet.create({
   },
   mainButtonText: {
     color: "#fff",
-    fontSize: 18,
     fontWeight: "bold",
     marginLeft: 8,
   },
