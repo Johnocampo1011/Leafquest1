@@ -5,30 +5,106 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Alert,
   FlatList,
 } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { db } from "./firebaseAdminConfig";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 import TicTacToeScreen from "./TicTacToeScreen";
-import { fetchQuestions } from "./quizData"; 
 
-// --- Leaf Points Helpers ---
+// --- TEMP userId until Firebase Auth is added ---
+const userId = "demoUser";
+
+// --- Firestore Helpers ---
 async function getLeafPoints() {
   try {
-    const stored = await AsyncStorage.getItem("leafPoints");
-    return stored ? parseInt(stored, 10) : 0;
-  } catch {
+    const userRef = doc(db, "users", userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      return snap.data().leafPoints || 0;
+    } else {
+      await setDoc(userRef, { leafPoints: 0, history: [] });
+      return 0;
+    }
+  } catch (err) {
+    console.error("Error getting points:", err);
     return 0;
   }
 }
 
 async function addLeafPoints(points) {
   try {
-    const current = await getLeafPoints();
+    const userRef = doc(db, "users", userId);
+    const snap = await getDoc(userRef);
+    let current = 0;
+    if (snap.exists()) {
+      current = snap.data().leafPoints || 0;
+    }
     const updated = current + points;
-    await AsyncStorage.setItem("leafPoints", updated.toString());
+
+    await updateDoc(userRef, {
+      leafPoints: updated,
+      history: arrayUnion({
+        type: "earn",
+        points,
+        date: new Date().toISOString(),
+      }),
+    });
+
     return updated;
-  } catch {
+  } catch (err) {
+    console.error("Error adding points:", err);
     return 0;
+  }
+}
+
+async function spendLeafPoints(cost) {
+  try {
+    const userRef = doc(db, "users", userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) return { success: false, remaining: 0 };
+
+    const current = snap.data().leafPoints || 0;
+    if (current >= cost) {
+      const updated = current - cost;
+      await updateDoc(userRef, {
+        leafPoints: updated,
+        history: arrayUnion({
+          type: "spend",
+          cost,
+          date: new Date().toISOString(),
+        }),
+      });
+      return { success: true, remaining: updated };
+    } else {
+      return { success: false, remaining: current };
+    }
+  } catch (err) {
+    console.error("Error spending points:", err);
+    return { success: false, remaining: 0 };
+  }
+}
+
+async function getHistory() {
+  try {
+    const userRef = doc(db, "users", userId);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      return snap.data().history || [];
+    }
+    return [];
+  } catch (err) {
+    console.error("Error getting history:", err);
+    return [];
   }
 }
 
@@ -47,7 +123,6 @@ export function HomeScreenWithQuiz({ navigation }) {
 
   return (
     <View style={styles.homeContainer}>
-      {/* Top bar with title + points */}
       <View style={styles.topBar}>
         <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
         <View style={styles.pointsContainer}>
@@ -75,7 +150,7 @@ export function HomeScreenWithQuiz({ navigation }) {
 
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#00796B" }]}
-          onPress={() => Alert.alert("Coming Soon", "Shop feature not ready yet!")}
+          onPress={() => navigation.navigate("ShopScreen")}
         >
           <Ionicons name="cart-outline" size={22} color="#fff" />
           <Text style={styles.mainButtonText}>Shop</Text>
@@ -93,120 +168,76 @@ export function HomeScreenWithQuiz({ navigation }) {
   );
 }
 
-// --- Quiz Screen ---
-export function QuizScreen({ navigation }) {
-  const [questions, setQuestions] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [score, setScore] = useState(0);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [loading, setLoading] = useState(true);
+// --- Shop Screen ---
+export function ShopScreen({ navigation }) {
+  const [leafPoints, setLeafPoints] = useState(0);
+
+  const items = [
+    { id: "1", name: "💧 Water", cost: 10 },
+    { id: "2", name: "🌿 Fertilizer", cost: 20 },
+    { id: "3", name: "🪴 Spray", cost: 15 },
+  ];
 
   useEffect(() => {
-    const loadQuestions = async () => {
-      const data = await fetchQuestions(10); // ✅ pulls 10 randomized
-      setQuestions(data);
-      setLoading(false);
+    const loadPoints = async () => {
+      const points = await getLeafPoints();
+      setLeafPoints(points);
     };
-    loadQuestions();
-  }, []);
+    const unsubscribe = navigation.addListener("focus", loadPoints);
+    return unsubscribe;
+  }, [navigation]);
 
-  if (loading) {
-    return (
-      <View style={styles.quizPage}>
-        <Text style={styles.quizTitle}>Loading Quiz...</Text>
-      </View>
-    );
-  }
-
-  if (questions.length === 0) {
-    return (
-      <View style={styles.quizPage}>
-        <Text style={styles.quizTitle}>⚠️ No questions found in Firestore</Text>
-      </View>
-    );
-  }
-
-  const currentQuestion = questions[currentIndex];
-
-  const handleOptionPress = (option) => {
-    if (showFeedback) return;
-
-    setSelectedOption(option.text);
-    if (option.isCorrect) setScore((prev) => prev + 1);
-    setShowFeedback(true);
-  };
-
-  const handleNext = async () => {
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((prev) => prev + 1);
-      setSelectedOption(null);
-      setShowFeedback(false);
+  const handlePurchase = async (item) => {
+    const result = await spendLeafPoints(item.cost);
+    if (result.success) {
+      setLeafPoints(result.remaining);
+      Alert.alert("Purchase Successful ✅", `You bought ${item.name}`);
     } else {
-      await saveScore(score);
-      await addLeafPoints(10); // ✅ reward 10 points after each quiz
-      Alert.alert(
-        "Quiz Finished!",
-        `You scored ${score} out of ${questions.length}\n+10 Leaf Points 🌿`,
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("HomeScreenWithQuiz"),
-          },
-        ]
-      );
+      Alert.alert("Not enough points ❌", `You need ${item.cost} points`);
     }
   };
 
   return (
-    <View style={styles.quizPage}>
-      <Text style={styles.questionCount}>
-        Question {currentIndex + 1} / {questions.length}
+    <View style={styles.historyContainer}>
+      <Text style={styles.quizTitle}>🛒 Shop</Text>
+      <Text style={{ textAlign: "center", marginBottom: 20 }}>
+        Your Points: {leafPoints}
       </Text>
-      <Text style={styles.quizTitle}>{currentQuestion.question}</Text>
 
-      {currentQuestion.options.map((option, index) => (
-        <TouchableOpacity
-          key={index}
-          style={[
-            styles.optionButton,
-            showFeedback && option.isCorrect
-              ? { backgroundColor: "#C8E6C9" }
-              : null,
-            showFeedback &&
-              selectedOption === option.text &&
-              !option.isCorrect
-              ? { backgroundColor: "#FFCDD2" }
-              : null,
-          ]}
-          onPress={() => handleOptionPress(option)}
-        >
-          <Text style={styles.optionText}>{option.text}</Text>
-        </TouchableOpacity>
-      ))}
-
-      {showFeedback && (
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {currentIndex + 1 === questions.length ? "Finish" : "Next"}
-          </Text>
-        </TouchableOpacity>
-      )}
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => handlePurchase(item)}
+          >
+            <Text style={styles.optionText}>
+              {item.name} - {item.cost} pts
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
     </View>
   );
 }
 
-// --- Save Score ---
-async function saveScore(score) {
-  try {
-    const stored = await AsyncStorage.getItem("quizHistory");
-    let history = stored ? JSON.parse(stored) : [];
-    const newEntry = { date: new Date().toLocaleString(), score };
-    history.push(newEntry);
-    await AsyncStorage.setItem("quizHistory", JSON.stringify(history));
-  } catch (e) {
-    console.log("Error saving score", e);
-  }
+// --- Quiz Screen (placeholder for now) ---
+export function QuizScreen() {
+  return (
+    <View style={styles.quizPage}>
+      <Text style={styles.quizTitle}>🌱 Quiz Feature Coming Soon</Text>
+      <TouchableOpacity
+        style={styles.nextButton}
+        onPress={async () => {
+          await addLeafPoints(5);
+          Alert.alert("Congrats!", "You earned 5 Leaf Points 🎉");
+        }}
+      >
+        <Text style={styles.nextButtonText}>Simulate Earn Points</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 // --- Score History Screen ---
@@ -214,60 +245,51 @@ export function ScoreHistoryScreen() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const stored = await AsyncStorage.getItem("quizHistory");
-        if (stored) setHistory(JSON.parse(stored));
-      } catch (e) {
-        console.log("Error loading history", e);
-      }
+    const loadHistory = async () => {
+      const records = await getHistory();
+      setHistory(records.reverse()); // newest first
     };
-    fetchHistory();
+    loadHistory();
   }, []);
 
   return (
     <View style={styles.historyContainer}>
       <Text style={styles.quizTitle}>📜 Score History</Text>
-      {history.length === 0 ? (
-        <Text style={{ textAlign: "center" }}>No history yet.</Text>
-      ) : (
-        <FlatList
-          data={history}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.historyItem}>
-              <Text>{item.date}</Text>
-              <Text>{item.score} pts</Text>
-            </View>
-          )}
-        />
-      )}
+      <FlatList
+        data={history}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.historyItem}>
+            <Text>
+              {item.type === "earn"
+                ? `+${item.points} pts`
+                : `-${item.cost} pts`}
+            </Text>
+            <Text style={{ color: "#555" }}>
+              {new Date(item.date).toLocaleString()}
+            </Text>
+          </View>
+        )}
+        ListEmptyComponent={
+          <Text style={{ textAlign: "center", marginTop: 20 }}>
+            No history yet.
+          </Text>
+        }
+      />
     </View>
   );
 }
 
-// --- MiniGames Screen ---
+// --- MiniGames Screen (placeholder) ---
 export function MiniGamesScreen({ navigation }) {
   return (
-    <View style={styles.quizPage}>
+    <View style={styles.historyContainer}>
       <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
-
       <TouchableOpacity
-        style={[styles.optionButton, { backgroundColor: "#C8E6C9" }]}
+        style={styles.optionButton}
         onPress={() => navigation.navigate("TicTacToeScreen")}
       >
-        <Ionicons name="grid-outline" size={20} color="#2E7D32" />
-        <Text style={styles.optionText}>Tic Tac Toe</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.optionButton, { backgroundColor: "#E0E0E0" }]}
-        onPress={() =>
-          Alert.alert("Coming Soon", "This mini-game is under development!")
-        }
-      >
-        <Ionicons name="help-circle-outline" size={20} color="#555" />
-        <Text style={styles.optionText}>Coming Soon...</Text>
+        <Text style={styles.optionText}>Play Tic Tac Toe</Text>
       </TouchableOpacity>
     </View>
   );
@@ -284,11 +306,20 @@ export default function QuizFeatureStack() {
         component={HomeScreenWithQuiz}
         options={{ title: "Home" }}
       />
-      <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ title: "Quiz" }} />
+      <Stack.Screen
+        name="QuizScreen"
+        component={QuizScreen}
+        options={{ title: "Quiz" }}
+      />
       <Stack.Screen
         name="ScoreHistoryScreen"
         component={ScoreHistoryScreen}
         options={{ title: "Score History" }}
+      />
+      <Stack.Screen
+        name="ShopScreen"
+        component={ShopScreen}
+        options={{ title: "Shop" }}
       />
       <Stack.Screen
         name="MiniGamesScreen"
@@ -356,6 +387,7 @@ const styles = StyleSheet.create({
   },
   mainButtonText: {
     color: "#fff",
+    fontSize: 18,
     fontWeight: "bold",
     marginLeft: 8,
   },
@@ -371,13 +403,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
     color: "#1B5E20",
-  },
-  questionCount: {
-    fontSize: 16,
-    marginBottom: 10,
-    color: "#2E7D32",
-    textAlign: "center",
-    fontWeight: "bold",
   },
   optionButton: {
     flexDirection: "row",
@@ -422,3 +447,4 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
   },
 });
+
