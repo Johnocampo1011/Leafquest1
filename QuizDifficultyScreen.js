@@ -7,129 +7,246 @@ import {
   StyleSheet,
   Alert,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { db } from "./firebaseAdminConfig";
+
+import { fetchQuestions } from "./quizData"; // expects client Firestore usage
+import { db } from "./firebaseConfig"; // your client firebase config (not admin)
+import { getAuth } from "firebase/auth";
 import {
   doc,
-  setDoc,
   getDoc,
+  setDoc,
   updateDoc,
   arrayUnion,
+  increment,
 } from "firebase/firestore";
+
 import TicTacToeScreen from "./TicTacToeScreen";
 
-// --- TEMP userId until Firebase Auth is added ---
-const userId = "demoUser";
+// ------------------------
+// Local keys (fallback)
+// ------------------------
+const ASYNC_POINTS_KEY = "leafPoints";
+const ASYNC_HISTORY_KEY = "quizHistory";
 
-// --- Firestore Helpers ---
-async function getLeafPoints() {
+// points multiplier per correct answer
+const POINTS_PER_CORRECT = 5;
+
+// ------------------------
+// Helper: get current user (may be null if not signed in)
+// ------------------------
+function getCurrentUser() {
   try {
-    const userRef = doc(db, "users", userId);
+    const auth = getAuth();
+    return auth.currentUser || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ------------------------
+// Firestore "ensure user doc" helper (creates doc if missing)
+// ------------------------
+async function ensureUserDoc(uid) {
+  try {
+    const userRef = doc(db, "users", uid);
     const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      return snap.data().leafPoints || 0;
-    } else {
-      await setDoc(userRef, { leafPoints: 0, history: [] });
-      return 0;
+    if (!snap.exists()) {
+      await setDoc(userRef, { leafPoints: 0, quizHistory: [] });
     }
-  } catch (err) {
-    console.error("Error getting points:", err);
+    return userRef;
+  } catch (e) {
+    console.log("ensureUserDoc error:", e);
+    throw e;
+  }
+}
+
+// ------------------------
+// Get leaf points (Firestore preferred, fallback to AsyncStorage)
+// ------------------------
+async function getLeafPointsForUser() {
+  const user = getCurrentUser();
+  if (user) {
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) return Number(snap.data().leafPoints ?? 0);
+    } catch (e) {
+      console.log("Error reading points from Firestore:", e);
+    }
+  }
+
+  // fallback to local storage
+  try {
+    const stored = await AsyncStorage.getItem(ASYNC_POINTS_KEY);
+    return stored ? parseInt(stored, 10) : 0;
+  } catch {
     return 0;
   }
 }
 
-async function addLeafPoints(points) {
-  try {
-    const userRef = doc(db, "users", userId);
-    const snap = await getDoc(userRef);
-    let current = 0;
-    if (snap.exists()) {
-      current = snap.data().leafPoints || 0;
+// ------------------------
+// Add leaf points to user (Firestore preferred, fallback to AsyncStorage)
+// Returns the updated total (number) or null on failure
+// ------------------------
+async function addLeafPointsForUser(pointsToAdd) {
+  const user = getCurrentUser();
+  if (user) {
+    try {
+      const userRef = await ensureUserDoc(user.uid);
+      // atomic increment
+      await updateDoc(userRef, { leafPoints: increment(pointsToAdd) });
+      const updatedSnap = await getDoc(userRef);
+      return updatedSnap.exists() ? Number(updatedSnap.data().leafPoints ?? 0) : null;
+    } catch (e) {
+      console.log("Error adding points in Firestore, falling back:", e);
     }
-    const updated = current + points;
+  }
 
-    await updateDoc(userRef, {
-      leafPoints: updated,
-      history: arrayUnion({
-        type: "earn",
-        points,
-        date: new Date().toISOString(),
-      }),
-    });
-
+  // fallback to AsyncStorage
+  try {
+    const stored = await AsyncStorage.getItem(ASYNC_POINTS_KEY);
+    const current = stored ? parseInt(stored, 10) : 0;
+    const updated = current + pointsToAdd;
+    await AsyncStorage.setItem(ASYNC_POINTS_KEY, String(updated));
     return updated;
-  } catch (err) {
-    console.error("Error adding points:", err);
-    return 0;
+  } catch (e) {
+    console.log("Error updating local points:", e);
+    return null;
   }
 }
 
-async function spendLeafPoints(cost) {
-  try {
-    const userRef = doc(db, "users", userId);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) return { success: false, remaining: 0 };
+// ------------------------
+// Spend points (attempt to deduct); returns { success, remaining }
+// ------------------------
+async function spendLeafPointsForUser(cost) {
+  const user = getCurrentUser();
+  if (user) {
+    try {
+      const userRef = await ensureUserDoc(user.uid);
+      const snap = await getDoc(userRef);
+      const current = Number(snap.data().leafPoints ?? 0);
+      if (current >= cost) {
+        await updateDoc(userRef, {
+          leafPoints: current - cost,
+          quizHistory: arrayUnion({ type: "spend", cost, date: new Date().toISOString() }),
+        });
+        return { success: true, remaining: current - cost };
+      } else {
+        return { success: false, remaining: current };
+      }
+    } catch (e) {
+      console.log("Error spending points (Firestore):", e);
+    }
+  }
 
-    const current = snap.data().leafPoints || 0;
+  // fallback to AsyncStorage
+  try {
+    const stored = await AsyncStorage.getItem(ASYNC_POINTS_KEY);
+    const current = stored ? parseInt(stored, 10) : 0;
     if (current >= cost) {
       const updated = current - cost;
-      await updateDoc(userRef, {
-        leafPoints: updated,
-        history: arrayUnion({
-          type: "spend",
-          cost,
-          date: new Date().toISOString(),
-        }),
-      });
+      await AsyncStorage.setItem(ASYNC_POINTS_KEY, String(updated));
+      // record local history too
+      const h = JSON.parse((await AsyncStorage.getItem(ASYNC_HISTORY_KEY)) || "[]");
+      h.push({ type: "spend", cost, date: new Date().toISOString() });
+      await AsyncStorage.setItem(ASYNC_HISTORY_KEY, JSON.stringify(h));
       return { success: true, remaining: updated };
     } else {
       return { success: false, remaining: current };
     }
-  } catch (err) {
-    console.error("Error spending points:", err);
+  } catch (e) {
+    console.log("Error spending points (local):", e);
     return { success: false, remaining: 0 };
   }
 }
 
-async function getHistory() {
-  try {
-    const userRef = doc(db, "users", userId);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      return snap.data().history || [];
+// ------------------------
+// Save quiz attempt (Firestore preferred, fallback to AsyncStorage)
+// entry: { score, total, earnedPoints, date }
+// ------------------------
+async function saveQuizAttemptForUser(entry) {
+  const user = getCurrentUser();
+  if (user) {
+    try {
+      const userRef = await ensureUserDoc(user.uid);
+      await updateDoc(userRef, {
+        quizHistory: arrayUnion(entry),
+      });
+      return true;
+    } catch (e) {
+      console.log("Error saving history to Firestore:", e);
     }
-    return [];
-  } catch (err) {
-    console.error("Error getting history:", err);
+  }
+
+  // fallback to AsyncStorage
+  try {
+    const stored = await AsyncStorage.getItem(ASYNC_HISTORY_KEY);
+    const history = stored ? JSON.parse(stored) : [];
+    history.push(entry);
+    await AsyncStorage.setItem(ASYNC_HISTORY_KEY, JSON.stringify(history));
+    return true;
+  } catch (e) {
+    console.log("Error saving history locally:", e);
+    return false;
+  }
+}
+
+// ------------------------
+// Fetch quiz history (Firestore preferred, fallback to AsyncStorage)
+// ------------------------
+async function fetchQuizHistoryForUser() {
+  const user = getCurrentUser();
+  if (user) {
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists()) return snap.data().quizHistory ?? [];
+    } catch (e) {
+      console.log("Error fetching history from Firestore:", e);
+    }
+  }
+
+  try {
+    const stored = await AsyncStorage.getItem(ASYNC_HISTORY_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
     return [];
   }
 }
 
-// --- Home Screen ---
+// ------------------------
+// Home Screen
+// ------------------------
 export function HomeScreenWithQuiz({ navigation }) {
   const [leafPoints, setLeafPoints] = useState(0);
+  const [loadingPoints, setLoadingPoints] = useState(true);
 
   useEffect(() => {
     const loadPoints = async () => {
-      const points = await getLeafPoints();
-      setLeafPoints(points);
+      setLoadingPoints(true);
+      const pts = await getLeafPointsForUser();
+      setLeafPoints(pts);
+      setLoadingPoints(false);
     };
-    const unsubscribe = navigation.addListener("focus", loadPoints);
-    return unsubscribe;
+    const unsub = navigation.addListener("focus", loadPoints);
+    loadPoints();
+    return unsub;
   }, [navigation]);
 
   return (
     <View style={styles.homeContainer}>
-      <View style={styles.topBar}>
-        <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
-        <View style={styles.pointsContainer}>
-          <Ionicons name="leaf-outline" size={20} color="#2E7D32" />
-          <Text style={styles.pointsText}>{leafPoints}</Text>
-        </View>
+      {/* top-right points badge */}
+      <View style={styles.pointsBadge}>
+        <Ionicons name="leaf-outline" size={18} color="#2E7D32" />
+        <Text style={styles.pointsText}>{loadingPoints ? "…" : leafPoints}</Text>
       </View>
+
+      <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
 
       <View style={styles.buttonColumn}>
         <TouchableOpacity
@@ -168,7 +285,204 @@ export function HomeScreenWithQuiz({ navigation }) {
   );
 }
 
-// --- Shop Screen ---
+// ------------------------
+// Quiz Screen
+// ------------------------
+export function QuizScreen({ navigation }) {
+  const [questions, setQuestions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [score, setScore] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // load quiz questions (from quizData.js which reads Firestore)
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoading(true);
+      const data = await fetchQuestions(10); // default 10
+      if (!mounted) return;
+      setQuestions(data);
+      setCurrentIndex(0);
+      setSelectedOption(null);
+      setShowFeedback(false);
+      setScore(0);
+      setLoading(false);
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.quizPage}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+        <Text style={{ textAlign: "center", marginTop: 8 }}>Loading Quiz...</Text>
+      </View>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <View style={styles.quizPage}>
+        <Text style={styles.quizTitle}>⚠️ No questions available</Text>
+      </View>
+    );
+  }
+
+  const currentQuestion = questions[currentIndex];
+
+  const handleOptionPress = (opt) => {
+    if (showFeedback) return;
+    setSelectedOption(opt);
+    const correct = opt.isCorrect === true || opt === currentQuestion.correct || opt.text === currentQuestion.correct;
+    // Note: support both shapes: { text, isCorrect } or options as array of strings with `correct` property on question
+    if (correct) setScore((s) => s + 1);
+    setShowFeedback(true);
+  };
+
+  const handleNext = async () => {
+    // reveal feedback if user tapped next without selecting an answer
+    if (!showFeedback) {
+      setShowFeedback(true);
+      return;
+    }
+
+    // move to next or finish
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((c) => c + 1);
+      setSelectedOption(null);
+      setShowFeedback(false);
+      return;
+    }
+
+    // finished quiz: compute earned points, save points & history
+    const earnedPoints = score * POINTS_PER_CORRECT;
+    const entry = {
+      date: new Date().toISOString(),
+      score,
+      total: questions.length,
+      earnedPoints,
+    };
+
+    // save attempt & add points (both try Firestore first, fallback handled)
+    await saveQuizAttemptForUser(entry);
+    const newTotal = await addLeafPointsForUser(earnedPoints);
+
+    Alert.alert(
+      "Quiz Finished!",
+      `You scored ${score} / ${questions.length}\n+${earnedPoints} Leaf Points\nTotal: ${newTotal ?? "—"}`,
+      [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.navigate("HomeScreenWithQuiz");
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  // render option text whether stored as objects or strings
+  const optionText = (opt) => (typeof opt === "string" ? opt : opt.text ?? String(opt));
+
+  return (
+    <View style={styles.quizPage}>
+      <Text style={styles.questionCount}>
+        Question {currentIndex + 1} / {questions.length}
+      </Text>
+
+      <Text style={styles.quizTitle}>{currentQuestion.question}</Text>
+
+      {currentQuestion.options.map((opt, idx) => {
+        const text = optionText(opt);
+        const isCorrect = typeof opt === "object" ? opt.isCorrect === true : false;
+        const selectedMatches = selectedOption && (selectedOption === opt || selectedOption.text === opt.text || selectedOption === text);
+
+        return (
+          <TouchableOpacity
+            key={idx}
+            style={[
+              styles.optionButton,
+              showFeedback && isCorrect ? { backgroundColor: "#C8E6C9" } : null,
+              showFeedback && selectedMatches && !isCorrect ? { backgroundColor: "#FFCDD2" } : null,
+            ]}
+            onPress={() => handleOptionPress(opt)}
+          >
+            <Text style={styles.optionText}>{text}</Text>
+          </TouchableOpacity>
+        );
+      })}
+
+      {/** Next/Finish button */}
+      {showFeedback && (
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {currentIndex + 1 === questions.length ? "Finish" : "Next"}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+// ------------------------
+// Score History Screen
+// ------------------------
+export function ScoreHistoryScreen() {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const h = await fetchQuizHistoryForUser();
+      // sort newest-first by date (if present)
+      h.sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
+      setHistory(h);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.historyContainer}>
+        <ActivityIndicator size="small" color="#2E7D32" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.historyContainer}>
+      <Text style={styles.quizTitle}>📜 Score History</Text>
+      {history.length === 0 ? (
+        <Text style={{ textAlign: "center" }}>No history yet.</Text>
+      ) : (
+        <FlatList
+          data={history}
+          keyExtractor={(_, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.historyItem}>
+              <Text>{item.date ? new Date(item.date).toLocaleString() : "Unknown date"}</Text>
+              <Text>
+                {item.score}/{item.total} (+{item.earnedPoints ?? 0} pts)
+              </Text>
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+// ------------------------
+// Shop Screen
+// ------------------------
 export function ShopScreen({ navigation }) {
   const [leafPoints, setLeafPoints] = useState(0);
 
@@ -180,18 +494,20 @@ export function ShopScreen({ navigation }) {
 
   useEffect(() => {
     const loadPoints = async () => {
-      const points = await getLeafPoints();
-      setLeafPoints(points);
+      const pts = await getLeafPointsForUser();
+      setLeafPoints(pts);
     };
-    const unsubscribe = navigation.addListener("focus", loadPoints);
-    return unsubscribe;
+    const unsub = navigation.addListener("focus", loadPoints);
+    loadPoints();
+    return unsub;
   }, [navigation]);
 
   const handlePurchase = async (item) => {
-    const result = await spendLeafPoints(item.cost);
-    if (result.success) {
-      setLeafPoints(result.remaining);
+    const res = await spendLeafPointsForUser(item.cost);
+    if (res.success) {
+      setLeafPoints(res.remaining);
       Alert.alert("Purchase Successful ✅", `You bought ${item.name}`);
+      // TODO: save item to user inventory (Firestore) when your inventory schema is ready
     } else {
       Alert.alert("Not enough points ❌", `You need ${item.cost} points`);
     }
@@ -200,18 +516,13 @@ export function ShopScreen({ navigation }) {
   return (
     <View style={styles.historyContainer}>
       <Text style={styles.quizTitle}>🛒 Shop</Text>
-      <Text style={{ textAlign: "center", marginBottom: 20 }}>
-        Your Points: {leafPoints}
-      </Text>
+      <Text style={{ textAlign: "center", marginBottom: 20 }}>Your Points: {leafPoints}</Text>
 
       <FlatList
         data={items}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(i) => i.id}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.optionButton}
-            onPress={() => handlePurchase(item)}
-          >
+          <TouchableOpacity style={styles.optionButton} onPress={() => handlePurchase(item)}>
             <Text style={styles.optionText}>
               {item.name} - {item.cost} pts
             </Text>
@@ -222,120 +533,41 @@ export function ShopScreen({ navigation }) {
   );
 }
 
-// --- Quiz Screen (placeholder for now) ---
-export function QuizScreen() {
-  return (
-    <View style={styles.quizPage}>
-      <Text style={styles.quizTitle}>🌱 Quiz Feature Coming Soon</Text>
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={async () => {
-          await addLeafPoints(5);
-          Alert.alert("Congrats!", "You earned 5 Leaf Points 🎉");
-        }}
-      >
-        <Text style={styles.nextButtonText}>Simulate Earn Points</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// --- Score History Screen ---
-export function ScoreHistoryScreen() {
-  const [history, setHistory] = useState([]);
-
-  useEffect(() => {
-    const loadHistory = async () => {
-      const records = await getHistory();
-      setHistory(records.reverse()); // newest first
-    };
-    loadHistory();
-  }, []);
-
-  return (
-    <View style={styles.historyContainer}>
-      <Text style={styles.quizTitle}>📜 Score History</Text>
-      <FlatList
-        data={history}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.historyItem}>
-            <Text>
-              {item.type === "earn"
-                ? `+${item.points} pts`
-                : `-${item.cost} pts`}
-            </Text>
-            <Text style={{ color: "#555" }}>
-              {new Date(item.date).toLocaleString()}
-            </Text>
-          </View>
-        )}
-        ListEmptyComponent={
-          <Text style={{ textAlign: "center", marginTop: 20 }}>
-            No history yet.
-          </Text>
-        }
-      />
-    </View>
-  );
-}
-
-// --- MiniGames Screen (placeholder) ---
+// ------------------------
+// MiniGames Screen (placeholder)
+// ------------------------
 export function MiniGamesScreen({ navigation }) {
   return (
     <View style={styles.historyContainer}>
       <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
-      <TouchableOpacity
-        style={styles.optionButton}
-        onPress={() => navigation.navigate("TicTacToeScreen")}
-      >
+      <TouchableOpacity style={styles.optionButton} onPress={() => navigation.navigate("TicTacToeScreen")}>
         <Text style={styles.optionText}>Play Tic Tac Toe</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-// --- Navigation ---
+// ------------------------
+// Navigation Stack
+// ------------------------
 const Stack = createNativeStackNavigator();
 
 export default function QuizFeatureStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen
-        name="HomeScreenWithQuiz"
-        component={HomeScreenWithQuiz}
-        options={{ title: "Home" }}
-      />
-      <Stack.Screen
-        name="QuizScreen"
-        component={QuizScreen}
-        options={{ title: "Quiz" }}
-      />
-      <Stack.Screen
-        name="ScoreHistoryScreen"
-        component={ScoreHistoryScreen}
-        options={{ title: "Score History" }}
-      />
-      <Stack.Screen
-        name="ShopScreen"
-        component={ShopScreen}
-        options={{ title: "Shop" }}
-      />
-      <Stack.Screen
-        name="MiniGamesScreen"
-        component={MiniGamesScreen}
-        options={{ title: "Mini-Games" }}
-      />
-      <Stack.Screen
-        name="TicTacToeScreen"
-        component={TicTacToeScreen}
-        options={{ title: "Tic Tac Toe" }}
-      />
+      <Stack.Screen name="HomeScreenWithQuiz" component={HomeScreenWithQuiz} options={{ title: "Home" }} />
+      <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ title: "Quiz" }} />
+      <Stack.Screen name="ScoreHistoryScreen" component={ScoreHistoryScreen} options={{ title: "Score History" }} />
+      <Stack.Screen name="ShopScreen" component={ShopScreen} options={{ title: "Shop" }} />
+      <Stack.Screen name="MiniGamesScreen" component={MiniGamesScreen} options={{ title: "Mini-Games" }} />
+      <Stack.Screen name="TicTacToeScreen" component={TicTacToeScreen} options={{ title: "Tic Tac Toe" }} />
     </Stack.Navigator>
   );
 }
 
-// --- Styles ---
+// ------------------------
+// Styles
+// ------------------------
 const styles = StyleSheet.create({
   homeContainer: {
     flex: 1,
@@ -343,31 +575,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 60,
   },
-  topBar: {
+  pointsBadge: {
+    position: "absolute",
+    top: 36,
+    right: 18,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
-    width: "90%",
     alignItems: "center",
-    marginBottom: 40,
+    elevation: 3,
+  },
+  pointsText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#2E7D32",
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#2E7D32",
-  },
-  pointsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#C8E6C9",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  pointsText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 6,
-    color: "#2E7D32",
+    marginBottom: 30,
   },
   buttonColumn: {
     flexDirection: "column",
@@ -403,6 +633,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
     color: "#1B5E20",
+  },
+  questionCount: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: "#2E7D32",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   optionButton: {
     flexDirection: "row",
@@ -447,4 +684,3 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
   },
 });
-
