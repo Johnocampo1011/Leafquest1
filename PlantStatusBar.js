@@ -75,46 +75,7 @@ const frequency = {
     fertilizer: initialValues?.weeklyProgress?.fertilizer ?? 0,
   });
 
-// Add this function inside your PlantStatusBar component
-const resetWaterCooldown = async () => {
-  if (!userId) {
-    console.error("❌ No user logged in!");
-    return;
-  }
 
-  try {
-    const plantRef = doc(db, "users", userId, "plants", plantId);
-
-    // Reset lastAction for water
-    setLastAction((prev) => ({
-      ...prev,
-      water: 0,
-    }));
-
-    // Reset cooldown locally
-    setCooldowns((prev) => ({
-      ...prev,
-      water: 0,
-    }));
-
-    // Update Firestore
-    await setDoc(
-      plantRef,
-      {
-        lastAction: {
-          ...lastAction,
-          water: 0,
-        },
-      },
-      { merge: true }
-    );
-
-    Alert.alert("✅ Water cooldown reset!", "You can water your plant immediately.");
-  } catch (err) {
-    console.error("❌ Failed to reset water cooldown:", err);
-    Alert.alert("Error", "Could not reset cooldown.");
-  }
-};
 
   // Stocks
   const [waterStock, setWaterStock] = useState(initialValues?.waterStock ?? 5);
@@ -527,17 +488,7 @@ const resetWaterCooldown = async () => {
         
         </View>
         <View style={{ marginTop: 16, alignItems: "center" }}>
-  <TouchableOpacity
-    onPress={resetWaterCooldown}
-    style={{
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      backgroundColor: "#2196F3",
-      borderRadius: 8,
-    }}
-  >
-    <Text style={{ color: "white", fontWeight: "bold" }}>Reset Water Cooldown</Text>
-  </TouchableOpacity>
+
 </View>
       </View>
         </ScrollView>
@@ -553,7 +504,7 @@ const resetWaterCooldown = async () => {
 
 const styles = StyleSheet.create({
   categoryContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#ffffffff",
     padding: 16,
     borderRadius: 12,
     marginTop: 16,

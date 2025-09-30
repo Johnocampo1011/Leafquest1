@@ -1427,3 +1427,47 @@ const styles = StyleSheet.create({
                 </Text>
               </TouchableOpacity>
           </View>
+
+
+
+
+// Add this function inside your PlantStatusBar component
+const resetWaterCooldown = async () => {
+  if (!userId) {
+    console.error("❌ No user logged in!");
+    return;
+  }
+
+  try {
+    const plantRef = doc(db, "users", userId, "plants", plantId);
+
+    // Reset lastAction for water
+    setLastAction((prev) => ({
+      ...prev,
+      water: 0,
+    }));
+
+    // Reset cooldown locally
+    setCooldowns((prev) => ({
+      ...prev,
+      water: 0,
+    }));
+
+    // Update Firestore
+    await setDoc(
+      plantRef,
+      {
+        lastAction: {
+          ...lastAction,
+          water: 0,
+        },
+      },
+      { merge: true }
+    );
+
+    Alert.alert("✅ Water cooldown reset!", "You can water your plant immediately.");
+  } catch (err) {
+    console.error("❌ Failed to reset water cooldown:", err);
+    Alert.alert("Error", "Could not reset cooldown.");
+  }
+};

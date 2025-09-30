@@ -11,13 +11,14 @@ import React from 'react';
 import QuizScreen from './QuizDifficultyScreen';
 import { WebView } from 'react-native-webview';
 import QuizDifficultyScreen from './QuizDifficultyScreen';
-import { auth } from "./firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
 import HomeScreenContent from './Homescreen';
 import { MenuProvider } from 'react-native-popup-menu';
-
+import { ProfileScreen } from './MenuButton'; // Import ProfileScreen
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "./firebaseConfig";
 
 
 
@@ -131,6 +132,8 @@ export default function App() {
       <Stack.Screen name="Homescreen" component={HomeStackScreen} />
       <Stack.Screen name="QuizScreen" component={QuizScreen} />
       <Stack.Screen name="QuizDifficultyScreen" component={QuizDifficultyScreen} />
+      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+
       
 
     </Stack.Navigator>
@@ -404,58 +407,70 @@ export function PasswordSuccessScreen({ navigation }) {
 }
 
 export function SignUpScreen({ navigation }) {
-  const [firstName, setfirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [firstName, setfirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
 
   const validateAndSignUp = async () => {
-  if (!firstName || !lastName || !email || !username || !password || !confirm) {
-    Alert.alert("Error", "Please fill in all fields.");
-    return;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    Alert.alert("Invalid Email", "Please enter a valid email address.");
-    return;
-  }
-
-  if (password !== confirm) {
-    Alert.alert("Password Mismatch", "Passwords do not match.");
-    return;
-  }
-
-  if (password.length < 6) {
-    Alert.alert("Weak Password", "Password must be at least 6 characters long.");
-    return;
-  }
-
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    navigation.navigate("WelcomeMessage");
-  } catch (error) {
-    console.log(error);
-    if (error.code === "auth/email-already-in-use") {
-      Alert.alert("Email In Use", "This email is already registered.");
-    } else {
-      Alert.alert("Signup Failed", error.message);
+    if (!firstName || !lastName || !email || !username || !password || !confirm) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
     }
-  }
-};
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
+    if (password !== confirm) {
+      Alert.alert("Password Mismatch", "Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Weak Password", "Password must be at least 6 characters long.");
+      return;
+    }
+
+    try {
+      // Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Store additional info in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        firstName,
+        lastName,
+        email,
+        username,
+        createdAt: new Date().toISOString(),
+      });
+
+      Alert.alert("Success", "Account created successfully!");
+      navigation.navigate("WelcomeMessage");
+    } catch (error) {
+      console.log(error);
+      if (error.code === "auth/email-already-in-use") {
+        Alert.alert("Email In Use", "This email is already registered.");
+      } else {
+        Alert.alert("Signup Failed", error.message);
+      }
+    }
+  };
 
   return (
     <View style={styles.loginOuterContainer}>
       <StatusBar style="auto" />
       <ImageBackground
         style={styles.imagebg}
-        source={require('./assets/greenbg 1.png')}
+        source={require("./assets/greenbg 1.png")}
         resizeMode="cover"
       >
         <View style={styles.centeringContainer}>
-
           <Text style={styles.mainTitle}>CREATE ACCOUNT</Text>
 
           <View style={styles.formContainer}>
@@ -499,14 +514,13 @@ export function SignUpScreen({ navigation }) {
                 value={confirm}
                 onChangeText={setConfirm}
               />
-            
 
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={validateAndSignUp}
-            >
-              <Text style={styles.loginButtonText}>SIGNUP</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={validateAndSignUp}
+              >
+                <Text style={styles.loginButtonText}>SIGNUP</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>

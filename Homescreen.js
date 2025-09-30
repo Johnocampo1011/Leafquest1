@@ -82,21 +82,35 @@ useEffect(() => {
         <View style={homeStyles.gridContainer}>
           {myPlants.length > 0 ? (
             myPlants.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={homeStyles.gridItem}
-                onPress={() =>
-                  navigation.navigate("PlantDetails", { plantId: item.id })
-                }
-              >
-                {item.image && (
-                  <Image
-                    source={item.image.startsWith("http") ? { uri: item.image } : localImages[item.image]}
-                    style={homeStyles.image}
-                  />
-                )}
-                <Text style={homeStyles.label}>{item.name}</Text>
-              </TouchableOpacity>
+             <TouchableOpacity
+  key={item.id}
+  style={homeStyles.gridItem}
+  onPress={() =>
+    navigation.navigate("PlantDetails", { plantId: item.id })
+  }
+>
+  {item.image && (
+    <Image
+      source={
+        item.image.startsWith("http")
+          ? { uri: item.image }
+          : localImages[item.image]
+      }
+      style={homeStyles.image}
+    />
+  )}
+
+  {/* Plant Name */}
+  <Text style={homeStyles.label}>{item.name}</Text>
+
+  {/* Plant Level */}
+  {item.plantLevel !== undefined && (
+    <View style={homeStyles.levelContainer}>
+      <Ionicons name="leaf" size={14} color="#4CAF50" />
+      <Text style={homeStyles.levelText}>Level {item.plantLevel}</Text>
+    </View>
+  )}
+</TouchableOpacity>
             ))
           ) : (
             <Text style={{ margin: 20, fontSize: 16, color: "gray" }}>
@@ -407,6 +421,22 @@ const homeStyles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.7)", // Semi-transparent background ✅
     paddingVertical: 4,
   },
+  levelContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: -10,
+  backgroundColor: "rgba(76, 175, 80, 0.1)", // light green background
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: 8,
+},
+levelText: {
+  fontSize: 10,
+  fontWeight: "600",
+  marginLeft: 4,
+  color: "#2E481E",
+},
+
 });
 
 const plntstyles = StyleSheet.create({ 
