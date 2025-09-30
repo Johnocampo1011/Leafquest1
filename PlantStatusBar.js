@@ -32,8 +32,6 @@ export default function PlantStatusBar({ plantId, initialValues }) {
     difficulty: initialValues?.difficulty || "Easy",
   });
 
-  // ... rest of your code unchanged
-
   // === Category UI ===
   const categoryItem = (icon, label, value) => (
     <View style={{ alignItems: "center", flex: 1, margin: 5 }}>
@@ -153,42 +151,58 @@ const resetWaterCooldown = async () => {
 
   // === Fetch plant data from Firestore ===
   useEffect(() => {
-    const fetchPlantData = async () => {
-      try {
-        const plantRef = doc(db, "users", userId, "plants", plantId);
-        const plantSnap = await getDoc(plantRef);
+  const fetchPlantData = async () => {
+    try {
+      const plantSnap = await getDoc(plantRef);
+      if (plantSnap.exists()) {
+        const data = plantSnap.data();
 
-        if (plantSnap.exists()) {
-          const data = plantSnap.data();
-          setWaterLevel(data.waterLevel || 0.3);
-          setLightLevel(data.lightLevel || 0.5);
-          setFertilizerLevel(data.fertilizerLevel || 0.2);
-          setPlantLevel(data.plantLevel || 1);
-          setPoints(data.points || 0);
-          setWaterStock(data.waterStock ?? 5);
-          setLightStock(data.lightStock ?? 5);
-          setFertilizerStock(data.fertilizerStock ?? 5);
-          setLastAction(data.lastAction || { water: 0, light: 0, fertilizer: 0 });
-        } else {
-          await setDoc(plantRef, {
-            waterLevel,
-            lightLevel,
-            fertilizerLevel,
-            plantLevel,
-            points,
-            waterStock,
-            lightStock,
-            fertilizerStock,
-            lastAction,
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching plant data:", error);
+        // === Update category info from Firestore ===
+        setCategoryInfo({
+          plantType: data.plantType || initialValues?.plantType || "Indoor",
+          soilType: data.soilType || initialValues?.soilType || "Loamy",
+          waterPH: data.waterPH || initialValues?.waterPH || "6.5",
+          fertilizerType: data.fertilizerType || initialValues?.fertilizerType || "Organic",
+          difficulty: data.difficulty || initialValues?.difficulty || "Easy",
+        });
+
+        // === Update other plant data as before ===
+        setWaterLevel(data.waterLevel || 0.3);
+        setLightLevel(data.lightLevel || 0.5);
+        setFertilizerLevel(data.fertilizerLevel || 0.2);
+        setPlantLevel(data.plantLevel || 1);
+        setPoints(data.points || 0);
+        setWaterStock(data.waterStock ?? 5);
+        setLightStock(data.lightStock ?? 5);
+        setFertilizerStock(data.fertilizerStock ?? 5);
+        setLastAction(data.lastAction || { water: 0, light: 0, fertilizer: 0 });
+      } else {
+        // Initialize Firestore with defaults if document doesn't exist
+        await setDoc(plantRef, {
+          plantType: categoryInfo.plantType,
+          soilType: categoryInfo.soilType,
+          waterPH: categoryInfo.waterPH,
+          fertilizerType: categoryInfo.fertilizerType,
+          difficulty: categoryInfo.difficulty,
+          waterLevel,
+          lightLevel,
+          fertilizerLevel,
+          plantLevel,
+          points,
+          waterStock,
+          lightStock,
+          fertilizerStock,
+          lastAction,
+        });
       }
-    };
+    } catch (error) {
+      console.error("Error fetching plant data:", error);
+    }
+  };
 
-    fetchPlantData();
-  }, [plantId]);
+  fetchPlantData();
+}, [plantId]);
+
 
   // === Cooldown updater ===
   useEffect(() => {

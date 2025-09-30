@@ -35,7 +35,7 @@ export const plants = [
   plantType: "Succulent",
   soilType: "Sandy, well-drained",
   waterPH: "6.0–8.0",
-  fertilizerType: "Cactus fertilizer (rarely needed)",
+  fertilizerType: "Cactus fertilizer",
   difficulty: "Easy",
 
   dailyThreshold: {
@@ -64,7 +64,34 @@ export const plants = [
     fertilizerThreshold: 1, // max fertilizer per day
     waterFrequency: 1,       // can water every 1 day
     fertilizerFrequency: 1,  // can fertilize every 1 day
-    lightFrequency: 1       // optional (every day is fine)
+    lightFrequency: 1,       // optional (every day is fine)
+
+     // ✅ Weekly requirements
+  weeklyNeeds: {
+    water: 3,        // 2–3 times a week
+    light: 7,        // daily
+    fertilizer: 1,   // once a week
+  },
+
+  // ✅ Track progress dynamically
+  weeklyProgress: {
+    water: 0,
+    light: 0,
+    fertilizer: 0,
+  },
+
+  // ✅ Extra info for UI
+  
+  plantType: "Perennial",
+  soilType: "SLoamy, well-drained",
+  waterPH: "5.0 to 6.0",
+  fertilizerType: "balanced houseplant fertilizer",
+  difficulty: "Easy",
+
+  dailyThreshold: {
+  water: 1,       // only once per day max
+  light: 1,       // only once per day action
+  fertilizer: 1,  // only once per day
     
   },
   {
