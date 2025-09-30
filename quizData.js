@@ -10,7 +10,7 @@ function shuffle(array) {
 // ✅ Fetch questions from Firestore
 export async function fetchQuestions(limit = 10) {
   try {
-    const querySnapshot = await getDocs(collection(db, "Quiz"));
+    const querySnapshot = await getDocs(collection(db, "quiz"));
 
     let questions = [];
     querySnapshot.forEach((doc) => {

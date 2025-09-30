@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 🌍 Shared Plant Library (read-only for all logged-in users)
+    match /plants/{plantId} {
+      allow read: if request.auth != null;
+      allow write: if false; // only admins via Firebase Console
+    }
+
+    // 👤 User’s Personal Plants (each user manages their own)
+    match /users/{userId}/plants/{plantId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 🌍 Shared Quizzes (read for everyone logged in)
+    match /quiz/{quizId} {
+      allow read: if request.auth != null;
+      allow write: if false; // only admins can upload quizzes
+    }
+
+    // 👤 User’s Quiz Results
+    match /users/{userId}/quizResults/{resultId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
