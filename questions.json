@@ -1,0 +1,492 @@
+[
+  {
+    "id": "q1",
+    "question": "African Violet blooms best when:",
+    "options": [
+      { "text": "Placed in bright, indirect light", "isCorrect": true },
+      { "text": "Kept in total darkness", "isCorrect": false },
+      { "text": "Watered with ice cubes", "isCorrect": false },
+      { "text": "Left in full sun", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q2",
+    "question": "Air Plants absorb water through:",
+    "options": [
+      { "text": "Their leaves", "isCorrect": true },
+      { "text": "Their roots", "isCorrect": false },
+      { "text": "Their flowers", "isCorrect": false },
+      { "text": "Their stems", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q3",
+    "question": "Alocasia plants prefer soil that is:",
+    "options": [
+      { "text": "Moist but well-draining", "isCorrect": true },
+      { "text": "Constantly soggy", "isCorrect": false },
+      { "text": "Completely dry", "isCorrect": false },
+      { "text": "Made of pure sand", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q4",
+    "question": "Aloe Vera should be watered:",
+    "options": [
+      { "text": "When soil is fully dry", "isCorrect": true },
+      { "text": "Every day", "isCorrect": false },
+      { "text": "Twice a day", "isCorrect": false },
+      { "text": "Never", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q5",
+    "question": "Anthurium produces:",
+    "options": [
+      { "text": "Bright red spathes (flowers)", "isCorrect": true },
+      { "text": "Blue fruits", "isCorrect": false },
+      { "text": "Fragrant purple leaves", "isCorrect": false },
+      { "text": "Edible seeds", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q6",
+    "question": "Areca Palm thrives in:",
+    "options": [
+      { "text": "Bright, indirect light", "isCorrect": true },
+      { "text": "Complete shade", "isCorrect": false },
+      { "text": "Harsh desert sun", "isCorrect": false },
+      { "text": "Constantly wet soil", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q7",
+    "question": "Bird’s Nest Fern leaves are unique because they:",
+    "options": [
+      { "text": "Grow in a rosette shape", "isCorrect": true },
+      { "text": "Turn into flowers", "isCorrect": false },
+      { "text": "Are needle-like", "isCorrect": false },
+      { "text": "Store water", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q8",
+    "question": "Boston Ferns love:",
+    "options": [
+      { "text": "High humidity", "isCorrect": true },
+      { "text": "Dry desert air", "isCorrect": false },
+      { "text": "Constant sunlight", "isCorrect": false },
+      { "text": "No water at all", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q9",
+    "question": "Cast Iron Plant is famous for being:",
+    "options": [
+      { "text": "Very tough and low-maintenance", "isCorrect": true },
+      { "text": "Extremely fragile", "isCorrect": false },
+      { "text": "Needing daily pruning", "isCorrect": false },
+      { "text": "Flowering all year", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q10",
+    "question": "Chinese Evergreen is perfect for:",
+    "options": [
+      { "text": "Low-light conditions", "isCorrect": true },
+      { "text": "Only direct sun", "isCorrect": false },
+      { "text": "Sandy soil", "isCorrect": false },
+      { "text": "Cold outdoor weather", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q12",
+    "question": "Croton plants are admired for:",
+    "options": [
+      { "text": "Colorful, variegated leaves", "isCorrect": true },
+      { "text": "White fragrant flowers", "isCorrect": false },
+      { "text": "Succulent stems", "isCorrect": false },
+      { "text": "Growing in deserts", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q13",
+    "question": "Dieffenbachia is also called:",
+    "options": [
+      { "text": "Dumb Cane", "isCorrect": true },
+      { "text": "Peace Lily", "isCorrect": false },
+      { "text": "Snake Plant", "isCorrect": false },
+      { "text": "Umbrella Plant", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q14",
+    "question": "Dracaena plants dislike:",
+    "options": [
+      { "text": "Fluoride in tap water", "isCorrect": true },
+      { "text": "Rainwater", "isCorrect": false },
+      { "text": "Filtered water", "isCorrect": false },
+      { "text": "Warm temperatures", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q15",
+    "question": "Fiddle Leaf Fig requires:",
+    "options": [
+      { "text": "Bright, filtered light", "isCorrect": true },
+      { "text": "Deep shade", "isCorrect": false },
+      { "text": "Heavy clay soil", "isCorrect": false },
+      { "text": "Standing water", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q16",
+    "question": "Fittonia is also known as:",
+    "options": [
+      { "text": "Nerve Plant", "isCorrect": true },
+      { "text": "Snake Plant", "isCorrect": false },
+      { "text": "Money Plant", "isCorrect": false },
+      { "text": "Spider Plant", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q17",
+    "question": "Guzmania is a type of:",
+    "options": [
+      { "text": "Bromeliad", "isCorrect": true },
+      { "text": "Succulent", "isCorrect": false },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Palm", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q18",
+    "question": "Haworthia is a:",
+    "options": [
+      { "text": "Succulent", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Palm", "isCorrect": false },
+      { "text": "Orchid", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q19",
+    "question": "Heartleaf Philodendron is best for:",
+    "options": [
+      { "text": "Beginners", "isCorrect": true },
+      { "text": "Outdoor gardens only", "isCorrect": false },
+      { "text": "Full desert sun", "isCorrect": false },
+      { "text": "Aquariums", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q20",
+    "question": "Hoya plants are known as:",
+    "options": [
+      { "text": "Wax Plants", "isCorrect": true },
+      { "text": "Snake Plants", "isCorrect": false },
+      { "text": "Air Ferns", "isCorrect": false },
+      { "text": "Stone Plants", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q21",
+    "question": "Jade Plant is believed to bring:",
+    "options": [
+      { "text": "Good luck and prosperity", "isCorrect": true },
+      { "text": "Bad luck", "isCorrect": false },
+      { "text": "Faster Wi-Fi", "isCorrect": false },
+      { "text": "Rainfall", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q22",
+    "question": "Kalanchoe is popular for its:",
+    "options": [
+      { "text": "Bright clusters of flowers", "isCorrect": true },
+      { "text": "Tall palm-like trunks", "isCorrect": false },
+      { "text": "Fragrant fruits", "isCorrect": false },
+      { "text": "Black leaves", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q23",
+    "question": "Lucky Bamboo grows best in:",
+    "options": [
+      { "text": "Water or soil with indirect light", "isCorrect": true },
+      { "text": "Full hot sun", "isCorrect": false },
+      { "text": "Desert sand", "isCorrect": false },
+      { "text": "Frozen soil", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q24",
+    "question": "Monstera Deliciosa is also called:",
+    "options": [
+      { "text": "Swiss Cheese Plant", "isCorrect": true },
+      { "text": "Snake Plant", "isCorrect": false },
+      { "text": "Umbrella Plant", "isCorrect": false },
+      { "text": "Peace Lily", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q25",
+    "question": "Orchids prefer to be watered:",
+    "options": [
+      { "text": "Once a week, when roots turn silvery", "isCorrect": true },
+      { "text": "Every day", "isCorrect": false },
+      { "text": "By misting only", "isCorrect": false },
+      { "text": "Never", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q26",
+    "question": "Parlor Palm is a great indoor plant because:",
+    "options": [
+      { "text": "It tolerates low light", "isCorrect": true },
+      { "text": "It requires daily sunbathing", "isCorrect": false },
+      { "text": "It survives only outdoors", "isCorrect": false },
+      { "text": "It needs constant fertilizer", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q27",
+    "question": "Peace Lily shows it needs water when:",
+    "options": [
+      { "text": "Its leaves droop", "isCorrect": true },
+      { "text": "Its flowers turn blue", "isCorrect": false },
+      { "text": "Its roots become woody", "isCorrect": false },
+      { "text": "It produces new leaves", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q28",
+    "question": "Polka Dot Plant is known for:",
+    "options": [
+      { "text": "Colorful spotted leaves", "isCorrect": true },
+      { "text": "Producing edible fruits", "isCorrect": false },
+      { "text": "Growing in deserts", "isCorrect": false },
+      { "text": "Large woody stems", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q29",
+    "question": "Pothos is one of the easiest plants because:",
+    "options": [
+      { "text": "It tolerates neglect", "isCorrect": true },
+      { "text": "It blooms every week", "isCorrect": false },
+      { "text": "It requires misting daily", "isCorrect": false },
+      { "text": "It cannot grow in water", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q30",
+    "question": "Prayer Plant leaves move because:",
+    "options": [
+      { "text": "They follow the light cycle (nyctinasty)", "isCorrect": true },
+      { "text": "They are overwatered", "isCorrect": false },
+      { "text": "They lack nutrients", "isCorrect": false },
+      { "text": "They are dying", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q31",
+    "question": "Rubber Plant thrives best in:",
+    "options": [
+      { "text": "Bright, indirect light", "isCorrect": true },
+      { "text": "Full desert sun", "isCorrect": false },
+      { "text": "No light at all", "isCorrect": false },
+      { "text": "Constantly soggy soil", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q32",
+    "question": "Schefflera is also called:",
+    "options": [
+      { "text": "Umbrella Plant", "isCorrect": true },
+      { "text": "Money Tree", "isCorrect": false },
+      { "text": "Snake Plant", "isCorrect": false },
+      { "text": "Bird of Paradise", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q33",
+    "question": "Snake Plant is also known as:",
+    "options": [
+      { "text": "Mother-in-law’s Tongue", "isCorrect": true },
+      { "text": "Peace Lily", "isCorrect": false },
+      { "text": "Dumb Cane", "isCorrect": false },
+      { "text": "Lucky Bamboo", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q34",
+    "question": "Spider Plant produces baby offshoots called:",
+    "options": [
+      { "text": "Pups or plantlets", "isCorrect": true },
+      { "text": "Seeds", "isCorrect": false },
+      { "text": "Bulbs", "isCorrect": false },
+      { "text": "Rhizomes", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q35",
+    "question": "Strelitzia is also called:",
+    "options": [
+      { "text": "Bird of Paradise", "isCorrect": true },
+      { "text": "Angel Wing Plant", "isCorrect": false },
+      { "text": "Goldfish Plant", "isCorrect": false },
+      { "text": "Fire Flower", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q36",
+    "question": "Tradescantia is admired for:",
+    "options": [
+      { "text": "Its purple trailing leaves", "isCorrect": true },
+      { "text": "Large woody stems", "isCorrect": false },
+      { "text": "Growing in water only", "isCorrect": false },
+      { "text": "Producing edible fruits", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q37",
+    "question": "Watermelon Peperomia leaves look like:",
+    "options": [
+      { "text": "Watermelon rinds", "isCorrect": true },
+      { "text": "Snake skin", "isCorrect": false },
+      { "text": "Orchid petals", "isCorrect": false },
+      { "text": "Bamboo stalks", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q38",
+    "question": "ZZ Raven plant is unique because:",
+    "options": [
+      { "text": "Its leaves are nearly black", "isCorrect": true },
+      { "text": "It produces colorful flowers", "isCorrect": false },
+      { "text": "It grows only in water", "isCorrect": false },
+      { "text": "It survives only outdoors", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q39",
+    "question": "Asparagus Fern is not a true fern but related to:",
+    "options": [
+      { "text": "Lilies", "isCorrect": true },
+      { "text": "Palms", "isCorrect": false },
+      { "text": "Grasses", "isCorrect": false },
+      { "text": "Orchids", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q40",
+    "question": "Begonia Maculata is famous for:",
+    "options": [
+      { "text": "Polka-dotted leaves", "isCorrect": true },
+      { "text": "Producing edible seeds", "isCorrect": false },
+      { "text": "Surviving in deserts", "isCorrect": false },
+      { "text": "Having needle-like leaves", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q41",
+    "question": "Begonia Rex is admired for:",
+    "options": [
+      { "text": "Its striking leaf patterns", "isCorrect": true },
+      { "text": "Large fruits", "isCorrect": false },
+      { "text": "Thick woody stems", "isCorrect": false },
+      { "text": "Being drought-tolerant", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q42",
+    "question": "Calathea Medallion is loved for:",
+    "options": [
+      { "text": "Round patterned leaves", "isCorrect": true },
+      { "text": "Producing edible roots", "isCorrect": false },
+      { "text": "Growing in deserts", "isCorrect": false },
+      { "text": "Being frost tolerant", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q43",
+    "question": "Calathea Orbifolia leaves are:",
+    "options": [
+      { "text": "Very large with silver stripes", "isCorrect": true },
+      { "text": "Thin needle-like", "isCorrect": false },
+      { "text": "Always purple", "isCorrect": false },
+      { "text": "Covered in spines", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q44",
+    "question": "Calathea Rattlesnake has:",
+    "options": [
+      { "text": "Wavy, spotted green leaves", "isCorrect": true },
+      { "text": "Flowers shaped like snakes", "isCorrect": false },
+      { "text": "Woody thick stems", "isCorrect": false },
+      { "text": "Desert-like leaves", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q45",
+    "question": "Clivia Miniata produces:",
+    "options": [
+      { "text": "Bright orange flowers", "isCorrect": true },
+      { "text": "Fragrant white blooms only", "isCorrect": false },
+      { "text": "Fruits instead of flowers", "isCorrect": false },
+      { "text": "Thorny stems", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q46",
+    "question": "Coleus plants are grown mainly for:",
+    "options": [
+      { "text": "Their colorful foliage", "isCorrect": true },
+      { "text": "Their edible fruits", "isCorrect": false },
+      { "text": "Their long roots", "isCorrect": false },
+      { "text": "Their fragrant flowers", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q47",
+    "question": "Cordyline Fruticosa is popular for:",
+    "options": [
+      { "text": "Its red and pink leaves", "isCorrect": true },
+      { "text": "Producing yellow flowers", "isCorrect": false },
+      { "text": "Surviving in snow", "isCorrect": false },
+      { "text": "Growing only in deserts", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q48",
+    "question": "Dischidia Ruscifolia is also called:",
+    "options": [
+      { "text": "Million Hearts", "isCorrect": true },
+      { "text": "Angel Wings", "isCorrect": false },
+      { "text": "Bird’s Nest", "isCorrect": false },
+      { "text": "Firecracker Plant", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q49",
+    "question": "Echeveria is a type of:",
+    "options": [
+      { "text": "Succulent", "isCorrect": true },
+      { "text": "Fern", "isCorrect": false },
+      { "text": "Palm", "isCorrect": false },
+      { "text": "Orchid", "isCorrect": false }
+    ]
+  },
+  {
+    "id": "q50",
+    "question": "Episcia Cupreata is also known as:",
+    "options": [
+      { "text": "Flame Violet", "isCorrect": true },
+      { "text": "Gold Leaf", "isCorrect": false },
+      { "text": "Snake Plant", "isCorrect": false },
+      { "text": "Money Tree", "isCorrect": false }
+    ]
+  }
+]
