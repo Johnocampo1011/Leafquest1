@@ -325,7 +325,7 @@ export function QuizScreen({ navigation }) {
     );
   }
 
-  if (!questions || questions.length === 0) {
+  if (questions.length === 0)
     return (
       <View style={styles.quizPage}>
         <Text style={styles.quizTitle}>⚠️ No questions available</Text>
@@ -507,7 +507,6 @@ export function ShopScreen({ navigation }) {
     if (res.success) {
       setLeafPoints(res.remaining);
       Alert.alert("Purchase Successful ✅", `You bought ${item.name}`);
-      // TODO: save item to user inventory (Firestore) when your inventory schema is ready
     } else {
       Alert.alert("Not enough points ❌", `You need ${item.cost} points`);
     }
@@ -600,9 +599,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   buttonColumn: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
     width: "80%",
     gap: 20,
   },
