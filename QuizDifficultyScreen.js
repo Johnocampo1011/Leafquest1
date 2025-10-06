@@ -274,6 +274,15 @@ export function HomeScreenWithQuiz({ navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.mainButton, { backgroundColor: "#4CAF50" }]}
+          onPress={() => navigation.navigate("InventoryScreen")}
+       >
+         <Ionicons name="bag-outline" size={22} color="#fff" />
+         <Text style={styles.mainButtonText}>Inventory</Text>
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#8E44AD" }]}
           onPress={() => navigation.navigate("MiniGamesScreen")}
         >
@@ -325,7 +334,7 @@ export function QuizScreen({ navigation }) {
     );
   }
 
-  if (questions.length === 0)
+  if (!questions || questions.length === 0) {
     return (
       <View style={styles.quizPage}>
         <Text style={styles.quizTitle}>⚠️ No questions available</Text>
@@ -481,15 +490,15 @@ export function ScoreHistoryScreen() {
 }
 
 // ------------------------
-// Shop Screen
+// Shop Screen (with Inventory Integration)
 // ------------------------
 export function ShopScreen({ navigation }) {
   const [leafPoints, setLeafPoints] = useState(0);
 
   const items = [
-    { id: "1", name: "💧 Water", cost: 10 },
-    { id: "2", name: "🌿 Fertilizer", cost: 20 },
-    { id: "3", name: "🪴 Spray", cost: 15 },
+    { id: "1", name: "Water", icon: "💧", cost: 10, desc: "Hydrate your plants to keep them fresh" },
+    { id: "2", name: "Fertilizer", icon: "🌿", cost: 20, desc: "Boost plant growth and strength" },
+    { id: "3", name: "Sunlight", icon: "☀️", cost: 15, desc: "Provide warmth and energy" },
   ];
 
   useEffect(() => {
@@ -506,28 +515,108 @@ export function ShopScreen({ navigation }) {
     const res = await spendLeafPointsForUser(item.cost);
     if (res.success) {
       setLeafPoints(res.remaining);
-      Alert.alert("Purchase Successful ✅", `You bought ${item.name}`);
+      await addItemToInventory(item);
+      Alert.alert("✅ Purchase Successful", `You bought ${item.icon} ${item.name}`);
     } else {
-      Alert.alert("Not enough points ❌", `You need ${item.cost} points`);
+      Alert.alert("❌ Not enough points", `You need ${item.cost} points`);
     }
   };
 
+  const addItemToInventory = async (item) => {
+    try {
+      const stored = await AsyncStorage.getItem("userInventory");
+      const inventory = stored ? JSON.parse(stored) : [];
+      inventory.push({ name: item.name, icon: item.icon });
+      await AsyncStorage.setItem("userInventory", JSON.stringify(inventory));
+    } catch (e) {
+      console.log("Error saving to inventory:", e);
+    }
+  };
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.shopCard}
+      onPress={() => handlePurchase(item)}
+      activeOpacity={0.8}
+    >
+      <Text style={styles.shopIcon}>{item.icon}</Text>
+      <Text style={styles.shopItemTitle}>{item.desc}</Text>
+      <View style={styles.shopCostTag}>
+        <Ionicons name="leaf-outline" size={14} color="#2E7D32" />
+        <Text style={styles.shopCostText}>{item.cost}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
-    <View style={styles.historyContainer}>
-      <Text style={styles.quizTitle}>🛒 Shop</Text>
-      <Text style={{ textAlign: "center", marginBottom: 20 }}>Your Points: {leafPoints}</Text>
+    <View style={styles.shopContainer}>
+      <Text style={styles.quizTitle}>🛒 LeafQuest Shop</Text>
+      <Text style={styles.pointsDisplay}>
+        <Ionicons name="leaf-outline" size={16} color="#2E7D32" />{" "}
+        Your Points: <Text style={{ fontWeight: "bold" }}>{leafPoints}</Text>
+      </Text>
+
+      <TouchableOpacity
+        style={styles.inventoryButton}
+        onPress={() => navigation.navigate("InventoryScreen")}
+      >
+        <Ionicons name="bag-outline" size={18} color="#fff" />
+        <Text style={styles.inventoryButtonText}>View Inventory</Text>
+      </TouchableOpacity>
 
       <FlatList
         data={items}
         keyExtractor={(i) => i.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.optionButton} onPress={() => handlePurchase(item)}>
-            <Text style={styles.optionText}>
-              {item.name} - {item.cost} pts
-            </Text>
-          </TouchableOpacity>
-        )}
+        renderItem={renderItem}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={{ paddingBottom: 30 }}
       />
+    </View>
+  );
+}
+
+
+// ------------------------
+// Inventory Screen
+// ------------------------
+export function InventoryScreen() {
+  const [inventory, setInventory] = useState([]);
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("userInventory");
+        const data = stored ? JSON.parse(stored) : [];
+        setInventory(data);
+      } catch (e) {
+        console.log("Error loading inventory:", e);
+      }
+    };
+    loadInventory();
+  }, []);
+
+  return (
+    <View style={styles.inventoryContainer}>
+      <Text style={styles.quizTitle}>🎒 Inventory</Text>
+
+      {inventory.length === 0 ? (
+        <Text style={{ textAlign: "center" }}>No items yet. Buy some from the Shop!</Text>
+      ) : (
+        <FlatList
+          data={inventory}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={{ paddingBottom: 30 }}
+          renderItem={({ item }) => (
+            <View style={styles.inventoryCard}>
+              <Text style={styles.shopIcon}>{item.icon}</Text>
+              <Text style={styles.shopItemTitle}>{item.name}</Text>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -558,6 +647,7 @@ export default function QuizFeatureStack() {
       <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ title: "Quiz" }} />
       <Stack.Screen name="ScoreHistoryScreen" component={ScoreHistoryScreen} options={{ title: "Score History" }} />
       <Stack.Screen name="ShopScreen" component={ShopScreen} options={{ title: "Shop" }} />
+      <Stack.Screen name="InventoryScreen" component={InventoryScreen} options={{ title: "Inventory" }} />
       <Stack.Screen name="MiniGamesScreen" component={MiniGamesScreen} options={{ title: "Mini-Games" }} />
       <Stack.Screen name="TicTacToeScreen" component={TicTacToeScreen} options={{ title: "Tic Tac Toe" }} />
     </Stack.Navigator>
@@ -599,6 +689,9 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   buttonColumn: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
     width: "80%",
     gap: 20,
   },
@@ -679,4 +772,90 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#ccc",
   },
+    shopContainer: {
+    flex: 1,
+    backgroundColor: "#E8F5E9",
+    padding: 20,
+  },
+  row: {
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  shopCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 15,
+    width: "48%",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+  shopIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
+  shopItemTitle: {
+    fontSize: 13,
+    textAlign: "center",
+    color: "#333",
+    marginBottom: 10,
+  },
+  shopCostTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#C8E6C9",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  shopCostText: {
+    marginLeft: 4,
+    color: "#2E7D32",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  pointsDisplay: {
+    textAlign: "center",
+    marginBottom: 20,
+    fontSize: 16,
+    color: "#1B5E20",
+  },
+
+  inventoryContainer: {
+  flex: 1,
+  backgroundColor: "#E8F5E9",
+  padding: 20,
+},
+inventoryCard: {
+  flex: 1,
+  margin: 8,
+  backgroundColor: "#fff",
+  borderRadius: 16,
+  padding: 15,
+  alignItems: "center",
+  justifyContent: "center",
+  elevation: 3,
+},
+inventoryButton: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#2E7D32",
+  borderRadius: 12,
+  padding: 10,
+  marginVertical: 10,
+  alignSelf: "center",
+  width: "60%",
+  elevation: 3,
+},
+inventoryButtonText: {
+  color: "#fff",
+  fontWeight: "bold",
+  marginLeft: 8,
+},
+
 });
