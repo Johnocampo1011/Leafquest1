@@ -13,211 +13,20 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { fetchQuestions } from "./quizData"; // expects client Firestore usage
-import { db } from "./firebaseConfig"; // your client firebase config (not admin)
-import { getAuth } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  arrayUnion,
-  increment,
-} from "firebase/firestore";
-
+import { fetchQuestions } from "./quizData";
 import TicTacToeScreen from "./TicTacToeScreen";
 
-// ------------------------
-// Local keys (fallback)
-// ------------------------
-const ASYNC_POINTS_KEY = "leafPoints";
-const ASYNC_HISTORY_KEY = "quizHistory";
+// 🌿 Import all Firestore-linked helpers from userData.js
+import {
+  getLeafPointsForUser,
+  addLeafPointsForUser,
+  spendLeafPointsForUser,
+  saveQuizAttemptForUser,
+  fetchQuizHistoryForUser,
+  fetchInventory,
+} from "./userData";
 
-// points multiplier per correct answer
 const POINTS_PER_CORRECT = 5;
-
-// ------------------------
-// Helper: get current user (may be null if not signed in)
-// ------------------------
-function getCurrentUser() {
-  try {
-    const auth = getAuth();
-    return auth.currentUser || null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// ------------------------
-// Firestore "ensure user doc" helper (creates doc if missing)
-// ------------------------
-async function ensureUserDoc(uid) {
-  try {
-    const userRef = doc(db, "users", uid);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) {
-      await setDoc(userRef, { leafPoints: 0, quizHistory: [] });
-    }
-    return userRef;
-  } catch (e) {
-    console.log("ensureUserDoc error:", e);
-    throw e;
-  }
-}
-
-// ------------------------
-// Get leaf points (Firestore preferred, fallback to AsyncStorage)
-// ------------------------
-async function getLeafPointsForUser() {
-  const user = getCurrentUser();
-  if (user) {
-    try {
-      const userRef = doc(db, "users", user.uid);
-      const snap = await getDoc(userRef);
-      if (snap.exists()) return Number(snap.data().leafPoints ?? 0);
-    } catch (e) {
-      console.log("Error reading points from Firestore:", e);
-    }
-  }
-
-  // fallback to local storage
-  try {
-    const stored = await AsyncStorage.getItem(ASYNC_POINTS_KEY);
-    return stored ? parseInt(stored, 10) : 0;
-  } catch {
-    return 0;
-  }
-}
-
-// ------------------------
-// Add leaf points to user (Firestore preferred, fallback to AsyncStorage)
-// Returns the updated total (number) or null on failure
-// ------------------------
-async function addLeafPointsForUser(pointsToAdd) {
-  const user = getCurrentUser();
-  if (user) {
-    try {
-      const userRef = await ensureUserDoc(user.uid);
-      // atomic increment
-      await updateDoc(userRef, { leafPoints: increment(pointsToAdd) });
-      const updatedSnap = await getDoc(userRef);
-      return updatedSnap.exists() ? Number(updatedSnap.data().leafPoints ?? 0) : null;
-    } catch (e) {
-      console.log("Error adding points in Firestore, falling back:", e);
-    }
-  }
-
-  // fallback to AsyncStorage
-  try {
-    const stored = await AsyncStorage.getItem(ASYNC_POINTS_KEY);
-    const current = stored ? parseInt(stored, 10) : 0;
-    const updated = current + pointsToAdd;
-    await AsyncStorage.setItem(ASYNC_POINTS_KEY, String(updated));
-    return updated;
-  } catch (e) {
-    console.log("Error updating local points:", e);
-    return null;
-  }
-}
-
-// ------------------------
-// Spend points (attempt to deduct); returns { success, remaining }
-// ------------------------
-async function spendLeafPointsForUser(cost) {
-  const user = getCurrentUser();
-  if (user) {
-    try {
-      const userRef = await ensureUserDoc(user.uid);
-      const snap = await getDoc(userRef);
-      const current = Number(snap.data().leafPoints ?? 0);
-      if (current >= cost) {
-        await updateDoc(userRef, {
-          leafPoints: current - cost,
-          quizHistory: arrayUnion({ type: "spend", cost, date: new Date().toISOString() }),
-        });
-        return { success: true, remaining: current - cost };
-      } else {
-        return { success: false, remaining: current };
-      }
-    } catch (e) {
-      console.log("Error spending points (Firestore):", e);
-    }
-  }
-
-  // fallback to AsyncStorage
-  try {
-    const stored = await AsyncStorage.getItem(ASYNC_POINTS_KEY);
-    const current = stored ? parseInt(stored, 10) : 0;
-    if (current >= cost) {
-      const updated = current - cost;
-      await AsyncStorage.setItem(ASYNC_POINTS_KEY, String(updated));
-      // record local history too
-      const h = JSON.parse((await AsyncStorage.getItem(ASYNC_HISTORY_KEY)) || "[]");
-      h.push({ type: "spend", cost, date: new Date().toISOString() });
-      await AsyncStorage.setItem(ASYNC_HISTORY_KEY, JSON.stringify(h));
-      return { success: true, remaining: updated };
-    } else {
-      return { success: false, remaining: current };
-    }
-  } catch (e) {
-    console.log("Error spending points (local):", e);
-    return { success: false, remaining: 0 };
-  }
-}
-
-// ------------------------
-// Save quiz attempt (Firestore preferred, fallback to AsyncStorage)
-// entry: { score, total, earnedPoints, date }
-// ------------------------
-async function saveQuizAttemptForUser(entry) {
-  const user = getCurrentUser();
-  if (user) {
-    try {
-      const userRef = await ensureUserDoc(user.uid);
-      await updateDoc(userRef, {
-        quizHistory: arrayUnion(entry),
-      });
-      return true;
-    } catch (e) {
-      console.log("Error saving history to Firestore:", e);
-    }
-  }
-
-  // fallback to AsyncStorage
-  try {
-    const stored = await AsyncStorage.getItem(ASYNC_HISTORY_KEY);
-    const history = stored ? JSON.parse(stored) : [];
-    history.push(entry);
-    await AsyncStorage.setItem(ASYNC_HISTORY_KEY, JSON.stringify(history));
-    return true;
-  } catch (e) {
-    console.log("Error saving history locally:", e);
-    return false;
-  }
-}
-
-// ------------------------
-// Fetch quiz history (Firestore preferred, fallback to AsyncStorage)
-// ------------------------
-async function fetchQuizHistoryForUser() {
-  const user = getCurrentUser();
-  if (user) {
-    try {
-      const userRef = doc(db, "users", user.uid);
-      const snap = await getDoc(userRef);
-      if (snap.exists()) return snap.data().quizHistory ?? [];
-    } catch (e) {
-      console.log("Error fetching history from Firestore:", e);
-    }
-  }
-
-  try {
-    const stored = await AsyncStorage.getItem(ASYNC_HISTORY_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
 
 // ------------------------
 // Home Screen
@@ -240,7 +49,6 @@ export function HomeScreenWithQuiz({ navigation }) {
 
   return (
     <View style={styles.homeContainer}>
-      {/* top-right points badge */}
       <View style={styles.pointsBadge}>
         <Ionicons name="leaf-outline" size={18} color="#2E7D32" />
         <Text style={styles.pointsText}>{loadingPoints ? "…" : leafPoints}</Text>
@@ -276,11 +84,10 @@ export function HomeScreenWithQuiz({ navigation }) {
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#4CAF50" }]}
           onPress={() => navigation.navigate("InventoryScreen")}
-       >
-         <Ionicons name="bag-outline" size={22} color="#fff" />
-         <Text style={styles.mainButtonText}>Inventory</Text>
+        >
+          <Ionicons name="bag-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>Inventory</Text>
         </TouchableOpacity>
-
 
         <TouchableOpacity
           style={[styles.mainButton, { backgroundColor: "#8E44AD" }]}
@@ -305,12 +112,11 @@ export function QuizScreen({ navigation }) {
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // load quiz questions (from quizData.js which reads Firestore)
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
-      const data = await fetchQuestions(10); // default 10
+      const data = await fetchQuestions(10);
       if (!mounted) return;
       setQuestions(data);
       setCurrentIndex(0);
@@ -325,42 +131,40 @@ export function QuizScreen({ navigation }) {
     };
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <View style={styles.quizPage}>
         <ActivityIndicator size="large" color="#2E7D32" />
         <Text style={{ textAlign: "center", marginTop: 8 }}>Loading Quiz...</Text>
       </View>
     );
-  }
 
-  if (!questions || questions.length === 0) {
+  if (!questions || questions.length === 0)
     return (
       <View style={styles.quizPage}>
         <Text style={styles.quizTitle}>⚠️ No questions available</Text>
       </View>
     );
-  }
 
   const currentQuestion = questions[currentIndex];
 
   const handleOptionPress = (opt) => {
     if (showFeedback) return;
     setSelectedOption(opt);
-    const correct = opt.isCorrect === true || opt === currentQuestion.correct || opt.text === currentQuestion.correct;
-    // Note: support both shapes: { text, isCorrect } or options as array of strings with `correct` property on question
+    const correct =
+      opt.isCorrect === true ||
+      opt === currentQuestion.correct ||
+      opt.text === currentQuestion.correct;
     if (correct) setScore((s) => s + 1);
     setShowFeedback(true);
   };
 
   const handleNext = async () => {
-    // reveal feedback if user tapped next without selecting an answer
     if (!showFeedback) {
       setShowFeedback(true);
       return;
     }
 
-    // move to next or finish
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex((c) => c + 1);
       setSelectedOption(null);
@@ -368,7 +172,7 @@ export function QuizScreen({ navigation }) {
       return;
     }
 
-    // finished quiz: compute earned points, save points & history
+    // quiz finished
     const earnedPoints = score * POINTS_PER_CORRECT;
     const entry = {
       date: new Date().toISOString(),
@@ -377,27 +181,19 @@ export function QuizScreen({ navigation }) {
       earnedPoints,
     };
 
-    // save attempt & add points (both try Firestore first, fallback handled)
     await saveQuizAttemptForUser(entry);
     const newTotal = await addLeafPointsForUser(earnedPoints);
 
     Alert.alert(
       "Quiz Finished!",
-      `You scored ${score} / ${questions.length}\n+${earnedPoints} Leaf Points\nTotal: ${newTotal ?? "—"}`,
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.navigate("HomeScreenWithQuiz");
-          },
-        },
-      ],
+      `You scored ${score}/${questions.length}\n+${earnedPoints} Leaf Points\nTotal: ${newTotal ?? "—"}`,
+      [{ text: "OK", onPress: () => navigation.navigate("HomeScreenWithQuiz") }],
       { cancelable: false }
     );
   };
 
-  // render option text whether stored as objects or strings
-  const optionText = (opt) => (typeof opt === "string" ? opt : opt.text ?? String(opt));
+  const optionText = (opt) =>
+    typeof opt === "string" ? opt : opt.text ?? String(opt);
 
   return (
     <View style={styles.quizPage}>
@@ -409,16 +205,25 @@ export function QuizScreen({ navigation }) {
 
       {currentQuestion.options.map((opt, idx) => {
         const text = optionText(opt);
-        const isCorrect = typeof opt === "object" ? opt.isCorrect === true : false;
-        const selectedMatches = selectedOption && (selectedOption === opt || selectedOption.text === opt.text || selectedOption === text);
+        const isCorrect =
+          typeof opt === "object" ? opt.isCorrect === true : false;
+        const selectedMatches =
+          selectedOption &&
+          (selectedOption === opt ||
+            selectedOption.text === opt.text ||
+            selectedOption === text);
 
         return (
           <TouchableOpacity
             key={idx}
             style={[
               styles.optionButton,
-              showFeedback && isCorrect ? { backgroundColor: "#C8E6C9" } : null,
-              showFeedback && selectedMatches && !isCorrect ? { backgroundColor: "#FFCDD2" } : null,
+              showFeedback && isCorrect
+                ? { backgroundColor: "#C8E6C9" }
+                : null,
+              showFeedback && selectedMatches && !isCorrect
+                ? { backgroundColor: "#FFCDD2" }
+                : null,
             ]}
             onPress={() => handleOptionPress(opt)}
           >
@@ -427,7 +232,6 @@ export function QuizScreen({ navigation }) {
         );
       })}
 
-      {/** Next/Finish button */}
       {showFeedback && (
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>
@@ -450,21 +254,22 @@ export function ScoreHistoryScreen() {
     const load = async () => {
       setLoading(true);
       const h = await fetchQuizHistoryForUser();
-      // sort newest-first by date (if present)
-      h.sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
+      h.sort(
+        (a, b) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
       setHistory(h);
       setLoading(false);
     };
     load();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <View style={styles.historyContainer}>
         <ActivityIndicator size="small" color="#2E7D32" />
       </View>
     );
-  }
 
   return (
     <View style={styles.historyContainer}>
@@ -477,7 +282,11 @@ export function ScoreHistoryScreen() {
           keyExtractor={(_, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.historyItem}>
-              <Text>{item.date ? new Date(item.date).toLocaleString() : "Unknown date"}</Text>
+              <Text>
+                {item.date
+                  ? new Date(item.date).toLocaleString()
+                  : "Unknown date"}
+              </Text>
               <Text>
                 {item.score}/{item.total} (+{item.earnedPoints ?? 0} pts)
               </Text>
@@ -489,47 +298,21 @@ export function ScoreHistoryScreen() {
   );
 }
 
-// ------------------------
-// Shop Screen (with Inventory Integration)
-// ------------------------
-export function ShopScreen({ navigation }) {
-  const [leafPoints, setLeafPoints] = useState(0);
-
-  const items = [
-    { id: "1", name: "Water", icon: "💧", cost: 10, desc: "Hydrate your plants to keep them fresh" },
-    { id: "2", name: "Fertilizer", icon: "🌿", cost: 20, desc: "Boost plant growth and strength" },
-    { id: "3", name: "Sunlight", icon: "☀️", cost: 15, desc: "Provide warmth and energy" },
-  ];
-
-  useEffect(() => {
-    const loadPoints = async () => {
-      const pts = await getLeafPointsForUser();
-      setLeafPoints(pts);
-    };
-    const unsub = navigation.addListener("focus", loadPoints);
-    loadPoints();
-    return unsub;
-  }, [navigation]);
-
+  // 🧩 Updated purchase logic (deducts points only if inventory update succeeds)
   const handlePurchase = async (item) => {
     const res = await spendLeafPointsForUser(item.cost);
-    if (res.success) {
-      setLeafPoints(res.remaining);
-      await addItemToInventory(item);
-      Alert.alert("✅ Purchase Successful", `You bought ${item.icon} ${item.name}`);
-    } else {
+    if (!res.success) {
       Alert.alert("❌ Not enough points", `You need ${item.cost} points`);
+      return;
     }
-  };
 
-  const addItemToInventory = async (item) => {
     try {
-      const stored = await AsyncStorage.getItem("userInventory");
-      const inventory = stored ? JSON.parse(stored) : [];
-      inventory.push({ name: item.name, icon: item.icon });
-      await AsyncStorage.setItem("userInventory", JSON.stringify(inventory));
-    } catch (e) {
-      console.log("Error saving to inventory:", e);
+      await addItemToInventory(item);
+      setLeafPoints(res.remaining);
+      Alert.alert("✅ Purchase Successful", `You bought ${item.icon} ${item.name}`);
+    } catch (error) {
+      Alert.alert("⚠️ Error", "Purchase failed to save in inventory.");
+      console.error(error);
     }
   };
 
@@ -552,8 +335,8 @@ export function ShopScreen({ navigation }) {
     <View style={styles.shopContainer}>
       <Text style={styles.quizTitle}>🛒 LeafQuest Shop</Text>
       <Text style={styles.pointsDisplay}>
-        <Ionicons name="leaf-outline" size={16} color="#2E7D32" />{" "}
-        Your Points: <Text style={{ fontWeight: "bold" }}>{leafPoints}</Text>
+        <Ionicons name="leaf-outline" size={16} color="#2E7D32" /> Your Points:{" "}
+        <Text style={{ fontWeight: "bold" }}>{leafPoints}</Text>
       </Text>
 
       <TouchableOpacity
@@ -574,11 +357,9 @@ export function ShopScreen({ navigation }) {
       />
     </View>
   );
-}
-
 
 // ------------------------
-// Inventory Screen
+// Inventory Screen (Improved Grid UI)
 // ------------------------
 export function InventoryScreen() {
   const [inventory, setInventory] = useState([]);
@@ -596,25 +377,84 @@ export function InventoryScreen() {
     loadInventory();
   }, []);
 
+  const renderItem = ({ item }) => (
+  <View style={styles.inventoryCard}>
+    <Text style={styles.inventoryIcon}>{item.icon}</Text>
+    <Text style={styles.inventoryName}>
+      {item.name} {item.quantity > 1 ? `×${item.quantity}` : ""}
+    </Text>
+  </View>
+);
+
+
   return (
     <View style={styles.inventoryContainer}>
       <Text style={styles.quizTitle}>🎒 Inventory</Text>
 
       {inventory.length === 0 ? (
-        <Text style={{ textAlign: "center" }}>No items yet. Buy some from the Shop!</Text>
+        <Text style={{ textAlign: "center" }}>
+          No items yet. Buy some from the Shop!
+        </Text>
       ) : (
         <FlatList
           data={inventory}
           keyExtractor={(item, index) => index.toString()}
           numColumns={2}
-          columnWrapperStyle={styles.row}
+          columnWrapperStyle={styles.inventoryRow}
           contentContainerStyle={{ paddingBottom: 30 }}
-          renderItem={({ item }) => (
-            <View style={styles.inventoryCard}>
-              <Text style={styles.shopIcon}>{item.icon}</Text>
-              <Text style={styles.shopItemTitle}>{item.name}</Text>
-            </View>
-          )}
+          renderItem={renderItem}
+        />
+      )}
+    </View>
+  );
+}
+
+
+// ------------------------
+// Inventory Screen (Improved Grid UI)
+// ------------------------
+export function InventoryScreen() {
+  const [inventory, setInventory] = useState([]);
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("userInventory");
+        const data = stored ? JSON.parse(stored) : [];
+        setInventory(data);
+      } catch (e) {
+        console.log("Error loading inventory:", e);
+      }
+    };
+    loadInventory();
+  }, []);
+
+  const renderItem = ({ item }) => (
+  <View style={styles.inventoryCard}>
+    <Text style={styles.inventoryIcon}>{item.icon}</Text>
+    <Text style={styles.inventoryName}>
+      {item.name} {item.quantity > 1 ? `×${item.quantity}` : ""}
+    </Text>
+  </View>
+);
+
+
+  return (
+    <View style={styles.inventoryContainer}>
+      <Text style={styles.quizTitle}>🎒 Inventory</Text>
+
+      {inventory.length === 0 ? (
+        <Text style={{ textAlign: "center" }}>
+          No items yet. Buy some from the Shop!
+        </Text>
+      ) : (
+        <FlatList
+          data={inventory}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={2}
+          columnWrapperStyle={styles.inventoryRow}
+          contentContainerStyle={{ paddingBottom: 30 }}
+          renderItem={renderItem}
         />
       )}
     </View>
@@ -622,13 +462,16 @@ export function InventoryScreen() {
 }
 
 // ------------------------
-// MiniGames Screen (placeholder)
+// MiniGames
 // ------------------------
 export function MiniGamesScreen({ navigation }) {
   return (
     <View style={styles.historyContainer}>
       <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
-      <TouchableOpacity style={styles.optionButton} onPress={() => navigation.navigate("TicTacToeScreen")}>
+      <TouchableOpacity
+        style={styles.optionButton}
+        onPress={() => navigation.navigate("TicTacToeScreen")}
+      >
         <Text style={styles.optionText}>Play Tic Tac Toe</Text>
       </TouchableOpacity>
     </View>
@@ -636,7 +479,7 @@ export function MiniGamesScreen({ navigation }) {
 }
 
 // ------------------------
-// Navigation Stack
+// Navigation
 // ------------------------
 const Stack = createNativeStackNavigator();
 
@@ -710,6 +553,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 8,
   },
+
+  // quiz styles
   quizPage: {
     flex: 1,
     backgroundColor: "#DFF0D8",
@@ -730,6 +575,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
+
+  // quiz styles 2
   optionButton: {
     flexDirection: "row",
     padding: 15,
@@ -740,7 +587,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
     elevation: 2,
   },
   optionText: {
@@ -761,6 +607,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+
+  // history styles
   historyContainer: {
     flex: 1,
     padding: 20,
@@ -772,7 +620,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#ccc",
   },
-    shopContainer: {
+
+  // shop styles
+  shopContainer: {
     flex: 1,
     backgroundColor: "#E8F5E9",
     padding: 20,
@@ -789,10 +639,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
   },
   shopIcon: {
     fontSize: 36,
@@ -825,21 +671,47 @@ const styles = StyleSheet.create({
     color: "#1B5E20",
   },
 
-  inventoryContainer: {
+// ------------------------
+// Inventory Styles (Grid Layout)
+// ------------------------
+inventoryContainer: {
   flex: 1,
   backgroundColor: "#E8F5E9",
   padding: 20,
 },
+
+inventoryRow: {
+  justifyContent: "space-between",
+  marginBottom: 15,
+},
+
 inventoryCard: {
-  flex: 1,
-  margin: 8,
-  backgroundColor: "#fff",
+  backgroundColor: "#FFFFFF",
   borderRadius: 16,
-  padding: 15,
+  paddingVertical: 25,
+  width: "48%",
   alignItems: "center",
   justifyContent: "center",
-  elevation: 3,
+  elevation: 4,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.15,
+  shadowRadius: 3,
 },
+
+inventoryIcon: {
+  fontSize: 40,
+  marginBottom: 10,
+},
+
+inventoryName: {
+  fontSize: 15,
+  fontWeight: "600",
+  color: "#2E7D32",
+  textAlign: "center",
+  marginTop: 6,
+},
+
 inventoryButton: {
   flexDirection: "row",
   alignItems: "center",
@@ -852,10 +724,10 @@ inventoryButton: {
   width: "60%",
   elevation: 3,
 },
+
 inventoryButtonText: {
   color: "#fff",
   fontWeight: "bold",
   marginLeft: 8,
 },
-
 });
