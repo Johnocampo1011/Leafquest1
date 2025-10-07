@@ -3,13 +3,12 @@ import { View, TouchableOpacity, Animated, Text, Alert, StyleSheet, ScrollView }
 import { Ionicons } from "@expo/vector-icons";
 import * as Progress from "react-native-progress";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "./firebaseConfig"; // your Firebase setup file
-import { getAuth } from "firebase/auth"; // ✅ import auth
+import { db } from "./firebaseConfig";
+import { getAuth } from "firebase/auth";
 
 export default function PlantStatusBar({ plantId, initialValues }) {
-
   const auth = getAuth();
-  const user = auth.currentUser; // ✅ get signed-in user
+  const user = auth.currentUser;
 
   if (!user) {
     return (
@@ -19,11 +18,10 @@ export default function PlantStatusBar({ plantId, initialValues }) {
     );
   }
 
-  const userId = user.uid; // ✅ each user has their own plants
- const plantRef = doc(db, "users", userId, "plants", plantId); // ✅ point to user's plants
+  const userId = user.uid;
+  const plantRef = doc(db, "users", userId, "plants", plantId);
 
-
-  // === Category Info (static or from Firestore) ===
+  // === Category Info ===
   const [categoryInfo, setCategoryInfo] = useState({
     plantType: initialValues?.plantType || "Indoor",
     soilType: initialValues?.soilType || "Loamy",
@@ -32,71 +30,31 @@ export default function PlantStatusBar({ plantId, initialValues }) {
     difficulty: initialValues?.difficulty || "Easy",
   });
 
-  // === Category UI ===
-  const categoryItem = (icon, label, value) => (
-    <View style={{ alignItems: "center", flex: 1, margin: 5 }}>
-      <Ionicons name={icon} size={22} color="#4CAF50" />
-      <Text style={{ fontSize: 12, fontWeight: "600", marginTop: 4 }}>{label}</Text>
-      <Text style={{ fontSize: 12, color: "gray" }}>{value}</Text>
-    </View>
-  );
+  // === Care Info (new structure) ===
+  const care = initialValues?.care || {
+    waterFrequency: 7,
+    lightFrequency: 1,
+    fertilizerFrequency: 30,
+    waterThreshold: 1,
+    lightThreshold: 7,
+    fertilizerThreshold: 1,
+  };
 
-  // === Default rules per plant ===
-const thresholds = {
-  water: initialValues?.dailyThreshold?.water ?? initialValues?.waterThreshold ?? 1,
-  light: initialValues?.dailyThreshold?.light ?? initialValues?.lightThreshold ?? 1,
-  fertilizer: initialValues?.dailyThreshold?.fertilizer ?? initialValues?.fertilizerThreshold ?? 1,
-};
+  // === State ===
+  const [waterLevel, setWaterLevel] = useState(initialValues?.waterLevel || 0.1);
+  const [lightLevel, setLightLevel] = useState(initialValues?.lightLevel || 0.1);
+  const [fertilizerLevel, setFertilizerLevel] = useState(initialValues?.fertilizerLevel || 0.1);
+  const [plantLevel, setPlantLevel] = useState(initialValues?.plantLevel || 1);
+  const [points, setPoints] = useState(initialValues?.points || 0);
 
-// === Frequencies (days between actions) ===
-const frequency = {
-  water: initialValues?.waterFrequency ?? 1,
-  light: initialValues?.lightFrequency ?? 1,
-  fertilizer: initialValues?.fertilizerFrequency ?? 1,
-};
+  const [waterStock, setWaterStock] = useState(initialValues?.waterStock || 10);
+  const [lightStock, setLightStock] = useState(initialValues?.lightStock || 10);
+  const [fertilizerStock, setFertilizerStock] = useState(initialValues?.fertilizerStock || 10);
 
-  // === States ===
-  const [waterLevel, setWaterLevel] = useState(initialValues?.water || 0.3);
-  const [lightLevel, setLightLevel] = useState(initialValues?.light || 0.5);
-  const [fertilizerLevel, setFertilizerLevel] = useState(initialValues?.fertilizer || 0.2);
-  const [plantLevel, setPlantLevel] = useState(1);
-  const [points, setPoints] = useState(0);
+  const [lastAction, setLastAction] = useState(initialValues?.lastAction || { water: 0, light: 0, fertilizer: 0 });
+  const [cooldowns, setCooldowns] = useState({ water: 0, light: 0, fertilizer: 0 });
 
-    // Weekly requirements & progress
-  const [weeklyNeeds, setWeeklyNeeds] = useState({
-    water: initialValues?.weeklyNeeds?.water ?? 3,      // 2–3x a week
-    light: initialValues?.weeklyNeeds?.light ?? 7,      // daily
-    fertilizer: initialValues?.weeklyNeeds?.fertilizer ?? 1, // once a week
-  });
-
-  const [weeklyProgress, setWeeklyProgress] = useState({
-    water: initialValues?.weeklyProgress?.water ?? 0,
-    light: initialValues?.weeklyProgress?.light ?? 0,
-    fertilizer: initialValues?.weeklyProgress?.fertilizer ?? 0,
-  });
-
-
-
-  // Stocks
-  const [waterStock, setWaterStock] = useState(initialValues?.waterStock ?? 5);
-  const [lightStock, setLightStock] = useState(initialValues?.lightStock ?? 5);
-  const [fertilizerStock, setFertilizerStock] = useState(initialValues?.fertilizerStock ?? 5);
-
-  // Last action timestamps
-  const [lastAction, setLastAction] = useState({
-    water: 0,
-    light: 0,
-    fertilizer: 0,
-  });
-
-  // Cooldown timers (seconds remaining)
-  const [cooldowns, setCooldowns] = useState({
-    water: 0,
-    light: 0,
-    fertilizer: 0,
-  });
-
-  // Animations
+  // === Animations ===
   const scaleAnims = {
     water: useRef(new Animated.Value(1)).current,
     light: useRef(new Animated.Value(1)).current,
@@ -110,60 +68,54 @@ const frequency = {
     ]).start();
   };
 
-  // === Fetch plant data from Firestore ===
+  // === Fetch Plant Data ===
   useEffect(() => {
-  const fetchPlantData = async () => {
-    try {
-      const plantSnap = await getDoc(plantRef);
-      if (plantSnap.exists()) {
-        const data = plantSnap.data();
+    const fetchPlantData = async () => {
+      try {
+        const plantSnap = await getDoc(plantRef);
+        if (plantSnap.exists()) {
+          const data = plantSnap.data();
 
-        // === Update category info from Firestore ===
-        setCategoryInfo({
-          plantType: data.plantType || initialValues?.plantType || "Indoor",
-          soilType: data.soilType || initialValues?.soilType || "Loamy",
-          waterPH: data.waterPH || initialValues?.waterPH || "6.5",
-          fertilizerType: data.fertilizerType || initialValues?.fertilizerType || "Organic",
-          difficulty: data.difficulty || initialValues?.difficulty || "Easy",
-        });
+          setCategoryInfo({
+            plantType: data.plantType || categoryInfo.plantType,
+            soilType: data.soilType || categoryInfo.soilType,
+            waterPH: data.waterPH || categoryInfo.waterPH,
+            fertilizerType: data.fertilizerType || categoryInfo.fertilizerType,
+            difficulty: data.difficulty || categoryInfo.difficulty,
+          });
 
-        // === Update other plant data as before ===
-        setWaterLevel(data.waterLevel || 0.3);
-        setLightLevel(data.lightLevel || 0.5);
-        setFertilizerLevel(data.fertilizerLevel || 0.2);
-        setPlantLevel(data.plantLevel || 1);
-        setPoints(data.points || 0);
-        setWaterStock(data.waterStock ?? 5);
-        setLightStock(data.lightStock ?? 5);
-        setFertilizerStock(data.fertilizerStock ?? 5);
-        setLastAction(data.lastAction || { water: 0, light: 0, fertilizer: 0 });
-      } else {
-        // Initialize Firestore with defaults if document doesn't exist
-        await setDoc(plantRef, {
-          plantType: categoryInfo.plantType,
-          soilType: categoryInfo.soilType,
-          waterPH: categoryInfo.waterPH,
-          fertilizerType: categoryInfo.fertilizerType,
-          difficulty: categoryInfo.difficulty,
-          waterLevel,
-          lightLevel,
-          fertilizerLevel,
-          plantLevel,
-          points,
-          waterStock,
-          lightStock,
-          fertilizerStock,
-          lastAction,
-        });
+          setWaterLevel(data.waterLevel ?? 0.1);
+          setLightLevel(data.lightLevel ?? 0.1);
+          setFertilizerLevel(data.fertilizerLevel ?? 0.1);
+          setPlantLevel(data.plantLevel ?? 1);
+          setPoints(data.points ?? 0);
+          setWaterStock(data.waterStock ?? 10);
+          setLightStock(data.lightStock ?? 10);
+          setFertilizerStock(data.fertilizerStock ?? 10);
+          setLastAction(data.lastAction || { water: 0, light: 0, fertilizer: 0 });
+        } else {
+          await setDoc(plantRef, {
+            ...categoryInfo,
+            ...initialValues,
+            care,
+            waterLevel,
+            lightLevel,
+            fertilizerLevel,
+            plantLevel,
+            points,
+            waterStock,
+            lightStock,
+            fertilizerStock,
+            lastAction,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching plant data:", error);
       }
-    } catch (error) {
-      console.error("Error fetching plant data:", error);
-    }
-  };
+    };
 
-  fetchPlantData();
-}, [plantId]);
-
+    fetchPlantData();
+  }, [plantId]);
 
   // === Cooldown updater ===
   useEffect(() => {
@@ -171,11 +123,17 @@ const frequency = {
       const now = Date.now();
       const newCooldowns = { ...cooldowns };
 
-      Object.keys(frequency).forEach((type) => {
+      const freq = {
+        water: care.waterFrequency,
+        light: care.lightFrequency,
+        fertilizer: care.fertilizerFrequency,
+      };
+
+      Object.keys(freq).forEach((type) => {
         const lastTime = lastAction[type] || 0;
-        const requiredMs = frequency[type] * 24 * 60 * 60 * 1000;
+        const requiredMs = freq[type] * 24 * 60 * 60 * 1000;
         const msLeft = Math.max(0, requiredMs - (now - lastTime));
-        newCooldowns[type] = Math.ceil(msLeft / 1000); // in seconds
+        newCooldowns[type] = Math.ceil(msLeft / 1000);
       });
 
       setCooldowns(newCooldowns);
@@ -184,32 +142,16 @@ const frequency = {
     return () => clearInterval(interval);
   }, [lastAction]);
 
-  // === Save to Firestore ===
+  // === Save Data ===
   const savePlantData = async (updatedData = {}) => {
     try {
-      const plantRef = doc(db, "users", userId, "plants", plantId);
-      await setDoc(
-        plantRef,
-        {
-          waterLevel,
-          lightLevel,
-          fertilizerLevel,
-          plantLevel,
-          points,
-          waterStock,
-          lightStock,
-          fertilizerStock,
-          lastAction,
-          ...updatedData,
-        },
-        { merge: true }
-      );
+      await setDoc(plantRef, { ...updatedData }, { merge: true });
     } catch (error) {
       console.error("Error saving plant data:", error);
     }
   };
 
-  // === Reward system ===
+  // === Reward ===
   const reward = () => {
     setPoints((prev) => {
       const newPoints = prev + 10;
@@ -220,14 +162,7 @@ const frequency = {
         setLightLevel(0);
         setFertilizerLevel(0);
 
-        savePlantData({
-          plantLevel: newLevel,
-          points: 0,
-          waterLevel: 0,
-          lightLevel: 0,
-          fertilizerLevel: 0,
-        });
-
+        savePlantData({ plantLevel: newLevel, points: 0, waterLevel: 0, lightLevel: 0, fertilizerLevel: 0 });
         return 0;
       } else {
         savePlantData({ points: newPoints });
@@ -243,6 +178,12 @@ const frequency = {
       return false;
     }
 
+    const thresholds = {
+      water: care.waterThreshold,
+      light: care.lightThreshold,
+      fertilizer: care.fertilizerThreshold,
+    };
+
     if (currentLevel >= thresholds[type]) {
       Alert.alert("⚠️ Limit reached!", `${type} has reached its safe threshold.`);
       return false;
@@ -251,112 +192,44 @@ const frequency = {
     return true;
   };
 
-   // === Update weekly progress (respects daily threshold) ===
-  const updateWeeklyProgress = (type) => {
-    const today = new Date().toDateString();
-
-    // Prevent multiple actions in one day
-    if (!lastAction[type]) lastAction[type] = "";
-    if (lastAction[type] === today) {
-      Alert.alert("⚠️ Limit", `You already gave ${type} today!`);
-      return false;
-    }
-
-    // Prevent overfilling weekly requirement
-    if (weeklyProgress[type] >= weeklyNeeds[type]) {
-      Alert.alert("✅ Done", `${type} is already complete for this week!`);
-      return false;
-    }
-
-    // Update progress
-    setWeeklyProgress((prev) => ({
-      ...prev,
-      [type]: prev[type] + 1,
-    }));
-
-    // Mark today's action
-    setLastAction((prev) => ({
-      ...prev,
-      [type]: today,
-    }));
-
-    // Save to Firestore
-    savePlantData({
-      weeklyProgress: {
-        ...weeklyProgress,
-        [type]: weeklyProgress[type] + 1,
-      },
-      lastAction: {
-        ...lastAction,
-        [type]: today,
-      },
-    });
-
-    return true;
-  };
-
-  // === Increase resource ===
+  // === Increase Resource ===
   const increase = (type) => {
-    const stockCheck = {
-      water: waterStock,
-      light: lightStock,
-      fertilizer: fertilizerStock,
+    const stockMap = {
+      water: [waterStock, setWaterStock],
+      light: [lightStock, setLightStock],
+      fertilizer: [fertilizerStock, setFertilizerStock],
     };
 
-     // Weekly progress check
-    const ok = updateWeeklyProgress(type);
-    if (!ok) return; // stop if daily/weekly blocked
+    const [stock, setStock] = stockMap[type];
+    if (stock <= 0) return;
 
-    const levelState = {
+    const levelMap = {
       water: [waterLevel, setWaterLevel],
       light: [lightLevel, setLightLevel],
       fertilizer: [fertilizerLevel, setFertilizerLevel],
     };
 
-    if (stockCheck[type] <= 0) return;
-
-    const [currentLevel, setLevel] = levelState[type];
-
-    if (!canUseResource(type, currentLevel)) return;
+    const [level, setLevel] = levelMap[type];
+    if (!canUseResource(type, level)) return;
 
     animatePress(type);
-
-    const newVal = Math.min(currentLevel + 0.1, thresholds[type]); // respect threshold
+    const newVal = Math.min(level + 0.1, care[`${type}Threshold`]);
     setLevel(newVal);
+    setStock(stock - 1);
 
-    // Update stock
-    if (type === "water") setWaterStock((prev) => prev - 1);
-    if (type === "light") setLightStock((prev) => prev - 1);
-    if (type === "fertilizer") setFertilizerStock((prev) => prev - 1);
-
-    // Update last action
     const updatedLastAction = { ...lastAction, [type]: Date.now() };
     setLastAction(updatedLastAction);
 
     savePlantData({
       [`${type}Level`]: newVal,
-      [`${type}Stock`]: stockCheck[type] - 1,
+      [`${type}Stock`]: stock - 1,
       lastAction: updatedLastAction,
     });
 
-    if (newVal >= thresholds[type]) reward();
+    if (newVal >= care[`${type}Threshold`]) reward();
   };
 
-  // === Colors ===
-  const getColor = (type) => {
-    switch (type) {
-      case "water":
-        return "#004a94ff";
-      case "light":
-        return "#e2c000ff";
-      case "fertilizer":
-        return "#1d9b1dff";
-      default:
-        return "#3a7d44";
-    }
-  };
-
-  // === Format cooldown time (h:m:s) ===
+  // === Utility ===
   const formatTime = (secs) => {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
@@ -366,13 +239,11 @@ const frequency = {
     return `${s}s`;
   };
 
-  // === Stock ===
-  const getStock = (type) => {
-    if (type === "water") return waterStock;
-    if (type === "light") return lightStock;
-    if (type === "fertilizer") return fertilizerStock;
-    return 0;
-  };
+  const getColor = (type) =>
+    type === "water" ? "#004a94ff" : type === "light" ? "#e2c000ff" : "#1d9b1dff";
+
+  const getStock = (type) =>
+    type === "water" ? waterStock : type === "light" ? lightStock : fertilizerStock;
 
   // === Bar UI ===
   const bar = (icon, value, type, label) => {
@@ -416,21 +287,8 @@ const frequency = {
         </Animated.View>
 
         <Text style={{ fontSize: 12, marginTop: 4 }}>{label}</Text>
-        {cooldowns[type] > 0 && (
-          <Text style={{ fontSize: 10, color: "gray" }}>
-            ⏳ {formatTime(cooldowns[type])}
-          </Text>
-        )}
-
-        <Progress.Bar
-          progress={value}
-          width={70}
-          height={8}
-          color={color}
-          borderColor="#ccc"
-          style={{ marginTop: 6 }}
-          animated
-        />
+        {cooldowns[type] > 0 && <Text style={{ fontSize: 10, color: "gray" }}>⏳ {formatTime(cooldowns[type])}</Text>}
+        <Progress.Bar progress={value} width={70} height={8} color={color} borderColor="#ccc" style={{ marginTop: 6 }} animated />
       </View>
     );
   };
@@ -441,9 +299,7 @@ const frequency = {
       <View style={{ marginBottom: 20, alignItems: "center" }}>
         <Text style={{ fontWeight: "bold", fontSize: 16 }}>Plant Level: {plantLevel}</Text>
         <Text style={{ color: "green" }}>Points: {points}/30</Text>
-        {points === 0 && (
-          <Text style={{ color: "#4CAF50", fontStyle: "italic" }}>🌱 Leveled up!</Text>
-        )}
+        {points === 0 && <Text style={{ color: "#4CAF50", fontStyle: "italic" }}>🌱 Leveled up!</Text>}
       </View>
 
       {/* Resource Bars */}
@@ -452,60 +308,52 @@ const frequency = {
         {bar("sunny", lightLevel, "light", "Sunlight")}
         {bar("leaf", fertilizerLevel, "fertilizer", "Fertilizer")}
       </View>
-        <View style={styles.categoryContainer}>
-  <Text style={styles.categoryHeader}>Category</Text>
 
-   <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-      <View style={{ flexDirection: "row" }}>
-        <View style={styles.iconBox}>
-          <Ionicons name="leaf" size={40} color="#27AE60" />
-          <Text style={styles.iconLabel}>Type</Text>
-          <Text style={styles.iconValue}>{categoryInfo.plantType}</Text>
-        </View>
+      {/* Category Info */}
+      <View style={styles.categoryContainer}>
+        <Text style={styles.categoryHeader}>Category</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ flexDirection: "row" }}>
+            <View style={styles.iconBox}>
+              <Ionicons name="leaf" size={40} color="#27AE60" />
+              <Text style={styles.iconLabel}>Type</Text>
+              <Text style={styles.iconValue}>{categoryInfo.plantType}</Text>
+            </View>
 
-        <View style={styles.iconBox}>
-          <Ionicons name="flower" size={40} color="#9B59B6" />
-          <Text style={styles.iconLabel}>Soil</Text>
-          <Text style={styles.iconValue}>{categoryInfo.soilType}</Text>
-        </View>
+            <View style={styles.iconBox}>
+              <Ionicons name="flower" size={40} color="#9B59B6" />
+              <Text style={styles.iconLabel}>Soil</Text>
+              <Text style={styles.iconValue}>{categoryInfo.soilType}</Text>
+            </View>
 
-        <View style={styles.iconBox}>
-          <Ionicons name="water" size={40} color="#3498DB" />
-          <Text style={styles.iconLabel}>Water pH</Text>
-          <Text style={styles.iconValue}>{categoryInfo.waterPH}</Text>
-        </View>
+            <View style={styles.iconBox}>
+              <Ionicons name="water" size={40} color="#3498DB" />
+              <Text style={styles.iconLabel}>Water pH</Text>
+              <Text style={styles.iconValue}>{categoryInfo.waterPH}</Text>
+            </View>
 
-        <View style={styles.iconBox}>
-          <Ionicons name="nutrition" size={40} color="#E67E22" />
-          <Text style={styles.iconLabel}>Fertilizer</Text>
-          <Text style={styles.iconValue}>{categoryInfo.fertilizerType}</Text>
-        </View>
+            <View style={styles.iconBox}>
+              <Ionicons name="nutrition" size={40} color="#E67E22" />
+              <Text style={styles.iconLabel}>Fertilizer</Text>
+              <Text style={styles.iconValue}>{categoryInfo.fertilizerType}</Text>
+            </View>
 
-        <View style={styles.iconBox}>
-          <Ionicons name="barbell" size={40} color="#C0392B" />
-          <Text style={styles.iconLabel}>Difficulty</Text>
-          <Text style={styles.iconValue}>{categoryInfo.difficulty}</Text>
-        
-        </View>
-        <View style={{ marginTop: 16, alignItems: "center" }}>
-
-</View>
-      </View>
+            <View style={styles.iconBox}>
+              <Ionicons name="barbell" size={40} color="#C0392B" />
+              <Text style={styles.iconLabel}>Difficulty</Text>
+              <Text style={styles.iconValue}>{categoryInfo.difficulty}</Text>
+            </View>
+          </View>
         </ScrollView>
       </View>
     </View>
-    
-    
   );
 }
 
-
-
-
 const styles = StyleSheet.create({
   categoryContainer: {
-    backgroundColor: "#ffffffff",
-    padding: 16,
+    backgroundColor: "#fff",
+    padding: 10,
     borderRadius: 12,
     marginTop: 16,
     width: "100%",
@@ -522,24 +370,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: "center",
   },
-  iconRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   iconBox: {
     alignItems: "center",
     marginRight: 24,
     width: 60,
   },
   iconLabel: {
-    marginTop: 6,
+    marginTop: 9,
     fontSize: 14,
     fontWeight: "600",
     color: "#333",
     textAlign: "center",
   },
   iconValue: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#555",
     textAlign: "center",
     marginTop: 2,

@@ -45,56 +45,51 @@ export const plants = [
 }
 
   },
-   {
-    name: "Philodendron",
-    image: "HEARTLEAF PHILODENDRON",
-    plantId: 3,
-    plantLevel: 1,
-    waterLevel: 0.1,
-    lightLevel: 0.1,
-    fertilizerLevel: 0.1,
-    points: 0,
-    waterStock: 10,
-    lightStock: 10,
-    fertilizerStock: 10,
-    screen: "PhilodendronDetails",
-    description: "Size: Vines to 8 feet long. Water: Prefers evenly moist soil, but not soggy. Water if top inch of soil is dry.Fertilize: Apply a water-soluble houseplant fertilizer from spring through fall.Description:  Another very easy-to-grow houseplant, similar to pothos. Tolerates low light, but will grow faster in medium to bright light. Foliage comes in a variety of sizes, shapes, and colors. Philodendrons can also be grown outdoors in mild climates. Philodendrons are tropical evergreen perennials native to Central and South America, belonging to the same family as pothos plants (Araceae). There are hundreds of philodendron species, categorized as either vining or non-climbing. Vining types have aerial roots and are excellent for hanging baskets or climbing. Philodendrons are considered mildly poisonous to people and pets if ingested, containing calcium oxalate crystals that can cause irritation.",
-    waterThreshold: 1,      // how much water per day is safe
-    lightThreshold: 1,      // max safe sunlight
-    fertilizerThreshold: 1, // max fertilizer per day
-    waterFrequency: 1,       // can water every 1 day
-    fertilizerFrequency: 1,  // can fertilize every 1 day
-    lightFrequency: 1,       // optional (every day is fine)
+  {   // latest trial for detailed plant data
+  name: "Philodendron",
+  image: "HEARTLEAF PHILODENDRON",
+  plantId: 3,
+  plantLevel: 1,
 
-     // ✅ Weekly requirements
-  weeklyNeeds: {
-    water: 3,        // 2–3 times a week
-    light: 7,        // daily
-    fertilizer: 1,   // once a week
+  // 🌱 Growth tracking
+  waterLevel: 0.1,
+  lightLevel: 0.1,
+  fertilizerLevel: 0.1,
+  points: 0,
+
+  // 🌿 Inventory stocks
+  waterStock: 10,
+  lightStock: 10,
+  fertilizerStock: 10,
+
+  // 📱 Navigation
+  screen: "PhilodendronDetails",
+
+  // 🪴 Description
+  description:
+    "Size: Vines to 8 feet long. Water: Prefers evenly moist soil, but not soggy. Water if top inch of soil is dry.Fertilize: Apply a water-soluble houseplant fertilizer from spring through fall.Description:  Another very easy-to-grow houseplant, similar to pothos. Tolerates low light, but will grow faster in medium to bright light. Foliage comes in a variety of sizes, shapes, and colors. Philodendrons can also be grown outdoors in mild climates. Philodendrons are tropical evergreen perennials native to Central and South America, belonging to the same family as pothos plants (Araceae). There are hundreds of philodendron species, categorized as either vining or non-climbing. Vining types have aerial roots and are excellent for hanging baskets or climbing. Philodendrons are considered mildly poisonous to people and pets if ingested, containing calcium oxalate crystals that can cause irritation."
+,
+
+  // 🌤️ Simplified care requirements
+  care: {
+    waterFrequency: 7,        // every 7 days
+    lightFrequency: 1,        // daily
+    fertilizerFrequency: 30,  // monthly
+
+    // maximum allowed actions per week/day
+    waterThreshold: 1,        // once per week max
+    lightThreshold: 7,        // up to 7 days of light exposure tracking
+    fertilizerThreshold: 1,   // once per month max
   },
 
-  // ✅ Track progress dynamically
-  weeklyProgress: {
-    water: 0,
-    light: 0,
-    fertilizer: 0,
-  },
-
-  // ✅ Extra info for UI
-  
+  // 🌍 Environmental data
   plantType: "Perennial",
-  soilType: "SLoamy, well-drained",
-  waterPH: "5.0 to 6.0",
-  fertilizerType: "balanced houseplant fertilizer",
-  difficulty: "Easy",
-
-  dailyThreshold: {
-  water: 1,       // only once per day max
-  light: 1,       // only once per day action
-  fertilizer: 1,  // only once per day
-    
-  },
-  {
+  soilType: "Loamy, well-drained",
+  waterPH: "5.0–6.0",
+  fertilizerType: "Balanced houseplant fertilizer",
+  difficulty: "Easy"
+},
+{
     name: "Bird's Nest Fern",
     image: "BIRDS NEST FERN",
     plantId: 4,

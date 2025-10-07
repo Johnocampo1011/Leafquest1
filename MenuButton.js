@@ -154,10 +154,7 @@ export function ProfileScreen({ navigation }) {
     );
   }
 
-  const handleEditProfile = () => {
-    Alert.alert("Edit Profile", "Profile editing coming soon! 🌱");
-    // 👉 Later: navigate to EditProfileScreen
-  };
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -213,11 +210,7 @@ export function ProfileScreen({ navigation }) {
       />
       <Text style={styles.levelText}>Level {Math.floor(plantCount / 10) + 1}</Text>
 
-      {/* ✏️ Edit Profile */}
-      <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-        <Ionicons name="create-outline" size={20} color="white" />
-        <Text style={styles.editText}>Edit Profile</Text>
-      </TouchableOpacity>
+      
     </ScrollView>
   );
 }
@@ -228,6 +221,7 @@ const styles = StyleSheet.create({
   backButton: {
     alignSelf: "flex-start",
     marginBottom: 10,
+    marginTop: 20,
     backgroundColor: "#4CAF50",
     padding: 8,
     borderRadius: 20,

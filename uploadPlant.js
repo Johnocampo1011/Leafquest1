@@ -1,37 +1,38 @@
-// uploadPlants.js (CommonJS version)
+// uploadPlants.js
 
-// ✅ Use CommonJS require
+// ✅ Import Firebase Admin SDK
 const admin = require("firebase-admin");
 const { plants } = require("./plantData.js");
+const path = require("path");
 
-// Load service account key JSON
-const serviceAccount = require("./serviceAccountKey.json");
+// ✅ Load service account key safely
+const serviceAccountPath = path.resolve(__dirname, "serviceAccountKey.json");
+const serviceAccount = require(serviceAccountPath);
 
 // ✅ Initialize Firebase Admin SDK
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
 const db = admin.firestore();
 
 async function uploadPlants() {
+  console.log("🌱 Starting plant data upload...");
+  const batch = db.batch();
+  let newCount = 0;
+  let updatedCount = 0;
+
   try {
-    console.log("🌱 Starting plant data upload...");
-
-    const batch = db.batch();
-    let newCount = 0;
-    let updatedCount = 0;
-
     for (const plant of plants) {
       const plantRef = db.collection("plants").doc(String(plant.plantId));
-      const existingDoc = await plantRef.get();
+      const docSnap = await plantRef.get();
 
-      if (existingDoc.exists) {
-        const existingData = existingDoc.data();
-
-        // ✅ Only update if there are changes
+      if (docSnap.exists) {
+        const existing = docSnap.data();
         const hasChanges = Object.keys(plant).some(
-          (key) => plant[key] !== existingData[key]
+          (key) => plant[key] !== existing[key]
         );
 
         if (hasChanges) {
@@ -43,7 +44,7 @@ async function uploadPlants() {
           console.log(`🔄 Updated: ${plant.name}`);
           updatedCount++;
         } else {
-          console.log(`⏭ Skipped (no changes): ${plant.name}`);
+          console.log(`⏭ No changes: ${plant.name}`);
         }
       } else {
         batch.set(plantRef, {
@@ -51,20 +52,25 @@ async function uploadPlants() {
           createdAt: new Date(),
           updatedAt: new Date(),
         });
-        console.log(`✅ Uploaded new: ${plant.name}`);
+        console.log(`✅ Added new: ${plant.name}`);
         newCount++;
       }
     }
 
-    // 🚀 Commit all writes in one go
+    // Commit batch writes
     await batch.commit();
     console.log(
-      `🎉 Plant data upload completed! (${newCount} new, ${updatedCount} updated)`
+      `🎉 Upload complete! (${newCount} new, ${updatedCount} updated)`
     );
-  } catch (error) {
-    console.error("❌ Error uploading plants:", error);
+  } catch (err) {
+    console.error("❌ Upload failed:", err.message);
   }
 }
 
-// 🚀 Run the uploader
-uploadPlants();
+// Run uploader
+uploadPlants()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error("🚨 Unexpected error:", err);
+    process.exit(1);
+  });
