@@ -268,17 +268,20 @@ export function ShopScreen({ navigation }) {
   }, []);
 
   const addItemToInventory = async (item) => {
-    try {
-      const stored = await AsyncStorage.getItem("userInventory");
-      const inventory = stored ? JSON.parse(stored) : [];
-      const existing = inventory.find((i) => i.name === item.name);
-      if (existing) existing.quantity += 1;
-      else inventory.push({ name: item.name, icon: item.icon, quantity: 1 });
-      await AsyncStorage.setItem("userInventory", JSON.stringify(inventory));
-    } catch (e) {
-      console.log("Error saving inventory:", e);
+  try {
+    const stored = await AsyncStorage.getItem("userInventory");
+    const inventory = stored ? JSON.parse(stored) : [];
+    const index = inventory.findIndex((i) => i.name === item.name);
+    if (index !== -1) {
+      inventory[index].quantity = (inventory[index].quantity || 1) + 1;
+    } else {
+      inventory.push({ name: item.name, icon: item.icon, quantity: 1 });
     }
-  };
+    await AsyncStorage.setItem("userInventory", JSON.stringify(inventory));
+  } catch (error) {
+    console.error("❌ Error updating inventory:", error);
+  }
+};
 
   const handlePurchase = async (item) => {
     const res = await spendLeafPointsForUser(item.cost);
