@@ -249,8 +249,12 @@ export function ScoreHistoryScreen() {
 }
 
 // ------------------------
-// Shop Screen
+// Shop Screen (uses user.inventory array field)
 // ------------------------
+import { doc, getDoc, updateDoc, setDoc, getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { db } from "./firebaseConfig";
+
 export function ShopScreen({ navigation }) {
   const [leafPoints, setLeafPoints] = useState(0);
   const items = [
@@ -267,22 +271,40 @@ export function ShopScreen({ navigation }) {
     loadPoints();
   }, []);
 
-  const addItemToInventory = async (item) => {
-  try {
-    const stored = await AsyncStorage.getItem("userInventory");
-    const inventory = stored ? JSON.parse(stored) : [];
-    const index = inventory.findIndex((i) => i.name === item.name);
-    if (index !== -1) {
-      inventory[index].quantity = (inventory[index].quantity || 1) + 1;
-    } else {
-      inventory.push({ name: item.name, icon: item.icon, quantity: 1 });
-    }
-    await AsyncStorage.setItem("userInventory", JSON.stringify(inventory));
-  } catch (error) {
-    console.error("❌ Error updating inventory:", error);
-  }
-};
+  // 🔄 Save to Firestore inventory array
+  const saveItemToFirestore = async (item) => {
+    try {
+      const user = getAuth().currentUser;
+      if (!user) return;
 
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+
+      if (snap.exists()) {
+        const userData = snap.data();
+        const inventory = userData.inventory || [];
+
+        const index = inventory.findIndex((i) => i.name === item.name);
+        if (index !== -1) {
+          inventory[index].quantity += 1;
+        } else {
+          inventory.push({ name: item.name, icon: item.icon, quantity: 1 });
+        }
+
+        await updateDoc(userRef, { inventory });
+      } else {
+        await setDoc(userRef, {
+          inventory: [{ name: item.name, icon: item.icon, quantity: 1 }],
+        });
+      }
+
+      console.log("✅ Item saved to inventory array");
+    } catch (err) {
+      console.error("❌ Firestore save error:", err);
+    }
+  };
+
+  // 💰 Handle purchase
   const handlePurchase = async (item) => {
     const res = await spendLeafPointsForUser(item.cost);
     if (!res.success) {
@@ -290,9 +312,13 @@ export function ShopScreen({ navigation }) {
       return;
     }
 
-    await addItemToInventory(item);
-    setLeafPoints(res.remaining);
-    Alert.alert("✅ Purchased", `You bought ${item.icon} ${item.name}`);
+    try {
+      await saveItemToFirestore(item);
+      setLeafPoints(res.remaining);
+      Alert.alert("✅ Purchased", `You bought ${item.icon} ${item.name}`);
+    } catch (err) {
+      console.error("❌ Purchase error:", err);
+    }
   };
 
   return (
@@ -335,28 +361,53 @@ export function ShopScreen({ navigation }) {
   );
 }
 
+
 // ------------------------
-// Inventory Screen (Grid)
+// Inventory Screen (reads user.inventory array field)
 // ------------------------
+
 export function InventoryScreen() {
   const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadInventory = async () => {
-      const stored = await AsyncStorage.getItem("userInventory");
-      const data = stored ? JSON.parse(stored) : [];
-      setInventory(data);
+      try {
+        const user = getAuth().currentUser;
+        if (!user) return;
+
+        const userRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userRef);
+
+        if (snap.exists()) {
+          const data = snap.data();
+          setInventory(data.inventory || []);
+        } else {
+          setInventory([]);
+        }
+      } catch (err) {
+        console.error("❌ Error loading inventory:", err);
+      } finally {
+        setLoading(false);
+      }
     };
+
     loadInventory();
   }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.inventoryContainer}>
+        <Text style={{ textAlign: "center" }}>Loading your inventory...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.inventoryContainer}>
       <Text style={styles.quizTitle}>🎒 Inventory</Text>
       {inventory.length === 0 ? (
-        <Text style={{ textAlign: "center" }}>
-          No items yet. Buy some from the Shop!
-        </Text>
+        <Text style={{ textAlign: "center" }}>No items yet. Buy some from the Shop!</Text>
       ) : (
         <FlatList
           data={inventory}
@@ -376,6 +427,7 @@ export function InventoryScreen() {
     </View>
   );
 }
+
 
 // ------------------------
 // Mini Games

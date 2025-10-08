@@ -151,3 +151,56 @@ export async function fetchInventory() {
   const stored = await AsyncStorage.getItem(ASYNC_INVENTORY_KEY);
   return stored ? JSON.parse(stored) : [];
 }
+
+// Add or update item in Firestore inventory
+export const addItemToInventoryForUser = async (item) => {
+  const user = getAuth().currentUser;
+  if (!user) return null;
+
+  const itemRef = doc(db, "users", user.uid, "inventory", item.name);
+  await setDoc(itemRef, {
+    name: item.name,
+    icon: item.icon,
+    quantity: increment(1),
+  }, { merge: true });
+};
+
+// Fetch inventory from Firestore
+export const fetchInventoryForUser = async () => {
+  const user = getAuth().currentUser;
+  if (!user) return [];
+
+  const inventoryRef = collection(db, "users", user.uid, "inventory");
+  const snapshot = await getDocs(inventoryRef);
+
+  return snapshot.docs.map((doc) => doc.data());
+};
+
+// 🪣 Save purchased item to Firestore
+export async function saveItemToInventory(item) {
+  try {
+    const user = getAuth().currentUser;
+    if (!user) return;
+
+    const itemRef = doc(db, "users", user.uid, "inventory", item.name);
+
+    // Get existing item
+    const snap = await getDoc(itemRef);
+    if (snap.exists()) {
+      const currentQty = snap.data().quantity || 0;
+      await setDoc(itemRef, {
+        name: item.name,
+        icon: item.icon,
+        quantity: currentQty + 1,
+      });
+    } else {
+      await setDoc(itemRef, {
+        name: item.name,
+        icon: item.icon,
+        quantity: 1,
+      });
+    }
+  } catch (error) {
+    console.error("Error saving item to Firestore:", error);
+  }
+}
