@@ -52,29 +52,54 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 // ---------------------------------------------
 function AnimatedButton({ title, color, icon, onPress }) {
   const scale = useRef(new Animated.Value(1)).current;
+  const glow = useRef(new Animated.Value(0)).current;
 
-  const onPressIn = () => {
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start();
+  const animateIn = () => {
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }),
+      Animated.timing(glow, { toValue: 1, duration: 150, useNativeDriver: false }),
+    ]).start();
   };
-  const onPressOut = () => {
-    Animated.spring(scale, { toValue: 1, friction: 6, useNativeDriver: true }).start();
+
+  const animateOut = () => {
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.timing(glow, { toValue: 0, duration: 150, useNativeDriver: false }),
+    ]).start();
   };
+
+  const glowColor = glow.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["rgba(255,255,255,0)", "rgba(255,255,255,0.5)"],
+  });
 
   return (
-    <Animated.View style={{ transform: [{ scale }], width: "100%" }}>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        style={[styles.mainButton, { backgroundColor: color }]}
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
+    <TouchableWithoutFeedback
+      onPressIn={animateIn}
+      onPressOut={() => {
+        animateOut();
+        onPress();
+      }}
+    >
+      <Animated.View
+        style={[
+          styles.mainButton,
+          {
+            backgroundColor: color,
+            transform: [{ scale }],
+            shadowColor: glowColor,
+            shadowOpacity: 0.8,
+            shadowRadius: 8,
+          },
+        ]}
       >
         <Ionicons name={icon} size={22} color="#fff" />
         <Text style={styles.mainButtonText}>{title}</Text>
-      </TouchableOpacity>
-    </Animated.View>
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 }
+
 
 // ---------------------------------------------
 // Small popup modal (used for success / info)
