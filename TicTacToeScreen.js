@@ -1,104 +1,249 @@
-// TicTacToeScreen.js
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+// TicTacToeScreen.js (Player vs Player version with LeafQuest UI)
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Modal,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
-export default function TicTacToeScreen() {
-  const [board, setBoard] = useState(Array(9).fill(null));
-  const [isXNext, setIsXNext] = useState(true);
+export default function TicTacToeScreen({ navigation }) {
+  const [board, setBoard] = useState(Array(9).fill(null)); // 'X' = Player 1, 'O' = Player 2
+  const [currentPlayer, setCurrentPlayer] = useState("X");
   const [winner, setWinner] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const icons = { X: "🌱", O: "🌸" };
 
   const winningCombinations = [
     [0, 1, 2],
     [3, 4, 5],
-    [6, 7, 8], // rows
+    [6, 7, 8],
     [0, 3, 6],
     [1, 4, 7],
-    [2, 5, 8], // columns
+    [2, 5, 8],
     [0, 4, 8],
-    [2, 4, 6], // diagonals
+    [2, 4, 6],
   ];
 
-  const checkWinner = (board) => {
+  // Animate screen entrance
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Reset modal and winner when leaving the screen
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        setShowModal(false);
+        setWinner(null);
+        setBoard(Array(9).fill(null));
+        setCurrentPlayer("X");
+      };
+    }, [])
+  );
+
+  const checkWinner = (b) => {
     for (let combo of winningCombinations) {
-      const [a, b, c] = combo;
-      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-        return board[a];
+      const [a, bb, c] = combo;
+      if (b[a] && b[a] === b[bb] && b[a] === b[c]) {
+        return b[a];
       }
     }
-    if (board.every((cell) => cell)) return "draw";
+    if (b.every((cell) => cell)) return "draw";
     return null;
   };
 
   const handlePress = (index) => {
     if (board[index] || winner) return;
 
-    const newBoard = [...board];
-    newBoard[index] = isXNext ? "🌱" : "🌸"; // plant icons instead of X/O
-    setBoard(newBoard);
+    const updatedBoard = [...board];
+    updatedBoard[index] = currentPlayer;
+    setBoard(updatedBoard);
 
-    const gameResult = checkWinner(newBoard);
+    const gameResult = checkWinner(updatedBoard);
     if (gameResult) {
       setWinner(gameResult);
-      if (gameResult === "draw") {
-        Alert.alert("🌿 It's a Draw!", "Try again?");
-      } else {
-        Alert.alert("🎉 Winner!", `${gameResult} wins the game!`);
-      }
+      setShowModal(true);
     } else {
-      setIsXNext(!isXNext);
+      setCurrentPlayer(currentPlayer === "X" ? "O" : "X");
     }
   };
 
   const resetGame = () => {
     setBoard(Array(9).fill(null));
-    setIsXNext(true);
     setWinner(null);
+    setShowModal(false);
+    setCurrentPlayer("X");
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🌿 Plant Tic Tac Toe</Text>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <Text style={styles.title}>🌿 Tic Tac Toe (PVP)</Text>
+
       <Text style={styles.turnText}>
         {winner
           ? winner === "draw"
-            ? "Game Over - Draw"
-            : `Winner: ${winner}`
-          : `Turn: ${isXNext ? "🌱" : "🌸"}`}
+            ? "Game Over — Draw"
+            : `Winner: ${icons[winner]}`
+          : `Turn: ${currentPlayer === "X" ? "Player 1 🌱" : "Player 2 🌸"}`}
       </Text>
 
       <View style={styles.board}>
-        {board.map((cell, index) => (
+        {board.map((cell, i) => (
           <TouchableOpacity
-            key={index}
+            key={i}
             style={styles.cell}
-            onPress={() => handlePress(index)}
+            onPress={() => handlePress(i)}
+            activeOpacity={0.8}
+            disabled={!!board[i] || !!winner}
           >
-            <Text style={styles.cellText}>{cell}</Text>
+            <Text style={styles.cellText}>{cell ? icons[cell] : ""}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
-        <Text style={styles.resetText}>🔄 Reset Game</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 18 }}>
+        <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
+          <Ionicons name="refresh" size={18} color="#fff" />
+          <Text style={styles.resetText}>Restart</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.resetButton, { backgroundColor: "#81C784" }]}
+          onPress={() => {
+            setShowModal(false);
+            navigation.navigate("MiniGamesScreen");
+          }}
+        >
+          <Ionicons name="arrow-back" size={18} color="#fff" />
+          <Text style={styles.resetText}>Back</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Result Modal */}
+      <Modal transparent visible={showModal} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {winner === "X"
+                ? "🎉 Player 1 Wins!"
+                : winner === "O"
+                ? "🌸 Player 2 Wins!"
+                : "🌿 It's a Draw!"}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={resetGame}
+            >
+              <Text style={styles.modalButtonText}>Play Again</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: "#81C784" }]}
+              onPress={() => {
+                setShowModal(false);
+                navigation.navigate("MiniGamesScreen");
+              }}
+            >
+              <Text style={styles.modalButtonText}>Back to Games</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </Animated.View>
   );
 }
 
+/* LeafQuest UI Styles */
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#E8F5E9" },
-  title: { fontSize: 26, fontWeight: "bold", marginBottom: 10, color: "#2E7D32" },
-  turnText: { fontSize: 18, marginBottom: 20, color: "#388E3C" },
-  board: { flexDirection: "row", flexWrap: "wrap", width: 300, height: 300 },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#E8F5E9",
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#2E7D32",
+  },
+  turnText: {
+    fontSize: 16,
+    marginBottom: 12,
+    color: "#388E3C",
+  },
+  board: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    width: 300,
+    height: 300,
+  },
   cell: {
-    width: "33.3%",
-    height: "33.3%",
+    width: "33.3333%",
+    height: "33.3333%",
     borderWidth: 2,
     borderColor: "#4CAF50",
     justifyContent: "center",
     alignItems: "center",
   },
-  cellText: { fontSize: 40 },
-  resetButton: { marginTop: 30, backgroundColor: "#388E3C", padding: 12, borderRadius: 10 },
-  resetText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  cellText: {
+    fontSize: 42,
+  },
+  resetButton: {
+    marginTop: 10,
+    backgroundColor: "#388E3C",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  resetText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 22,
+    borderRadius: 16,
+    width: 280,
+    alignItems: "center",
+    elevation: 6,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2E7D32",
+    marginBottom: 6,
+  },
+  modalButton: {
+    backgroundColor: "#2E7D32",
+    paddingVertical: 10,
+    paddingHorizontal: 26,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
 });
