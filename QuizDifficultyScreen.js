@@ -594,14 +594,14 @@ export default function QuizFeatureStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Home" component={HomeScreenWithQuiz} />
-      <Stack.Screen name="QuizScreen" component={QuizScreen} />
-      <Stack.Screen name="ScoreHistoryScreen" component={ScoreHistoryScreen} />
-      <Stack.Screen name="ShopScreen" component={ShopScreen} />
-      <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
-      <Stack.Screen name="MiniGamesScreen" component={MiniGamesScreen} />
-      <Stack.Screen name="TicTacToeScreen" component={TicTacToeScreen} />
-      <Stack.Screen name="TicTacToeModeScreen" component={TicTacToeModeScreen} options={{ title: "Select Mode" }} />
-      <Stack.Screen name="TicTacToeAIScreen" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
+      <Stack.Screen name="Quiz" component={QuizScreen} />
+      <Stack.Screen name="History" component={ScoreHistoryScreen} />
+      <Stack.Screen name="Shop" component={ShopScreen} />
+      <Stack.Screen name="Inventory" component={InventoryScreen} />
+      <Stack.Screen name="MiniGames" component={MiniGamesScreen} />
+      <Stack.Screen name="TicTacToe" component={TicTacToeScreen} />
+      <Stack.Screen name="TicTacToe" component={TicTacToeModeScreen} options={{ title: "Select Mode" }} />
+      <Stack.Screen name="TicTacToe" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
     </Stack.Navigator>
   );
 }
