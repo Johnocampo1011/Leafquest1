@@ -27,7 +27,6 @@ import TicTacToeScreen from "./TicTacToeScreen";
 
 import { fetchQuestions } from "./quizData";
 
-// Firestore helpers + low-level firestore
 import {
   getLeafPointsForUser,
   addLeafPointsForUser,
@@ -42,36 +41,22 @@ import { db } from "./firebaseConfig";
 
 const POINTS_PER_CORRECT = 5;
 
-// Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// ---------------------------------------------
-// Reusable Animated Button component
-// ---------------------------------------------
+// -------------------------------
+// Animated Button
+// -------------------------------
 function AnimatedButton({ title, color, icon, onPress }) {
   const scale = useRef(new Animated.Value(1)).current;
-  const glow = useRef(new Animated.Value(0)).current;
 
   const animateIn = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }),
-      Animated.timing(glow, { toValue: 1, duration: 150, useNativeDriver: false }),
-    ]).start();
+    Animated.spring(scale, { toValue: 0.95, useNativeDriver: true }).start();
   };
-
   const animateOut = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, friction: 6, useNativeDriver: true }),
-      Animated.timing(glow, { toValue: 0, duration: 150, useNativeDriver: false }),
-    ]).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
   };
-
-  const glowColor = glow.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["rgba(255,255,255,0)", "rgba(255,255,255,0.5)"],
-  });
 
   return (
     <TouchableWithoutFeedback
@@ -81,18 +66,7 @@ function AnimatedButton({ title, color, icon, onPress }) {
         onPress();
       }}
     >
-      <Animated.View
-        style={[
-          styles.mainButton,
-          {
-            backgroundColor: color,
-            transform: [{ scale }],
-            shadowColor: glowColor,
-            shadowOpacity: 0.8,
-            shadowRadius: 8,
-          },
-        ]}
-      >
+      <Animated.View style={[styles.mainButton, { backgroundColor: color, transform: [{ scale }] }]}>
         <Ionicons name={icon} size={22} color="#fff" />
         <Text style={styles.mainButtonText}>{title}</Text>
       </Animated.View>
@@ -100,45 +74,33 @@ function AnimatedButton({ title, color, icon, onPress }) {
   );
 }
 
-
-// ---------------------------------------------
-// Small popup modal (used for success / info)
-// ---------------------------------------------
-function InfoModal({ visible, title, message, onClose, autoDismissMs = 2000 }) {
-  useEffect(() => {
-    let t;
-    if (visible && autoDismissMs > 0) {
-      t = setTimeout(() => {
-        onClose?.();
-      }, autoDismissMs);
-    }
-    return () => clearTimeout(t);
-  }, [visible, autoDismissMs]);
-
+// -------------------------------
+// Modal Popup
+// -------------------------------
+function InfoModal({ visible, title, message, onClose }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.modalBackdrop}>
-          <Animated.View style={styles.modalCard}>
+          <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{title}</Text>
             <Text style={styles.modalMessage}>{message}</Text>
-          </Animated.View>
+          </View>
         </View>
       </TouchableWithoutFeedback>
     </Modal>
   );
 }
 
-// ------------------------
+// -------------------------------
 // Home Screen
-// ------------------------
+// -------------------------------
 export function HomeScreenWithQuiz({ navigation }) {
   const [leafPoints, setLeafPoints] = useState(0);
   const [loadingPoints, setLoadingPoints] = useState(true);
 
   useEffect(() => {
     const loadPoints = async () => {
-      setLoadingPoints(true);
       const pts = await getLeafPointsForUser();
       setLeafPoints(pts);
       setLoadingPoints(false);
@@ -193,9 +155,9 @@ export function HomeScreenWithQuiz({ navigation }) {
   );
 }
 
-// ------------------------
+// -------------------------------
 // Quiz Screen
-// ------------------------
+// -------------------------------
 export function QuizScreen({ navigation }) {
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -206,28 +168,21 @@ export function QuizScreen({ navigation }) {
   const [exitModalVisible, setExitModalVisible] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
     const load = async () => {
       setLoading(true);
       const data = await fetchQuestions(10);
-      if (!mounted) return;
       setQuestions(data);
       setLoading(false);
     };
     load();
-    return () => {
-      mounted = false;
-    };
   }, []);
 
-  // intercept hardware back button
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
         setExitModalVisible(true);
-        return true; // prevent default
+        return true;
       };
-
       BackHandler.addEventListener("hardwareBackPress", onBackPress);
       return () => BackHandler.removeEventListener("hardwareBackPress", onBackPress);
     }, [])
@@ -253,40 +208,36 @@ export function QuizScreen({ navigation }) {
   const handleOptionPress = (opt) => {
     if (showFeedback) return;
     setSelectedOption(opt);
-    const correct = opt.isCorrect === true || opt === currentQuestion.correct || opt.text === currentQuestion.correct;
+    const correct =
+      opt.isCorrect === true ||
+      opt === currentQuestion.correct ||
+      opt.text === currentQuestion.correct;
     if (correct) setScore((s) => s + 1);
     setShowFeedback(true);
   };
 
   const handleNext = async () => {
-    if (!showFeedback) {
-      setShowFeedback(true);
-      return;
-    }
-
     if (currentIndex + 1 < questions.length) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setCurrentIndex((c) => c + 1);
       setSelectedOption(null);
       setShowFeedback(false);
       return;
     }
 
-    // finished: apply tiered scoring
     let earnedPoints = 0;
     if (score >= 10) earnedPoints = 10;
     else if (score >= 5) earnedPoints = 5;
     else if (score >= 3) earnedPoints = 1;
-    else earnedPoints = 0;
 
     const entry = { date: new Date().toISOString(), score, total: questions.length, earnedPoints };
-
     await saveQuizAttemptForUser(entry);
     const newTotal = await addLeafPointsForUser(earnedPoints);
 
-    Alert.alert("Quiz Finished!", `You scored ${score}/${questions.length}\n+${earnedPoints} Leaf Points\nTotal: ${newTotal ?? "—"}`, [
-      { text: "OK", onPress: () => navigation.navigate("Home") },
-    ]);
+    Alert.alert(
+      "Quiz Finished!",
+      `You scored ${score}/${questions.length}\n+${earnedPoints} Leaf Points\nTotal: ${newTotal ?? "—"}`,
+      [{ text: "OK", onPress: () => navigation.navigate("HomeScreenWithQuiz") }]
+    );
   };
 
   return (
@@ -296,53 +247,52 @@ export function QuizScreen({ navigation }) {
         title="Exit Quiz?"
         message="Are you sure? Progress won't be saved."
         onClose={() => setExitModalVisible(false)}
-        autoDismissMs={0}
       />
+
       <Text style={styles.questionCount}>
         Question {currentIndex + 1} / {questions.length}
       </Text>
 
       <Text style={styles.quizTitle}>{currentQuestion.question}</Text>
 
-      {currentQuestion.options.map((opt, idx) => {
-        const isCorrect = typeof opt === "object" ? opt.isCorrect === true : false;
-        const selectedMatches =
-          selectedOption && (selectedOption === opt || selectedOption.text === opt.text || selectedOption === (typeof opt === "string" ? opt : opt.text));
-        return (
-          <TouchableOpacity
-            key={idx}
-            style={[
-              styles.optionButton,
-              showFeedback && isCorrect ? { backgroundColor: "#C8E6C9" } : null,
-              showFeedback && selectedMatches && !isCorrect ? { backgroundColor: "#FFCDD2" } : null,
-            ]}
-            onPress={() => handleOptionPress(opt)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.optionText}>{typeof opt === "string" ? opt : opt.text}</Text>
-          </TouchableOpacity>
-        );
-      })}
+      {currentQuestion.options.map((opt, idx) => (
+        <TouchableOpacity
+          key={idx}
+          style={[
+            styles.optionButton,
+            showFeedback && opt.isCorrect && { backgroundColor: "#C8E6C9" },
+            showFeedback &&
+              selectedOption === opt &&
+              !opt.isCorrect && { backgroundColor: "#FFCDD2" },
+          ]}
+          onPress={() => handleOptionPress(opt)}
+        >
+          <Text style={styles.optionText}>
+            {typeof opt === "string" ? opt : opt.text}
+          </Text>
+        </TouchableOpacity>
+      ))}
 
       {showFeedback && (
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>{currentIndex + 1 === questions.length ? "Finish" : "Next"}</Text>
+          <Text style={styles.nextButtonText}>
+            {currentIndex + 1 === questions.length ? "Finish" : "Next"}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
 
-// ------------------------
+// -------------------------------
 // Score History Screen
-// ------------------------
+// -------------------------------
 export function ScoreHistoryScreen() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      setLoading(true);
       const h = await fetchQuizHistoryForUser();
       h.sort((a, b) => new Date(b.date) - new Date(a.date));
       setHistory(h);
@@ -376,15 +326,11 @@ export function ScoreHistoryScreen() {
   );
 }
 
-// ------------------------
-// Shop Screen (animated cards + save to Firestore)
-// ------------------------
+// -------------------------------
+// Shop Screen
+// -------------------------------
 export function ShopScreen({ navigation }) {
   const [leafPoints, setLeafPoints] = useState(0);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalMsg, setModalMsg] = useState({ title: "", message: "" });
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
   const items = [
     { id: "1", name: "Water", icon: "💧", cost: 10, desc: "Hydrate your plants" },
     { id: "2", name: "Fertilizer", icon: "🌿", cost: 20, desc: "Boost growth" },
@@ -396,28 +342,21 @@ export function ShopScreen({ navigation }) {
       const pts = await getLeafPointsForUser();
       setLeafPoints(pts);
     };
-    const unsub = navigation.addListener("focus", loadPoints);
     loadPoints();
-    Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
-    return unsub;
-  }, [navigation]);
+  }, []);
 
-  // Save item into user's inventory array in Firestore (merging quantities)
   const saveItemToFirestore = async (item) => {
     const user = getAuth().currentUser;
-    if (!user) throw new Error("Not signed in");
-
+    if (!user) return;
     const userRef = doc(db, "users", user.uid);
     const snap = await getDoc(userRef);
+
     if (snap.exists()) {
-      const userData = snap.data();
-      const inventory = Array.isArray(userData.inventory) ? [...userData.inventory] : [];
+      const data = snap.data();
+      const inventory = data.inventory || [];
       const idx = inventory.findIndex((i) => i.name === item.name);
-      if (idx >= 0) {
-        inventory[idx].quantity = (inventory[idx].quantity || 0) + 1;
-      } else {
-        inventory.push({ name: item.name, icon: item.icon, quantity: 1 });
-      }
+      if (idx !== -1) inventory[idx].quantity += 1;
+      else inventory.push({ name: item.name, icon: item.icon, quantity: 1 });
       await updateDoc(userRef, { inventory });
     } else {
       await setDoc(userRef, { inventory: [{ name: item.name, icon: item.icon, quantity: 1 }] });
@@ -425,183 +364,129 @@ export function ShopScreen({ navigation }) {
   };
 
   const handlePurchase = async (item) => {
-    try {
-      const res = await spendLeafPointsForUser(item.cost);
-      if (!res.success) {
-        setModalMsg({ title: "Not enough points", message: `You need ${item.cost} points` });
-        setModalVisible(true);
-        return;
-      }
-
-      // try to save to firestore
-      await saveItemToFirestore(item);
-
-      // success: animate + update points badge and show modal
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setLeafPoints(res.remaining);
-      setModalMsg({ title: "Purchase Successful ✅", message: `You bought ${item.icon} ${item.name}` });
-      setModalVisible(true);
-    } catch (err) {
-      console.error("Purchase/save error:", err);
-      setModalMsg({ title: "Error", message: "Could not complete purchase. Try again." });
-      setModalVisible(true);
+    const res = await spendLeafPointsForUser(item.cost);
+    if (!res.success) {
+      Alert.alert("❌ Not enough points", `You need ${item.cost} points`);
+      return;
     }
-  };
 
-  const renderCard = ({ item, index }) => {
-    const cardFade = new Animated.Value(0);
-    Animated.timing(cardFade, { toValue: 1, duration: 300 + index * 80, useNativeDriver: true }).start();
-
-    return (
-      <Animated.View style={[styles.shopCard, { opacity: cardFade }]}>
-        <TouchableOpacity style={{ alignItems: "center" }} onPress={() => handlePurchase(item)} activeOpacity={0.85}>
-          <Text style={styles.shopIcon}>{item.icon}</Text>
-          <Text style={styles.shopItemTitle}>{item.desc}</Text>
-          <View style={styles.shopCostTag}>
-            <Ionicons name="leaf-outline" size={14} color="#2E7D32" />
-            <Text style={styles.shopCostText}>{item.cost}</Text>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    );
+    await saveItemToFirestore(item);
+    setLeafPoints(res.remaining);
+    Alert.alert("✅ Purchased", `You bought ${item.icon} ${item.name}`);
   };
 
   return (
     <View style={styles.shopContainer}>
-      <InfoModal visible={modalVisible} title={modalMsg.title} message={modalMsg.message} onClose={() => setModalVisible(false)} />
       <Text style={styles.quizTitle}>🛒 LeafQuest Shop</Text>
-
       <Text style={styles.pointsDisplay}>
-        <Ionicons name="leaf-outline" size={16} color="#2E7D32" /> Your Points: <Text style={{ fontWeight: "bold" }}>{leafPoints}</Text>
+        <Ionicons name="leaf-outline" size={16} color="#2E7D32" /> Your Points:{" "}
+        <Text style={{ fontWeight: "bold" }}>{leafPoints}</Text>
       </Text>
 
-      <TouchableOpacity style={styles.inventoryButton} onPress={() => navigation.navigate("InventoryScreen")}>
+      <TouchableOpacity
+        style={styles.inventoryButton}
+        onPress={() => navigation.navigate("InventoryScreen")}
+      >
         <Ionicons name="bag-outline" size={18} color="#fff" />
         <Text style={styles.inventoryButtonText}>View Inventory</Text>
       </TouchableOpacity>
 
-      <Animated.View style={{ opacity: fadeAnim, flex: 1 }}>
-        <FlatList
-          data={items}
-          keyExtractor={(i) => i.id}
-          renderItem={renderCard}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={{ paddingBottom: 30 }}
-        />
-      </Animated.View>
+      <FlatList
+        data={items}
+        keyExtractor={(i) => i.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.shopCard} onPress={() => handlePurchase(item)}>
+            <Text style={styles.shopIcon}>{item.icon}</Text>
+            <Text style={styles.shopItemTitle}>{item.desc}</Text>
+            <View style={styles.shopCostTag}>
+              <Ionicons name="leaf-outline" size={14} color="#2E7D32" />
+              <Text style={styles.shopCostText}>{item.cost}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+      />
     </View>
   );
 }
 
-// ------------------------
-// Inventory Screen (reads inventory array on user doc)
-// ------------------------
+// -------------------------------
+// Inventory Screen
+// -------------------------------
 export function InventoryScreen() {
   const [inventory, setInventory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const fade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const loadInventory = async () => {
-      try {
-        setLoading(true);
-        const user = getAuth().currentUser;
-        if (!user) {
-          setInventory([]);
-          setLoading(false);
-          return;
-        }
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setInventory(Array.isArray(data.inventory) ? data.inventory : []);
-        } else {
-          setInventory([]);
-        }
-      } catch (err) {
-        console.error("Error loading inventory:", err);
-        setInventory([]);
-      } finally {
-        Animated.timing(fade, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-        setLoading(false);
-      }
+    const load = async () => {
+      const user = getAuth().currentUser;
+      if (!user) return;
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) setInventory(snap.data().inventory || []);
     };
-
-    const unsubFocus = () => {}; // placeholder
-
-    loadInventory();
-    // Re-load when screen focuses
-    // Note: use navigation listener if you want automatic refresh when returning from Shop
-    return unsubFocus;
+    load();
   }, []);
-
-  if (loading) {
-    return (
-      <View style={styles.inventoryContainer}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.inventoryContainer}>
       <Text style={styles.quizTitle}>🎒 Inventory</Text>
-
       {inventory.length === 0 ? (
         <Text style={{ textAlign: "center" }}>No items yet. Buy some from the Shop!</Text>
       ) : (
-        <Animated.View style={{ opacity: fade, flex: 1 }}>
-          <FlatList
-            data={inventory}
-            keyExtractor={(item, i) => i.toString()}
-            numColumns={2}
-            columnWrapperStyle={styles.inventoryRow}
-            contentContainerStyle={{ paddingBottom: 30 }}
-            renderItem={({ item }) => (
-              <View style={styles.inventoryCard}>
-                <Text style={styles.inventoryIcon}>{item.icon}</Text>
-                <Text style={styles.inventoryName}>
-                  {item.name} {item.quantity > 1 ? `×${item.quantity}` : ""}
-                </Text>
-              </View>
-            )}
-          />
-        </Animated.View>
+        <FlatList
+          data={inventory}
+          keyExtractor={(item, i) => i.toString()}
+          numColumns={2}
+          columnWrapperStyle={styles.inventoryRow}
+          renderItem={({ item }) => (
+            <View style={styles.inventoryCard}>
+              <Text style={styles.inventoryIcon}>{item.icon}</Text>
+              <Text style={styles.inventoryName}>
+                {item.name} {item.quantity > 1 ? `×${item.quantity}` : ""}
+              </Text>
+            </View>
+          )}
+        />
       )}
     </View>
   );
 }
 
-// ------------------------
+// -------------------------------
 // Mini Games
-// ------------------------
+// -------------------------------
 export function MiniGamesScreen({ navigation }) {
   return (
     <View style={styles.historyContainer}>
       <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
-      <AnimatedButton title="Play Tic Tac Toe" color="#43A047" icon="play" onPress={() => navigation.navigate("TicTacToeModeScreen")} />
+      <AnimatedButton
+        title="Play Tic Tac Toe"
+        color="#43A047"
+        icon="play"
+        onPress={() => navigation.navigate("TicTacToeModeScreen")}
+      />
     </View>
   );
 }
 
-// ------------------------
-// Stack Navigation
-// ------------------------
+// -------------------------------
+// Navigation Stack (Fixed)
+// -------------------------------
 const Stack = createNativeStackNavigator();
+
 export default function QuizFeatureStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Home" component={HomeScreenWithQuiz} />
-      <Stack.Screen name="Quiz" component={QuizScreen} />
-      <Stack.Screen name="History" component={ScoreHistoryScreen} />
-      <Stack.Screen name="Shop" component={ShopScreen} />
-      <Stack.Screen name="Inventory" component={InventoryScreen} />
-      <Stack.Screen name="MiniGames" component={MiniGamesScreen} />
-      <Stack.Screen name="TicTacToe Game" component={TicTacToeScreen} />
-      <Stack.Screen name="TicTacToe Mode" component={TicTacToeModeScreen} options={{ title: "Select Mode" }} />
-      <Stack.Screen name="TicTacToe VS Ai" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
+      <Stack.Screen name="HomeScreenWithQuiz" component={HomeScreenWithQuiz} />
+      <Stack.Screen name="QuizScreen" component={QuizScreen} />
+      <Stack.Screen name="ScoreHistoryScreen" component={ScoreHistoryScreen} />
+      <Stack.Screen name="ShopScreen" component={ShopScreen} />
+      <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
+      <Stack.Screen name="MiniGamesScreen" component={MiniGamesScreen} />
+      <Stack.Screen name="TicTacToeScreen" component={TicTacToeScreen} />
+      <Stack.Screen name="TicTacToeModeScreen" component={TicTacToeModeScreen} options={{ title: "Select Mode" }} />
+      <Stack.Screen name="TicTacToeAIScreen" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
     </Stack.Navigator>
   );
 }
