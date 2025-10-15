@@ -1,15 +1,15 @@
 // QuizDifficultyScreen.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   FlatList,
+  Alert,
+  Animated,
   ActivityIndicator,
   BackHandler,
-  Animated,
   Modal,
   TouchableWithoutFeedback,
   LayoutAnimation,
@@ -18,293 +18,267 @@ import {
 } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-
-import TicTacToeModeScreen from "./TicTacToeModeScreen";
+import { db } from "./firebaseConfig";
+import { getAuth } from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import TicTacToeAIScreen from "./TicTacToeAIScreen";
 import TicTacToeScreen from "./TicTacToeScreen";
-
 import { fetchQuestions } from "./quizData";
 
-import {
-  getLeafPointsForUser,
-  addLeafPointsForUser,
-  spendLeafPointsForUser,
-  saveQuizAttemptForUser,
-  fetchQuizHistoryForUser,
-} from "./userData";
-
-import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { db } from "./firebaseConfig";
-
-const POINTS_PER_CORRECT = 5;
-
+// Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// ---------------------------------------------
-// Animated Button
-// ---------------------------------------------
+// ----------------------------
+// Firestore helpers
+// ----------------------------
+async function getUserRef() {
+  const user = getAuth().currentUser;
+  if (!user) throw new Error("No user logged in");
+  return doc(db, "users", user.uid);
+}
+
+async function ensureUserDoc() {
+  const ref = await getUserRef();
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, { leafPoints: 0, inventory: [], scoreHistory: [] });
+  }
+  return ref;
+}
+
+async function addLeafPoints(amount) {
+  const ref = await ensureUserDoc();
+  const snap = await getDoc(ref);
+  const current = snap.exists() ? snap.data().leafPoints || 0 : 0;
+  await updateDoc(ref, { leafPoints: current + amount });
+  return current + amount;
+}
+
+async function deductLeafPoints(amount) {
+  const ref = await ensureUserDoc();
+  const snap = await getDoc(ref);
+  const current = snap.exists() ? snap.data().leafPoints || 0 : 0;
+  if (current < amount) throw new Error("insufficient_points");
+  const newBalance = Math.max(0, current - amount);
+  await updateDoc(ref, { leafPoints: newBalance });
+  return newBalance;
+}
+
+async function pushScoreHistory(entry) {
+  const ref = await ensureUserDoc();
+  const snap = await getDoc(ref);
+  const data = snap.exists() ? snap.data() : {};
+  const history = Array.isArray(data.scoreHistory) ? [...data.scoreHistory] : [];
+  history.push(entry);
+  await updateDoc(ref, { scoreHistory: history });
+}
+
+async function upsertInventoryItem(newItem) {
+  const ref = await ensureUserDoc();
+  const snap = await getDoc(ref);
+  const data = snap.exists() ? snap.data() : {};
+  const inventory = Array.isArray(data.inventory) ? [...data.inventory] : [];
+
+  // Merge by name (increment quantity if exists)
+  const idx = inventory.findIndex((i) => i.name === newItem.name);
+  if (idx >= 0) {
+    inventory[idx].quantity = (inventory[idx].quantity || 0) + (newItem.quantity || 1);
+  } else {
+    inventory.push({ ...newItem, quantity: newItem.quantity || 1 });
+  }
+  await updateDoc(ref, { inventory });
+}
+
+// ----------------------------
+// Animated Button (consistent width)
+// ----------------------------
 function AnimatedButton({ title, color, icon, onPress }) {
   const scale = useRef(new Animated.Value(1)).current;
-  const glow = useRef(new Animated.Value(0)).current;
-
-  const animateIn = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }),
-      Animated.timing(glow, { toValue: 1, duration: 150, useNativeDriver: false }),
-    ]).start();
-  };
-
-  const animateOut = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, friction: 6, useNativeDriver: true }),
-      Animated.timing(glow, { toValue: 0, duration: 150, useNativeDriver: false }),
-    ]).start();
+  const pressIn = () => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start();
+  const pressOut = () => {
+    Animated.spring(scale, { toValue: 1, friction: 5, useNativeDriver: true }).start();
+    setTimeout(onPress, 80);
   };
 
   return (
-    <TouchableWithoutFeedback
-      onPressIn={animateIn}
-      onPressOut={() => {
-        animateOut();
-        onPress();
-      }}
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPressIn={pressIn}
+      onPressOut={pressOut}
+      style={{ width: "100%", paddingHorizontal: 6 }}
     >
-      <Animated.View
-        style={[
-          styles.mainButton,
-          {
-            backgroundColor: color,
-            transform: [{ scale }],
-          },
-        ]}
-      >
-        <Ionicons name={icon} size={22} color="#fff" />
+      <Animated.View style={[styles.mainButton, { backgroundColor: color, transform: [{ scale }] }]}>
+        <Ionicons name={icon} size={20} color="#fff" />
         <Text style={styles.mainButtonText}>{title}</Text>
       </Animated.View>
-    </TouchableWithoutFeedback>
+    </TouchableOpacity>
   );
 }
 
-// ---------------------------------------------
-// Info Modal
-// ---------------------------------------------
-function InfoModal({ visible, title, message, onClose, autoDismissMs = 2000 }) {
-  useEffect(() => {
-    let t;
-    if (visible && autoDismissMs > 0) {
-      t = setTimeout(() => {
-        onClose?.();
-      }, autoDismissMs);
-    }
-    return () => clearTimeout(t);
-  }, [visible, autoDismissMs]);
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.modalBackdrop}>
-          <Animated.View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <Text style={styles.modalMessage}>{message}</Text>
-          </Animated.View>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
-  );
-}
-
-// ---------------------------------------------
-// Home Menu
-// ---------------------------------------------
+// ----------------------------
+// Home Screen (real-time leafPoints)
+// ----------------------------
 export function HomeScreenWithQuiz({ navigation }) {
   const [leafPoints, setLeafPoints] = useState(0);
-  const [loadingPoints, setLoadingPoints] = useState(true);
 
-  useEffect(() => {
-    const loadPoints = async () => {
-      setLoadingPoints(true);
-      const pts = await getLeafPointsForUser();
-      setLeafPoints(pts);
-      setLoadingPoints(false);
-    };
-    const unsub = navigation.addListener("focus", loadPoints);
-    loadPoints();
-    return unsub;
-  }, [navigation]);
+  useFocusEffect(
+    useCallback(() => {
+      let unsub;
+      const start = async () => {
+        const ref = await ensureUserDoc();
+        unsub = onSnapshot(ref, (snap) => {
+          if (snap.exists()) setLeafPoints(snap.data().leafPoints || 0);
+        });
+      };
+      start();
+      return () => unsub && unsub();
+    }, [])
+  );
 
   return (
     <View style={styles.homeContainer}>
-      <View style={styles.pointsBadge}>
+      <Text style={styles.title}>🌿 LeafQuest</Text>
+      <View style={styles.pointsRow}>
         <Ionicons name="leaf-outline" size={18} color="#2E7D32" />
-        <Text style={styles.pointsText}>{loadingPoints ? "…" : leafPoints}</Text>
+        <Text style={styles.pointsText}> {leafPoints} Leaf Points</Text>
       </View>
 
-      <Text style={styles.title}>🌱 Welcome to LeafQuest!</Text>
-
       <View style={styles.buttonColumn}>
-        <AnimatedButton
-          title="Start Quiz"
-          color="#388E3C"
-          icon="play-circle-outline"
-          onPress={() => navigation.navigate("Taking Quiz")}
-        />
-        <AnimatedButton
-          title="History"
-          color="#6D4C41"
-          icon="time-outline"
-          onPress={() => navigation.navigate("Score History")}
-        />
-        <AnimatedButton
-          title="Shop"
-          color="#00796B"
-          icon="cart-outline"
-          onPress={() => navigation.navigate("Shop")}
-        />
-        <AnimatedButton
-          title="Inventory"
-          color="#4CAF50"
-          icon="bag-outline"
-          onPress={() => navigation.navigate("Inventory")}
-        />
-        <AnimatedButton
-          title="Mini-Games"
-          color="#8E44AD"
-          icon="game-controller-outline"
-          onPress={() => navigation.navigate("MiniGames Menu")}
-        />
+        <AnimatedButton title="Start Quiz" color="#388E3C" icon="play-circle-outline" onPress={() => navigation.navigate("Taking Quiz")} />
+        <AnimatedButton title="Score History" color="#6D4C41" icon="time-outline" onPress={() => navigation.navigate("Score History")} />
+        <AnimatedButton title="Shop" color="#00796B" icon="cart-outline" onPress={() => navigation.navigate("Shop")} />
+        <AnimatedButton title="Inventory" color="#4CAF50" icon="bag-outline" onPress={() => navigation.navigate("Inventory")} />
+        <AnimatedButton title="Mini-Games" color="#8E44AD" icon="game-controller-outline" onPress={() => navigation.navigate("MiniGames Menu")} />
       </View>
     </View>
   );
 }
 
-// ---------------------------------------------
+// ----------------------------
 // Quiz Screen
-// ---------------------------------------------
+// - exit confirmation if user presses back
+// - final popup showing result and saving to Firestore
+// - tiered reward: score <4 => 0, score >=4 => score (4-10)
+// ----------------------------
 export function QuizScreen({ navigation }) {
   const [questions, setQuestions] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [idx, setIdx] = useState(0);
+  const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
     const load = async () => {
-      setLoading(true);
-      const data = await fetchQuestions(10);
-      if (!mounted) return;
-      setQuestions(data);
-      setLoading(false);
+      try {
+        const data = await fetchQuestions(10);
+        if (!cancelled) setQuestions(data);
+      } catch {
+        if (!cancelled) setQuestions([{ question: "What does a plant need?", options: ["Sunlight", "Juice"], correct: "Sunlight" }]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     load();
-    return () => {
-      mounted = false;
-    };
+    return () => (cancelled = true);
   }, []);
 
   useFocusEffect(
-    React.useCallback(() => {
-      const onBackPress = () => {
+    useCallback(() => {
+      const onBack = () => {
         setExitModalVisible(true);
         return true;
       };
-
-      BackHandler.addEventListener("hardwareBackPress", onBackPress);
-      return () => BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+      BackHandler.addEventListener("hardwareBackPress", onBack);
+      return () => BackHandler.removeEventListener("hardwareBackPress", onBack);
     }, [])
   );
 
-  if (loading)
-    return (
-      <View style={styles.quizPage}>
-        <ActivityIndicator size="large" color="#2E7D32" />
-        <Text style={{ textAlign: "center", marginTop: 8 }}>Loading Quiz...</Text>
-      </View>
-    );
-
-  if (!questions || questions.length === 0)
-    return (
-      <View style={styles.quizPage}>
-        <Text style={styles.quizTitle}>⚠️ No questions available</Text>
-      </View>
-    );
-
-  const currentQuestion = questions[currentIndex];
-
-  const handleOptionPress = (opt) => {
+  const choose = (opt) => {
     if (showFeedback) return;
-    setSelectedOption(opt);
-    const correct = opt.isCorrect === true || opt === currentQuestion.correct || opt.text === currentQuestion.correct;
+    const q = questions[idx];
+    const correct = opt === q.correct || opt.text === q.correct || opt.isCorrect;
+    setSelected(opt);
     if (correct) setScore((s) => s + 1);
     setShowFeedback(true);
   };
 
-  const handleNext = async () => {
-    if (!showFeedback) {
-      setShowFeedback(true);
-      return;
-    }
-
-    if (currentIndex + 1 < questions.length) {
+  const next = async () => {
+    if (idx + 1 < questions.length) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setCurrentIndex((c) => c + 1);
-      setSelectedOption(null);
+      setIdx((i) => i + 1);
+      setSelected(null);
       setShowFeedback(false);
       return;
     }
 
-    let earnedPoints = 0;
-    if (score >= 10) earnedPoints = 10;
-    else if (score >= 5) earnedPoints = 5;
-    else if (score >= 3) earnedPoints = 1;
-    else earnedPoints = 0;
+    // finished
+    const earned = score >= 4 ? score : 0;
+    try {
+      await addLeafPoints(earned);
+      await pushScoreHistory({ date: new Date().toISOString(), score, total: questions.length, earned });
+    } catch (err) {
+      console.warn("Could not save quiz result", err);
+    }
 
-    const entry = { date: new Date().toISOString(), score, total: questions.length, earnedPoints };
-
-    await saveQuizAttemptForUser(entry);
-    const newTotal = await addLeafPointsForUser(earnedPoints);
-
-    Alert.alert("Quiz Finished!", `You scored ${score}/${questions.length}\n+${earnedPoints} Leaf Points\nTotal: ${newTotal ?? "—"}`, [
+    // popup and navigate home
+    Alert.alert("Quiz Finished", `You scored ${score}/${questions.length}\n+${earned} Leaf Points`, [
       { text: "OK", onPress: () => navigation.navigate("Home Menu") },
     ]);
   };
 
+  if (loading)
+    return (
+      <View style={styles.centerPage}>
+        <ActivityIndicator size="large" color="#2E7D32" />
+      </View>
+    );
+
+  const q = questions[idx] || { question: "No questions", options: [] };
+
   return (
     <View style={styles.quizPage}>
-      <InfoModal
-        visible={exitModalVisible}
-        title="Exit Quiz?"
-        message="Are you sure? Progress won't be saved."
-        onClose={() => setExitModalVisible(false)}
-        autoDismissMs={0}
-      />
-      <Text style={styles.questionCount}>
-        Question {currentIndex + 1} / {questions.length}
-      </Text>
+      {/* Exit confirmation modal */}
+      <Modal visible={exitModalVisible} transparent animationType="fade" onRequestClose={() => setExitModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setExitModalVisible(false)}>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Exit Quiz?</Text>
+              <Text style={styles.modalMessage}>Are you sure? Progress will not be saved.</Text>
+              <View style={{ flexDirection: "row", marginTop: 12 }}>
+                <TouchableOpacity style={[styles.optionButton, { backgroundColor: "#C8E6C9", flex: 1, marginRight: 6 }]} onPress={() => setExitModalVisible(false)}>
+                  <Text style={{ textAlign: "center", color: "#1B5E20", fontWeight: "bold" }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.optionButton, { backgroundColor: "#E57373", flex: 1 }]} onPress={() => navigation.navigate("Home Menu")}>
+                  <Text style={{ textAlign: "center", color: "#fff", fontWeight: "bold" }}>Exit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
-      <Text style={styles.quizTitle}>{currentQuestion.question}</Text>
+      <Text style={styles.questionCount}>Question {idx + 1} / {questions.length}</Text>
+      <Text style={styles.quizTitle}>{q.question}</Text>
 
-      {currentQuestion.options.map((opt, idx) => {
-        const isCorrect = typeof opt === "object" ? opt.isCorrect === true : false;
-        const selectedMatches =
-          selectedOption && (selectedOption === opt || selectedOption.text === opt.text || selectedOption === (typeof opt === "string" ? opt : opt.text));
+      {q.options.map((opt, i) => {
+        const correct = opt === q.correct || opt.isCorrect;
+        const chosen = selected === opt || selected?.text === opt?.text;
+        // keep base button light so green highlight reads well
         return (
           <TouchableOpacity
-            key={idx}
+            key={i}
             style={[
               styles.optionButton,
-              showFeedback && isCorrect ? { backgroundColor: "#C8E6C9" } : null,
-              showFeedback && selectedMatches && !isCorrect ? { backgroundColor: "#FFCDD2" } : null,
+              showFeedback && correct ? { backgroundColor: "#C8E6C9" } : null,
+              showFeedback && chosen && !correct ? { backgroundColor: "#FFCDD2" } : null,
             ]}
-            onPress={() => handleOptionPress(opt)}
-            activeOpacity={0.8}
+            onPress={() => choose(opt)}
           >
             <Text style={styles.optionText}>{typeof opt === "string" ? opt : opt.text}</Text>
           </TouchableOpacity>
@@ -312,334 +286,265 @@ export function QuizScreen({ navigation }) {
       })}
 
       {showFeedback && (
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>{currentIndex + 1 === questions.length ? "Finish" : "Next"}</Text>
+        <TouchableOpacity style={styles.nextButton} onPress={next}>
+          <Text style={styles.nextButtonText}>{idx + 1 === questions.length ? "Finish" : "Next"}</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
 
-// ---------------------------------------------
-// Score History
-// ---------------------------------------------
+// ----------------------------
+// Score History (live)
+// ----------------------------
 export function ScoreHistoryScreen() {
   const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const fade = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const h = await fetchQuizHistoryForUser();
-      h.sort((a, b) => new Date(b.date) - new Date(a.date));
-      setHistory(h);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  if (loading) return <View style={styles.historyContainer}><ActivityIndicator /></View>;
+  useFocusEffect(
+    useCallback(() => {
+      let unsub;
+      const start = async () => {
+        const ref = await ensureUserDoc();
+        unsub = onSnapshot(ref, (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            const arr = Array.isArray(data.scoreHistory) ? [...data.scoreHistory].reverse() : [];
+            setHistory(arr);
+            Animated.timing(fade, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+          } else {
+            setHistory([]);
+          }
+        });
+      };
+      start();
+      return () => unsub && unsub();
+    }, [])
+  );
 
   return (
-    <View style={styles.historyContainer}>
+    <Animated.View style={[styles.historyContainer, { opacity: fade }]}>
       <Text style={styles.quizTitle}>📜 Score History</Text>
-      {history.length === 0 ? (
-        <Text style={{ textAlign: "center" }}>No history yet.</Text>
+      {!history.length ? (
+        <Text style={{ textAlign: "center", color: "#1B5E20" }}>No history yet</Text>
       ) : (
         <FlatList
           data={history}
-          keyExtractor={(_, i) => i.toString()}
+          keyExtractor={(it, i) => i.toString()}
+          renderItem={({ item }) => {
+            const d = new Date(item.date).toLocaleString();
+            return (
+              <View style={styles.historyItem}>
+                <Text style={styles.historyText}>{d} — {item.score}/{item.total} (+{item.earned || 0})</Text>
+              </View>
+            );
+          }}
+        />
+      )}
+    </Animated.View>
+  );
+}
+
+// ----------------------------
+// Shop (live)
+// ----------------------------
+export function ShopScreen() {
+  const [leafPoints, setLeafPoints] = useState(0);
+  const fade = useRef(new Animated.Value(0)).current;
+
+  const catalog = [
+    { id: "w1", name: "Water", icon: "💧", cost: 10 },
+    { id: "f1", name: "Fertilizer", icon: "🌿", cost: 20 },
+    { id: "s1", name: "Sunlight", icon: "☀️", cost: 15 },
+  ];
+
+  useFocusEffect(
+    useCallback(() => {
+      let unsub;
+      const start = async () => {
+        const ref = await ensureUserDoc();
+        unsub = onSnapshot(ref, (snap) => {
+          if (snap.exists()) {
+            setLeafPoints(snap.data().leafPoints || 0);
+            Animated.timing(fade, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+          }
+        });
+      };
+      start();
+      return () => unsub && unsub();
+    }, [])
+  );
+
+  const buy = async (item) => {
+    try {
+      // Deduct then add inventory
+      await deductLeafPoints(item.cost);
+      await upsertInventoryItem({ name: item.name, icon: item.icon, quantity: 1 });
+      Alert.alert("Purchase Successful", `You bought ${item.icon} ${item.name}`);
+    } catch (err) {
+      if (err.message === "insufficient_points") {
+        Alert.alert("Not enough points", "You need more Leaf Points to buy this.");
+      } else {
+        console.error("Purchase error:", err);
+        Alert.alert("Error", "Could not complete purchase.");
+      }
+    }
+  };
+
+  return (
+    <Animated.View style={[styles.shopContainer, { opacity: fade }]}>
+      <Text style={styles.quizTitle}>🛒 Shop</Text>
+      <Text style={{ textAlign: "center", color: "#1B5E20", marginBottom: 10 }}>Your LeafPoints: {leafPoints}</Text>
+      <FlatList
+        data={catalog}
+        keyExtractor={(i) => i.id}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: "space-between", marginBottom: 12 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.shopCard} onPress={() => buy(item)} activeOpacity={0.85}>
+            <Text style={styles.shopIcon}>{item.icon}</Text>
+            <Text style={styles.shopItemTitle}>{item.name}</Text>
+            <View style={styles.shopCostTag}>
+              <Ionicons name="leaf-outline" size={14} color="#2E7D32" />
+              <Text style={styles.shopCostText}>{item.cost}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+    </Animated.View>
+  );
+}
+
+// ----------------------------
+// Inventory (live)
+// ----------------------------
+export function InventoryScreen() {
+  const [inventory, setInventory] = useState([]);
+  const fade = useRef(new Animated.Value(0)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      let unsub;
+      const start = async () => {
+        const ref = await ensureUserDoc();
+        unsub = onSnapshot(ref, (snap) => {
+          if (snap.exists()) {
+            setInventory(Array.isArray(snap.data().inventory) ? snap.data().inventory : []);
+            Animated.timing(fade, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+          } else {
+            setInventory([]);
+          }
+        });
+      };
+      start();
+      return () => unsub && unsub();
+    }, [])
+  );
+
+  return (
+    <Animated.View style={[styles.historyContainer, { opacity: fade }]}>
+      <Text style={styles.quizTitle}>🎒 Inventory</Text>
+      {!inventory.length ? (
+        <Text style={{ textAlign: "center", color: "#1B5E20" }}>Inventory empty</Text>
+      ) : (
+        <FlatList
+          data={inventory}
+          keyExtractor={(it, i) => i.toString()}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: "space-between", marginBottom: 12 }}
           renderItem={({ item }) => (
-            <View style={styles.historyItem}>
-              <Text>{new Date(item.date).toLocaleString()}</Text>
-              <Text>
-                {item.score}/{item.total} (+{item.earnedPoints ?? 0} pts)
-              </Text>
+            <View style={styles.inventoryCard}>
+              <Text style={styles.inventoryIcon}>{item.icon ?? "📦"}</Text>
+              <Text style={styles.inventoryName}>{item.name} {item.quantity && item.quantity > 1 ? `×${item.quantity}` : ""}</Text>
             </View>
           )}
         />
       )}
-    </View>
+    </Animated.View>
   );
 }
 
-// ---------------------------------------------
-// Shop
-// ---------------------------------------------
-export function ShopScreen({ navigation }) {
-  const [leafPoints, setLeafPoints] = useState(0);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalMsg, setModalMsg] = useState({ title: "", message: "" });
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  const items = [
-    { id: "1", name: "Water", icon: "💧", cost: 10, desc: "Hydrate your plants" },
-    { id: "2", name: "Fertilizer", icon: "🌿", cost: 20, desc: "Boost growth" },
-    { id: "3", name: "Sunlight", icon: "☀️", cost: 15, desc: "Give energy" },
-  ];
-
-  useEffect(() => {
-    const loadPoints = async () => {
-      const pts = await getLeafPointsForUser();
-      setLeafPoints(pts);
-    };
-    const unsub = navigation.addListener("focus", loadPoints);
-    loadPoints();
-    Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
-    return unsub;
-  }, [navigation]);
-
-  const saveItemToFirestore = async (item) => {
-    const user = getAuth().currentUser;
-    if (!user) throw new Error("Not signed in");
-
-    const userRef = doc(db, "users", user.uid);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      const userData = snap.data();
-      const inventory = Array.isArray(userData.inventory) ? [...userData.inventory] : [];
-      const idx = inventory.findIndex((i) => i.name === item.name);
-      if (idx >= 0) {
-        inventory[idx].quantity = (inventory[idx].quantity || 0) + 1;
-      } else {
-        inventory.push({ name: item.name, icon: item.icon, quantity: 1 });
-      }
-      await updateDoc(userRef, { inventory });
-    } else {
-      await setDoc(userRef, { inventory: [{ name: item.name, icon: item.icon, quantity: 1 }] });
-    }
-  };
-
-  const handlePurchase = async (item) => {
-    try {
-      const res = await spendLeafPointsForUser(item.cost);
-      if (!res.success) {
-        setModalMsg({ title: "Not enough points", message: `You need ${item.cost} points` });
-        setModalVisible(true);
-        return;
-      }
-
-      await saveItemToFirestore(item);
-
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setLeafPoints(res.remaining);
-      setModalMsg({ title: "Purchase Successful ✅", message: `You bought ${item.icon} ${item.name}` });
-      setModalVisible(true);
-    } catch (err) {
-      console.error("Purchase/save error:", err);
-      setModalMsg({ title: "Error", message: "Could not complete purchase. Try again." });
-      setModalVisible(true);
-    }
-  };
-
-  const renderCard = ({ item, index }) => {
-    const cardFade = new Animated.Value(0);
-    Animated.timing(cardFade, { toValue: 1, duration: 300 + index * 80, useNativeDriver: true }).start();
-
-    return (
-      <Animated.View style={[styles.shopCard, { opacity: cardFade }]}>
-        <TouchableOpacity style={{ alignItems: "center" }} onPress={() => handlePurchase(item)} activeOpacity={0.85}>
-          <Text style={styles.shopIcon}>{item.icon}</Text>
-          <Text style={styles.shopItemTitle}>{item.desc}</Text>
-          <View style={styles.shopCostTag}>
-            <Ionicons name="leaf-outline" size={14} color="#2E7D32" />
-            <Text style={styles.shopCostText}>{item.cost}</Text>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
-
-  return (
-    <View style={styles.shopContainer}>
-      <InfoModal visible={modalVisible} title={modalMsg.title} message={modalMsg.message} onClose={() => setModalVisible(false)} />
-      <Text style={styles.quizTitle}>🛒 LeafQuest Shop</Text>
-
-      <Text style={styles.pointsDisplay}>
-        <Ionicons name="leaf-outline" size={16} color="#2E7D32" /> Your Points:{" "}
-        <Text style={{ fontWeight: "bold" }}>{leafPoints}</Text>
-      </Text>
-
-      <TouchableOpacity style={styles.inventoryButton} onPress={() => navigation.navigate("Inventory")}>
-        <Ionicons name="bag-outline" size={18} color="#fff" />
-        <Text style={styles.inventoryButtonText}>View Inventory</Text>
-      </TouchableOpacity>
-
-      <Animated.View style={{ opacity: fadeAnim, flex: 1 }}>
-        <FlatList
-          data={items}
-          keyExtractor={(i) => i.id}
-          renderItem={renderCard}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={{ paddingBottom: 30 }}
-        />
-      </Animated.View>
-    </View>
-  );
-}
-
-// ---------------------------------------------
-// Inventory
-// ---------------------------------------------
-export function InventoryScreen() {
-  const [inventory, setInventory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const fade = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loadInventory = async () => {
-      try {
-        setLoading(true);
-        const user = getAuth().currentUser;
-        if (!user) {
-          setInventory([]);
-          setLoading(false);
-          return;
-        }
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setInventory(Array.isArray(data.inventory) ? data.inventory : []);
-        } else {
-          setInventory([]);
-        }
-      } catch (err) {
-        console.error("Error loading inventory:", err);
-        setInventory([]);
-      } finally {
-        Animated.timing(fade, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-        setLoading(false);
-      }
-    };
-
-    loadInventory();
-  }, []);
-
-  if (loading) {
-    return (
-      <View style={styles.inventoryContainer}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.inventoryContainer}>
-      <Text style={styles.quizTitle}>🎒 Inventory</Text>
-
-      {inventory.length === 0 ? (
-        <Text style={{ textAlign: "center" }}>No items yet. Buy some from the Shop!</Text>
-      ) : (
-        <Animated.View style={{ opacity: fade, flex: 1 }}>
-          <FlatList
-            data={inventory}
-            keyExtractor={(item, i) => i.toString()}
-            numColumns={2}
-            columnWrapperStyle={styles.inventoryRow}
-            contentContainerStyle={{ paddingBottom: 30 }}
-            renderItem={({ item }) => (
-              <View style={styles.inventoryCard}>
-                <Text style={styles.inventoryIcon}>{item.icon}</Text>
-                <Text style={styles.inventoryName}>
-                  {item.name} {item.quantity > 1 ? `×${item.quantity}` : ""}
-                </Text>
-              </View>
-            )}
-          />
-        </Animated.View>
-      )}
-    </View>
-  );
-}
-
-// ---------------------------------------------
-// Mini-Games
-// ---------------------------------------------
+// ----------------------------
+// Mini Games Menu
+// ----------------------------
 export function MiniGamesScreen({ navigation }) {
+  const fade = useRef(new Animated.Value(0)).current;
+  useEffect(() => Animated.timing(fade, { toValue: 1, duration: 350, useNativeDriver: true }).start(), []);
+
   return (
-    <View style={styles.historyContainer}>
-      <Text style={styles.quizTitle}>🎮 Mini-Games</Text>
-      <AnimatedButton title="Play Tic Tac Toe" color="#43A047" icon="play" onPress={() => navigation.navigate("TicTacToeMode")} />
-    </View>
+    <Animated.View style={[styles.historyContainer, { opacity: fade }]}>
+      <Text style={styles.quizTitle}>🎮 Mini Games</Text>
+      <AnimatedButton title="Tic Tac Toe (PVP)" color="#43A047" icon="people-outline" onPress={() => navigation.navigate("TicTacToePVP")} />
+      <AnimatedButton title="Tic Tac Toe (AI)" color="#2E7D32" icon="hardware-chip-outline" onPress={() => navigation.navigate("TicTacToeAI")} />
+      <AnimatedButton title="Back to Menu" color="#6D4C41" icon="home-outline" onPress={() => navigation.navigate("Home Menu")} />
+    </Animated.View>
   );
 }
 
-// ---------------------------------------------
-// Navigation Stack (Fixed)
-// ---------------------------------------------
+// ----------------------------
+// Navigation Stack
+// ----------------------------
 const Stack = createNativeStackNavigator();
-
 export default function QuizFeatureStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: "#C8E6C9" },
+        headerTintColor: "#1B5E20",
+        headerTitleStyle: { fontWeight: "bold" },
+      }}
+    >
       <Stack.Screen name="Home Menu" component={HomeScreenWithQuiz} />
       <Stack.Screen name="Taking Quiz" component={QuizScreen} />
       <Stack.Screen name="Score History" component={ScoreHistoryScreen} />
       <Stack.Screen name="Shop" component={ShopScreen} />
       <Stack.Screen name="Inventory" component={InventoryScreen} />
       <Stack.Screen name="MiniGames Menu" component={MiniGamesScreen} />
-      <Stack.Screen name="TicTacToe" component={TicTacToeScreen} />
-      <Stack.Screen name="TicTacToeMode" component={TicTacToeModeScreen} options={{ title: "Select Mode" }} />
+      <Stack.Screen name="TicTacToePVP" component={TicTacToeScreen} options={{ title: "Tic Tac Toe (PVP)" }} />
       <Stack.Screen name="TicTacToeAI" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
     </Stack.Navigator>
   );
 }
 
-// ---------------------------------------------
+// ----------------------------
 // Styles
-// ---------------------------------------------
+// ----------------------------
 const styles = StyleSheet.create({
-  homeContainer: { flex: 1, backgroundColor: "#E8F5E9", alignItems: "center", paddingTop: 60 },
-  pointsBadge: {
-    position: "absolute",
-    top: 36,
-    right: 18,
-    backgroundColor: "#fff",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 3,
-  },
-  pointsText: { marginLeft: 6, fontSize: 14, fontWeight: "bold", color: "#2E7D32" },
-  title: { fontSize: 22, fontWeight: "bold", color: "#2E7D32", marginBottom: 30 },
-  buttonColumn: { flexDirection: "column", alignItems: "center", width: "80%", justifyContent: "center", gap: 18 },
-  mainButton: { flexDirection: "row", width: "100%", paddingVertical: 18, borderRadius: 14, alignItems: "center", justifyContent: "center", elevation: 3 },
-  mainButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold", marginLeft: 8 },
+  homeContainer: { flex: 1, backgroundColor: "#E8F5E9", alignItems: "center", paddingTop: 56 },
+  title: { fontSize: 26, fontWeight: "bold", color: "#2E7D32", marginBottom: 12 },
+  pointsRow: { flexDirection: "row", alignItems: "center", marginBottom: 18 },
+  pointsText: { color: "#1B5E20", fontSize: 16, marginLeft: 6 },
+  buttonColumn: { width: "86%", gap: 12, alignItems: "center" },
+  mainButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 12, width: "100%", elevation: 3, shadowColor: "#000", shadowOpacity: 0.12, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4 },
+  mainButtonText: { color: "#fff", fontWeight: "700", marginLeft: 10 },
 
-  quizPage: { flex: 1, backgroundColor: "#DFF0D8", justifyContent: "center", padding: 20 },
-  quizTitle: { fontSize: 20, fontWeight: "bold", textAlign: "center", marginBottom: 20, color: "#1B5E20" },
-  questionCount: { fontSize: 16, color: "#2E7D32", textAlign: "center", fontWeight: "bold", marginBottom: 10 },
-  optionButton: { flexDirection: "row", padding: 15, borderRadius: 12, borderWidth: 1, borderColor: "#4CAF50", marginBottom: 15, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
-  optionText: { fontSize: 18, fontWeight: "500", color: "#000" },
-  nextButton: { marginTop: 20, backgroundColor: "#388E3C", padding: 15, borderRadius: 12, alignItems: "center", elevation: 3 },
-  nextButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  quizPage: { flex: 1, backgroundColor: "#DFF0D8", padding: 18 },
+  quizTitle: { fontSize: 20, fontWeight: "bold", textAlign: "center", color: "#1B5E20", marginVertical: 8 },
+  questionCount: { textAlign: "center", color: "#2E7D32", marginBottom: 10, fontWeight: "600" },
+  optionButton: { backgroundColor: "#fff", padding: 14, borderRadius: 12, borderWidth: 1, borderColor: "#DCEEDC", marginBottom: 10 },
+  optionText: { textAlign: "center", color: "#1B5E20", fontSize: 16 },
+  nextButton: { backgroundColor: "#2E7D32", padding: 14, borderRadius: 12, marginTop: 10 },
+  nextButtonText: { color: "#fff", textAlign: "center", fontWeight: "700" },
 
-  historyContainer: { flex: 1, padding: 20 },
-  historyItem: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderColor: "#ccc" },
+  historyContainer: { flex: 1, backgroundColor: "#E8F5E9", padding: 18 },
+  historyItem: { backgroundColor: "#FFFFFF", padding: 12, borderRadius: 10, marginBottom: 10 },
+  historyText: { color: "#1B5E20" },
 
-  shopContainer: { flex: 1, backgroundColor: "#E8F5E9", padding: 20 },
-  row: { justifyContent: "space-between", marginBottom: 15 },
-  shopCard: { backgroundColor: "#fff", borderRadius: 16, padding: 15, width: "48%", alignItems: "center", justifyContent: "center", elevation: 4 },
-  shopIcon: { fontSize: 36, marginBottom: 8 },
-  shopItemTitle: { fontSize: 13, textAlign: "center", color: "#333", marginBottom: 10 },
-  shopCostTag: { flexDirection: "row", alignItems: "center", backgroundColor: "#C8E6C9", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  shopCostText: { marginLeft: 4, color: "#2E7D32", fontWeight: "bold", fontSize: 13 },
-  pointsDisplay: { textAlign: "center", marginBottom: 12, fontSize: 16, color: "#1B5E20" },
+  shopContainer: { flex: 1, padding: 18, backgroundColor: "#E8F5E9" },
+  shopCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, width: "48%", alignItems: "center", justifyContent: "center", elevation: 3 },
+  shopIcon: { fontSize: 34 },
+  shopItemTitle: { marginTop: 8, fontWeight: "600" },
+  shopCostTag: { flexDirection: "row", alignItems: "center", marginTop: 8, backgroundColor: "#C8E6C9", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
+  shopCostText: { marginLeft: 6, color: "#2E7D32", fontWeight: "700" },
 
-  inventoryContainer: { flex: 1, backgroundColor: "#E8F5E9", padding: 20 },
-  inventoryRow: { justifyContent: "space-between", marginBottom: 15 },
-  inventoryCard: { backgroundColor: "#fff", borderRadius: 16, paddingVertical: 25, width: "48%", alignItems: "center", justifyContent: "center", elevation: 4 },
-  inventoryIcon: { fontSize: 40, marginBottom: 10 },
-  inventoryName: { fontSize: 15, fontWeight: "600", color: "#2E7D32", textAlign: "center" },
-  inventoryButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#2E7D32", borderRadius: 12, padding: 10, marginVertical: 10, alignSelf: "center", width: "60%", elevation: 3 },
-  inventoryButtonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
+  inventoryCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, width: "48%", alignItems: "center", justifyContent: "center", elevation: 3 },
+  inventoryIcon: { fontSize: 36, marginBottom: 8 },
+  inventoryName: { fontWeight: "600", color: "#2E7D32", textAlign: "center" },
 
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "center", alignItems: "center", padding: 20 },
-  modalCard: { width: "90%", backgroundColor: "#fff", borderRadius: 12, padding: 18, alignItems: "center", elevation: 8 },
-  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
-  modalMessage: { fontSize: 14, color: "#444", textAlign: "center" },
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
+  modalCard: { backgroundColor: "#fff", padding: 18, borderRadius: 10, width: "86%", alignItems: "center" },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: "#1B5E20" },
+  modalMessage: { fontSize: 14, color: "#333", marginTop: 8 },
+
+  centerPage: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#DFF0D8" },
 });

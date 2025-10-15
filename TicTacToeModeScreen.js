@@ -1,29 +1,37 @@
 // TicTacToeModeScreen.js
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function TicTacToeModeScreen({ navigation }) {
+  const fadeAnim = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🎮 Choose Game Mode</Text>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <Text style={styles.title}>🎮 Choose Mode</Text>
 
       <TouchableOpacity
-        style={[styles.modeButton, { backgroundColor: "#4CAF50" }]}
-        onPress={() => navigation.navigate("TicTacToeScreen")}
+        style={styles.button}
+        onPress={() => navigation.navigate("TicTacToe")} // Go to Player vs Player
+        activeOpacity={0.8}
       >
-        <Ionicons name="people-outline" size={24} color="#fff" />
-        <Text style={styles.modeText}>Player vs Player</Text>
+        <Ionicons name="people-outline" size={22} color="#fff" />
+        <Text style={styles.buttonText}>Player vs Player</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.modeButton, { backgroundColor: "#8E44AD" }]}
-        onPress={() => navigation.navigate("TicTacToeAIScreen")}
+        style={[styles.button, { backgroundColor: "#6A1B9A" }]}
+        onPress={() => navigation.navigate("TicTacToeAI")} // Go to AI version
+        activeOpacity={0.8}
       >
-        <Ionicons name="hardware-chip-outline" size={24} color="#fff" />
-        <Text style={styles.modeText}>Player vs AI</Text>
+        <Ionicons name="hardware-chip-outline" size={22} color="#fff" />
+        <Text style={styles.buttonText}>Player vs AI</Text>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -31,8 +39,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#E8F5E9",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
     padding: 20,
   },
   title: {
@@ -41,16 +49,18 @@ const styles = StyleSheet.create({
     color: "#2E7D32",
     marginBottom: 40,
   },
-  modeButton: {
+  button: {
+    backgroundColor: "#388E3C",
+    width: "80%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    width: "80%",
-    paddingVertical: 15,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 14,
     marginBottom: 20,
+    elevation: 3,
   },
-  modeText: {
+  buttonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",

@@ -1,4 +1,3 @@
-// TicTacToeAIScreen.js
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -7,261 +6,171 @@ import {
   StyleSheet,
   Animated,
   Modal,
-  Alert,
 } from "react-native";
 import { getAuth } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "./firebaseConfig";
-import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { addLeafPointsForUser } from "./userData";
 
 export default function TicTacToeAIScreen({ navigation }) {
-  const [board, setBoard] = useState(Array(9).fill(null)); // 'X' = player, 'O' = AI
-  const [isThinking, setIsThinking] = useState(false);
-  const [winner, setWinner] = useState(null); // 'X', 'O' or 'draw'
-  const [showModal, setShowModal] = useState(false);
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
+  const [winner, setWinner] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const aiTimeoutRef = useRef(null);
 
-  const icons = { X: "🌱", O: "🌸" };
-
-  const winningCombinations = [
+  const winningCombos = [
     [0, 1, 2],
     [3, 4, 5],
-    [6, 7, 8], // rows
+    [6, 7, 8],
     [0, 3, 6],
     [1, 4, 7],
-    [2, 5, 8], // columns
+    [2, 5, 8],
     [0, 4, 8],
-    [2, 4, 6], // diagonals
+    [2, 4, 6],
   ];
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 450,
+      duration: 500,
       useNativeDriver: true,
     }).start();
   }, []);
 
-  // cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
-    };
-  }, []);
-
-  // If screen loses focus, reset modal and game so popup doesn't persist
-  useFocusEffect(
-    React.useCallback(() => {
-      return () => {
-        // cleanup when blurring / navigating away
-        setShowModal(false);
-        setWinner(null);
-        setIsThinking(false);
-        if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
-      };
-    }, [])
-  );
-
   const checkWinner = (b) => {
-    for (let combo of winningCombinations) {
-      const [a, bb, c] = combo;
-      if (b[a] && b[a] === b[bb] && b[a] === b[c]) {
-        return b[a]; // 'X' or 'O'
-      }
+    for (let [a, bb, c] of winningCombos) {
+      if (b[a] && b[a] === b[bb] && b[a] === b[c]) return b[a];
     }
     if (b.every((cell) => cell)) return "draw";
     return null;
   };
 
-  const makeMove = (b, index, player) => {
-    const nb = [...b];
-    nb[index] = player;
-    return nb;
+  const handlePress = (i) => {
+    if (!isPlayerTurn || board[i] || winner) return;
+
+    const newBoard = [...board];
+    newBoard[i] = "🌱";
+    setBoard(newBoard);
+    setIsPlayerTurn(false);
+
+    const result = checkWinner(newBoard);
+    if (result) return showEndModal(result);
+
+    setTimeout(() => aiMove(newBoard), 800);
   };
 
-  // AI logic: tries to win, then block, otherwise random.
-  // Returns new board (does not set state).
-  const computeAIMove = (b) => {
-    const available = b
-      .map((v, i) => (v ? null : i))
-      .filter((v) => v !== null);
-    if (available.length === 0) return b;
+  const aiMove = (b) => {
+    const empty = b.map((v, i) => (v ? null : i)).filter((v) => v !== null);
+    if (empty.length === 0) return;
 
-    const playSmart = Math.random() < 0.7; // 70% chance AI tries to be smart
-
-    if (playSmart) {
-      // Try to win
-      for (let [a, bb, c] of winningCombinations) {
-        if (b[a] === "O" && b[bb] === "O" && !b[c]) return makeMove(b, c, "O");
-        if (b[a] === "O" && b[c] === "O" && !b[bb]) return makeMove(b, bb, "O");
-        if (b[bb] === "O" && b[c] === "O" && !b[a]) return makeMove(b, a, "O");
+    const tryMove = (sym) => {
+      for (let [a, bb, c] of winningCombos) {
+        if (b[a] === sym && b[bb] === sym && !b[c]) return c;
+        if (b[a] === sym && b[c] === sym && !b[bb]) return bb;
+        if (b[bb] === sym && b[c] === sym && !b[a]) return a;
       }
-      // Try to block player
-      for (let [a, bb, c] of winningCombinations) {
-        if (b[a] === "X" && b[bb] === "X" && !b[c]) return makeMove(b, c, "O");
-        if (b[a] === "X" && b[c] === "X" && !b[bb]) return makeMove(b, bb, "O");
-        if (b[bb] === "X" && b[c] === "X" && !b[a]) return makeMove(b, a, "O");
-      }
-    }
+      return null;
+    };
 
-    // Fallback: random available
-    const randomIndex = available[Math.floor(Math.random() * available.length)];
-    return makeMove(b, randomIndex, "O");
+    const aiIndex =
+      tryMove("🌸") ||
+      tryMove("🌱") ||
+      empty[Math.floor(Math.random() * empty.length)];
+    b[aiIndex] = "🌸";
+    setBoard([...b]);
+
+    const result = checkWinner(b);
+    if (result) showEndModal(result);
+    else setIsPlayerTurn(true);
   };
 
-  // called when a win/draw happens
-  const endGame = async (result) => {
+  const showEndModal = async (result) => {
     setWinner(result);
-    setIsThinking(false);
-    setShowModal(true);
 
-    if (result === "X") {
-      // reward +10 leaf points on player win (attempt Firestore update)
+    if (result === "🌱") {
+      // ✅ player won — give +5 leafpoints
       try {
-        const user = getAuth().currentUser;
-        if (!user) return;
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-        const currentPoints = snap.exists() ? Number(snap.data().leafPoints ?? 0) : 0;
-        await updateDoc(userRef, { leafPoints: currentPoints + 10 });
+        await addLeafPointsForUser(5);
+        setModalMessage("🎉 You Won! +5 LeafPoints 🌿");
       } catch (err) {
-        console.warn("Failed giving reward:", err);
+        console.error("Error adding LeafPoints:", err);
+        setModalMessage("🎉 You Won! (Reward not saved due to network)");
       }
-    }
-  };
-
-  // Player taps a cell
-  const handlePress = (index) => {
-    // ignore if cell filled, game over, or AI is thinking
-    if (board[index] || winner || isThinking) return;
-
-    // player move
-    const afterPlayer = makeMove(board, index, "X");
-    setBoard(afterPlayer);
-
-    const result = checkWinner(afterPlayer);
-    if (result) {
-      endGame(result);
-      return;
+    } else if (result === "🌸") {
+      setModalMessage("💀 The AI Won this round!");
+    } else {
+      setModalMessage("🌿 It's a draw! Nobody wins.");
     }
 
-    // AI will move after short delay
-    setIsThinking(true);
-    aiTimeoutRef.current = setTimeout(() => {
-      const afterAI = computeAIMove(afterPlayer);
-      setBoard(afterAI);
-      const aiResult = checkWinner(afterAI);
-      if (aiResult) {
-        endGame(aiResult);
-      } else {
-        setIsThinking(false);
-      }
-      aiTimeoutRef.current = null;
-    }, 700); // delay in ms (tweak to taste)
+    setModalVisible(true);
   };
 
   const resetGame = () => {
-    if (aiTimeoutRef.current) {
-      clearTimeout(aiTimeoutRef.current);
-      aiTimeoutRef.current = null;
-    }
     setBoard(Array(9).fill(null));
+    setIsPlayerTurn(true);
     setWinner(null);
-    setShowModal(false);
-    setIsThinking(false);
+    setModalVisible(false);
+  };
+
+  const goBackToMenu = () => {
+    setModalVisible(false);
+    navigation.navigate("MiniGames Menu");
   };
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <Text style={styles.title}>🌿 Tic Tac Toe (vs AI)</Text>
-
+      <Text style={styles.title}>🤖 Tic Tac Toe (AI Mode)</Text>
       <Text style={styles.turnText}>
         {winner
           ? winner === "draw"
-            ? "Game Over — Draw"
-            : `Winner: ${icons[winner]}`
-          : isThinking
-          ? "AI is thinking..."
-          : "Your turn — 🌱"}
+            ? "It’s a Draw!"
+            : winner === "🌱"
+            ? "You Won!"
+            : "AI Wins!"
+          : isPlayerTurn
+          ? "Your Turn 🌱"
+          : "AI Thinking... 🌸"}
       </Text>
 
       <View style={styles.board}>
         {board.map((cell, i) => (
           <TouchableOpacity
             key={i}
-            style={[
-              styles.cell,
-              isThinking ? { opacity: 0.9 } : null,
-              winner ? { opacity: 0.9 } : null,
-            ]}
+            style={styles.cell}
             onPress={() => handlePress(i)}
-            activeOpacity={0.8}
-            disabled={!!board[i] || !!winner || isThinking}
+            activeOpacity={0.7}
           >
-            <Text style={styles.cellText}>{cell ? icons[cell] : ""}</Text>
+            <Text style={styles.cellText}>{cell}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 18 }}>
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={() => {
-            if (isThinking) {
-              // avoid interrupting AI mid-think — confirm
-              Alert.alert("Wait", "AI is thinking — try again shortly.");
-              return;
-            }
-            resetGame();
-          }}
-        >
-          <Ionicons name="refresh" size={18} color="#fff" />
-          <Text style={styles.resetText}>Restart</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.backButton} onPress={goBackToMenu}>
+        <Text style={styles.backText}>← Back to Mini-Games</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.resetButton, { backgroundColor: "#81C784" }]}
-          onPress={() => {
-            // ensure modal doesn't persist if open
-            setShowModal(false);
-            navigation.navigate("MiniGamesScreen");
-          }}
-        >
-          <Ionicons name="arrow-back" size={18} color="#fff" />
-          <Text style={styles.resetText}>Back</Text>
-        </TouchableOpacity>
-      </View>
+      {/* 🌿 Custom modal popup (works on web & mobile) */}
+      <Modal transparent visible={modalVisible} animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Game Over</Text>
+            <Text style={styles.modalMessage}>{modalMessage}</Text>
 
-      {/* Result modal */}
-      <Modal transparent visible={showModal} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {winner === "X" ? "🎉 You Won!" : winner === "O" ? "😔 AI Wins" : "🌿 It's a Draw!"}
-            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#43A047" }]}
+                onPress={resetGame}
+              >
+                <Text style={styles.modalButtonText}>🔁 Play Again</Text>
+              </TouchableOpacity>
 
-            {winner === "X" && <Text style={styles.modalSubtitle}>+10 Leaf Points</Text>}
-
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                resetGame();
-              }}
-            >
-              <Text style={styles.modalButtonText}>Play Again</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: "#81C784" }]}
-              onPress={() => {
-                setShowModal(false);
-                navigation.navigate("MiniGamesScreen");
-              }}
-            >
-              <Text style={styles.modalButtonText}>Back to Games</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#2E7D32" }]}
+                onPress={goBackToMenu}
+              >
+                <Text style={styles.modalButtonText}>🏠 Main Menu</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -269,28 +178,58 @@ export default function TicTacToeAIScreen({ navigation }) {
   );
 }
 
-/* Styles */
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#E8F5E9" },
-  title: { fontSize: 26, fontWeight: "bold", marginBottom: 8, color: "#2E7D32" },
-  turnText: { fontSize: 16, marginBottom: 12, color: "#388E3C" },
+  container: {
+    flex: 1,
+    backgroundColor: "#E8F5E9",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  title: { fontSize: 26, fontWeight: "bold", color: "#2E7D32", marginBottom: 10 },
+  turnText: { fontSize: 18, color: "#388E3C", marginBottom: 20 },
   board: { flexDirection: "row", flexWrap: "wrap", width: 300, height: 300 },
   cell: {
-    width: "33.3333%",
-    height: "33.3333%",
+    width: "33.3%",
+    height: "33.3%",
     borderWidth: 2,
     borderColor: "#4CAF50",
     justifyContent: "center",
     alignItems: "center",
   },
-  cellText: { fontSize: 42 },
-  resetButton: { marginTop: 10, backgroundColor: "#388E3C", paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, flexDirection: "row", alignItems: "center", gap: 8 },
-  resetText: { color: "#fff", fontWeight: "700" },
+  cellText: { fontSize: 38 },
+  backButton: {
+    marginTop: 40,
+    backgroundColor: "#2E7D32",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    elevation: 3,
+  },
+  backText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
-  modalContent: { backgroundColor: "#fff", padding: 22, borderRadius: 16, width: 280, alignItems: "center", elevation: 6 },
-  modalTitle: { fontSize: 20, fontWeight: "bold", color: "#2E7D32", marginBottom: 6 },
-  modalSubtitle: { color: "#388E3C", marginBottom: 14, fontWeight: "600" },
-  modalButton: { backgroundColor: "#2E7D32", paddingVertical: 10, paddingHorizontal: 26, borderRadius: 12, marginTop: 8 },
-  modalButtonText: { color: "#fff", fontWeight: "700" },
+  // Modal styling
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    width: "85%",
+    alignItems: "center",
+    elevation: 8,
+  },
+  modalTitle: { fontSize: 22, fontWeight: "bold", color: "#1B5E20", marginBottom: 10 },
+  modalMessage: { fontSize: 16, color: "#333", textAlign: "center", marginBottom: 20 },
+  modalActions: { flexDirection: "row", justifyContent: "space-around", width: "100%" },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  modalButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });
