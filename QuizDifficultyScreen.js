@@ -599,9 +599,9 @@ export default function QuizFeatureStack() {
       <Stack.Screen name="Shop" component={ShopScreen} />
       <Stack.Screen name="Inventory" component={InventoryScreen} />
       <Stack.Screen name="MiniGames" component={MiniGamesScreen} />
-      <Stack.Screen name="TicTacToe" component={TicTacToeScreen} />
-      <Stack.Screen name="TicTacToe" component={TicTacToeModeScreen} options={{ title: "Select Mode" }} />
-      <Stack.Screen name="TicTacToe" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
+      <Stack.Screen name="TicTacToe Game" component={TicTacToeScreen} />
+      <Stack.Screen name="TicTacToe Mode" component={TicTacToeModeScreen} options={{ title: "Select Mode" }} />
+      <Stack.Screen name="TicTacToe VS Ai" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
     </Stack.Navigator>
   );
 }
