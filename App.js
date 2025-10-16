@@ -8,14 +8,13 @@ import { StyleSheet, Text, ImageBackground, View, SafeAreaView, TextInput, Butto
 import { useState } from 'react';
 import { HomeStackScreen } from './HomeStack';
 import React from 'react';
-import QuizScreen from './QuizDifficultyScreen';
 import { WebView } from 'react-native-webview';
-import QuizDifficultyScreen from './QuizDifficultyScreen';
 import { auth } from "./firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
 import HomeScreenContent from './Homescreen';
+import QuizFeatureStack from "./QuizDifficultyScreen";
 
 
 
@@ -127,8 +126,7 @@ export default function App() {
       <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
       <Stack.Screen name="WelcomeMessage" component={WelcomeMessage} />
       <Stack.Screen name="Homescreen" component={HomeStackScreen} />
-      <Stack.Screen name="QuizScreen" component={QuizScreen} />
-      <Stack.Screen name="QuizDifficultyScreen" component={QuizDifficultyScreen} />
+      <Stack.Screen name="QuizFeature" component={QuizFeatureStack} />
       
 
     </Stack.Navigator>
