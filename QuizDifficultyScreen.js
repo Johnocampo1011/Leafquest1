@@ -165,27 +165,28 @@ export function HomeScreenWithQuiz({ navigation }) {
 // ----------------------------
 export function QuizScreen({ navigation }) {
   const [questions, setQuestions] = useState([]);
-  const [idx, setIdx] = useState(0);
+  const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [earnedPoints, setEarnedPoints] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
     const load = async () => {
       try {
         const data = await fetchQuestions(10);
-        if (!cancelled) setQuestions(data);
+        setQuestions(data);
       } catch {
-        if (!cancelled) setQuestions([{ question: "What does a plant need?", options: ["Sunlight", "Juice"], correct: "Sunlight" }]);
-      } finally {
-        if (!cancelled) setLoading(false);
+        setQuestions([
+          { question: "What does a plant need?", options: ["Sunlight", "Juice"], correct: "Sunlight" },
+        ]);
       }
+      setLoading(false);
     };
     load();
-    return () => (cancelled = true);
   }, []);
 
   useFocusEffect(
@@ -199,63 +200,81 @@ export function QuizScreen({ navigation }) {
     }, [])
   );
 
-  const choose = (opt) => {
+  const handleSelect = (opt) => {
     if (showFeedback) return;
-    const q = questions[idx];
+    const q = questions[current];
     const correct = opt === q.correct || opt.text === q.correct || opt.isCorrect;
     setSelected(opt);
-    if (correct) setScore((s) => s + 1);
+    if (correct) setScore((prev) => prev + 1);
     setShowFeedback(true);
   };
 
-  const next = async () => {
-    if (idx + 1 < questions.length) {
+  const handleFinish = async () => {
+    let earned = score >= 4 ? score : 0;
+    setEarnedPoints(earned);
+    setResultModalVisible(true);
+
+    try {
+      const user = await getUserData();
+      const newHistory = user.scoreHistory || [];
+      newHistory.push({
+        date: new Date().toISOString(),
+        score,
+        total: questions.length,
+        earned,
+      });
+      await updateUserData({
+        leafPoints: (user.leafPoints || 0) + earned,
+        scoreHistory: newHistory,
+      });
+    } catch (err) {
+      console.warn("Failed to save quiz result:", err);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (current + 1 < questions.length) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setIdx((i) => i + 1);
+      setCurrent((c) => c + 1);
       setSelected(null);
       setShowFeedback(false);
-      return;
+    } else {
+      handleFinish();
     }
-
-    // finished
-    const earned = score >= 4 ? score : 0;
-    try {
-      await addLeafPoints(earned);
-      await pushScoreHistory({ date: new Date().toISOString(), score, total: questions.length, earned });
-    } catch (err) {
-      console.warn("Could not save quiz result", err);
-    }
-
-    // popup and navigate home
-    Alert.alert("Quiz Finished", `You scored ${score}/${questions.length}\n+${earned} Leaf Points`, [
-      { text: "OK", onPress: () => navigation.navigate("Home Menu") },
-    ]);
   };
 
   if (loading)
     return (
-      <View style={styles.centerPage}>
+      <View style={styles.quizPage}>
         <ActivityIndicator size="large" color="#2E7D32" />
+        <Text style={{ textAlign: "center", color: "#2E7D32", marginTop: 8 }}>Loading quiz...</Text>
       </View>
     );
 
-  const q = questions[idx] || { question: "No questions", options: [] };
+  const q = questions[current];
+  if (!q) return <Text>No questions found.</Text>;
 
   return (
     <View style={styles.quizPage}>
-      {/* Exit confirmation modal */}
-      <Modal visible={exitModalVisible} transparent animationType="fade" onRequestClose={() => setExitModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setExitModalVisible(false)}>
+      {/* Exit Confirmation Modal */}
+      <Modal visible={exitModalVisible} transparent animationType="fade">
+        <TouchableWithoutFeedback>
           <View style={styles.modalBackdrop}>
             <View style={styles.modalCard}>
               <Text style={styles.modalTitle}>Exit Quiz?</Text>
-              <Text style={styles.modalMessage}>Are you sure? Progress will not be saved.</Text>
-              <View style={{ flexDirection: "row", marginTop: 12 }}>
-                <TouchableOpacity style={[styles.optionButton, { backgroundColor: "#C8E6C9", flex: 1, marginRight: 6 }]} onPress={() => setExitModalVisible(false)}>
+              <Text style={styles.modalMessage}>Your progress will not be saved.</Text>
+              <View style={{ flexDirection: "row", marginTop: 10 }}>
+                <TouchableOpacity
+                  style={[styles.optionButton, { backgroundColor: "#C8E6C9", flex: 1, marginRight: 5 }]}
+                  onPress={() => setExitModalVisible(false)}
+                >
                   <Text style={{ textAlign: "center", color: "#1B5E20", fontWeight: "bold" }}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.optionButton, { backgroundColor: "#E57373", flex: 1 }]} onPress={() => navigation.navigate("Home Menu")}>
-                  <Text style={{ textAlign: "center", color: "#fff", fontWeight: "bold" }}>Exit</Text>
+                <TouchableOpacity
+                  style={[styles.optionButton, { backgroundColor: "#E57373", flex: 1, marginLeft: 5 }]}
+                  onPress={() => navigation.navigate("Home Menu")}
+                >
+                  <Text style={{ textAlign: "center", color: "white", fontWeight: "bold" }}>Exit</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -263,22 +282,55 @@ export function QuizScreen({ navigation }) {
         </TouchableWithoutFeedback>
       </Modal>
 
-      <Text style={styles.questionCount}>Question {idx + 1} / {questions.length}</Text>
+      {/* Quiz Results Modal */}
+      <Modal visible={resultModalVisible} transparent animationType="fade">
+        <TouchableWithoutFeedback>
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.modalCard, { alignItems: "center" }]}>
+              <Text style={styles.modalTitle}>Quiz Completed 🌿</Text>
+              <Text style={styles.modalMessage}>Score: {score}/{questions.length}</Text>
+              <Text style={[styles.modalMessage, { marginBottom: 10 }]}>+{earnedPoints} Leaf Points</Text>
+              <TouchableOpacity
+                style={[styles.optionButton, { backgroundColor: "#388E3C", width: "80%", marginBottom: 10 }]}
+                onPress={() => {
+                  setResultModalVisible(false);
+                  navigation.replace("Taking Quiz");
+                }}
+              >
+                <Text style={{ color: "white", fontWeight: "bold", textAlign: "center" }}>Try Again</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.optionButton, { backgroundColor: "#6D4C41", width: "80%" }]}
+                onPress={() => {
+                  setResultModalVisible(false);
+                  navigation.navigate("Home Menu");
+                }}
+              >
+                <Text style={{ color: "white", fontWeight: "bold", textAlign: "center" }}>Back to Menu</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      <Text style={styles.questionCount}>Question {current + 1} / {questions.length}</Text>
       <Text style={styles.quizTitle}>{q.question}</Text>
 
       {q.options.map((opt, i) => {
         const correct = opt === q.correct || opt.isCorrect;
         const chosen = selected === opt || selected?.text === opt?.text;
-        // keep base button light so green highlight reads well
+        const backgroundColor = showFeedback
+          ? correct
+            ? "#A5D6A7"
+            : chosen
+            ? "#FFCDD2"
+            : "#fff"
+          : "#fff";
         return (
           <TouchableOpacity
             key={i}
-            style={[
-              styles.optionButton,
-              showFeedback && correct ? { backgroundColor: "#C8E6C9" } : null,
-              showFeedback && chosen && !correct ? { backgroundColor: "#FFCDD2" } : null,
-            ]}
-            onPress={() => choose(opt)}
+            style={[styles.optionButton, { backgroundColor }]}
+            onPress={() => handleSelect(opt)}
           >
             <Text style={styles.optionText}>{typeof opt === "string" ? opt : opt.text}</Text>
           </TouchableOpacity>
@@ -286,13 +338,16 @@ export function QuizScreen({ navigation }) {
       })}
 
       {showFeedback && (
-        <TouchableOpacity style={styles.nextButton} onPress={next}>
-          <Text style={styles.nextButtonText}>{idx + 1 === questions.length ? "Finish" : "Next"}</Text>
+        <TouchableOpacity style={styles.nextButton} onPress={nextQuestion}>
+          <Text style={styles.nextButtonText}>
+            {current + 1 === questions.length ? "Finish" : "Next"}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
+
 
 // ----------------------------
 // Score History (live)
@@ -465,21 +520,52 @@ export function InventoryScreen() {
 }
 
 // ----------------------------
-// Mini Games Menu
+// Mini Games Menu (with proper spacing)
 // ----------------------------
 export function MiniGamesScreen({ navigation }) {
-  const fade = useRef(new Animated.Value(0)).current;
-  useEffect(() => Animated.timing(fade, { toValue: 1, duration: 350, useNativeDriver: true }).start(), []);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   return (
-    <Animated.View style={[styles.historyContainer, { opacity: fade }]}>
-      <Text style={styles.quizTitle}>🎮 Mini Games</Text>
-      <AnimatedButton title="Tic Tac Toe (PVP)" color="#43A047" icon="people-outline" onPress={() => navigation.navigate("TicTacToePVP")} />
-      <AnimatedButton title="Tic Tac Toe (AI)" color="#2E7D32" icon="hardware-chip-outline" onPress={() => navigation.navigate("TicTacToeAI")} />
-      <AnimatedButton title="Back to Menu" color="#6D4C41" icon="home-outline" onPress={() => navigation.navigate("Home Menu")} />
+    <Animated.View style={[styles.historyContainer, { opacity: fadeAnim, justifyContent: "center", alignItems: "center" }]}>
+      <Text style={styles.quizTitle}>🎮 Mini-Games Menu</Text>
+
+      <View style={{ width: "85%", marginTop: 30 }}>
+        <TouchableOpacity
+          style={[styles.mainButton, { backgroundColor: "#43A047", marginBottom: 20 }]} // 🌿 added visible gap
+          onPress={() => navigation.navigate("TicTacToePVP")}
+        >
+          <Ionicons name="people-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>🌱 Play Tic Tac Toe (PVP)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.mainButton, { backgroundColor: "#2E7D32", marginBottom: 20 }]} // 🌿 spacing
+          onPress={() => navigation.navigate("TicTacToeAI")}
+        >
+          <Ionicons name="hardware-chip-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>🤖 Play Tic Tac Toe (AI)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.mainButton, { backgroundColor: "#6D4C41" }]}
+          onPress={() => navigation.navigate("Home Menu")}
+        >
+          <Ionicons name="home-outline" size={22} color="#fff" />
+          <Text style={styles.mainButtonText}>⬅️ Back to Main Menu</Text>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }
+
 
 // ----------------------------
 // Navigation Stack
