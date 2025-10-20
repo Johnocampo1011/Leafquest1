@@ -1,32 +1,64 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  TouchableOpacity,
+  ImageBackground,
+  Animated,
+  PanResponder,
+  Image,
 } from "react-native";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
-import { Ionicons } from "@expo/vector-icons";
 import PlantStatusBar from "./PlantStatusBar";
 import { localImages } from "./localImages";
+import PlantInfoTabs from "./PlantInfoTab";
 
-export function CustomHeader({ onMenuPress }) {
+
+// 🌿 Rotatable image component
+const RotatablePlantImage = ({ source }) => {
+  const rotation = useRef(new Animated.Value(0)).current;
+
+  const rotate = rotation.interpolate({
+    inputRange: [-400, 400],
+    outputRange: ["-150deg", "150deg"],
+    extrapolate: "clamp",
+  });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        rotation.setValue(gesture.dx);
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(rotation, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 4,
+          tension: 40,
+        }).start();
+      },
+    })
+  ).current;
+
   return (
-    <View style={styles.header}>
-      <View style={{ flex: 1 }} />
-      <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
-        <Ionicons name="menu" size={30} color="green" />
-      </TouchableOpacity>
-    </View>
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={[
+        styles.imageContainer,
+        { transform: [{ rotateY: rotate }] },
+      ]}
+    >
+      <Image source={source} style={styles.image} />
+    </Animated.View>
   );
-}
+};
 
-  
 
+// 🌱 Main screen
 export default function PlantDetailsScreen({ route, navigation }) {
   const { plantId } = route.params;
   const [plant, setPlant] = useState(null);
@@ -73,52 +105,59 @@ export default function PlantDetailsScreen({ route, navigation }) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <CustomHeader onMenuPress={() => navigation.navigate("Menu")} />
+    <ImageBackground
+      source={require("./assets/leafybg.jpg")}
+      resizeMode="cover"
+      style={styles.background}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>{plant.name}</Text>
 
-      <Text style={styles.title}>{plant.name}</Text>
+        {/* 🌀 Replaced <Image> with the interactive RotatablePlantImage */}
+        <RotatablePlantImage
+          source={
+            plant.image && !plant.image.startsWith("http")
+              ? localImages[plant.image] || require("./assets/icon.png")
+              : { uri: plant.image }
+          }
+        />
 
-      <Image
-        source={
-          plant.image && !plant.image.startsWith("http")
-            ? localImages[plant.image] || require("./assets/icon.png")
-            : { uri: plant.image }
-        }
-        style={styles.image}
-      />
+        <PlantStatusBar plantId={route.params.plantId} />
+        <PlantInfoTabs plant={plant} />
 
-      <PlantStatusBar plantId={route.params.plantId} />
-
-      {/* Description card */}
-      <View style={styles.descriptionContainer}>
-        <Text style={styles.descriptionHeader}>🌿 About This Plant</Text>
-        <Text style={styles.descriptionText}>
-          {plant.description || "No description available."}
-        </Text>
-      </View>
-    </ScrollView>
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.descriptionHeader}>🌿 About This Plant</Text>
+          <Text style={styles.descriptionText}>
+            {plant.description || "No description available."}
+          </Text>
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
+
+// 🎨 Styles
 const styles = StyleSheet.create({
-  header: {
-    height: 30,
-    backgroundColor: "transparent",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    marginTop: 40,
-  },
   container: {
+    paddingTop: 50,
     padding: 16,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "rgba(255, 255, 255, 0)",
     alignItems: "center",
+    
+  },
+  imageContainer: {
+    width: 200,
+    height: 200,
+    marginBottom: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    perspective: 1000, // ✅ adds depth for Y-rotation
   },
   image: {
     width: 200,
     height: 200,
-    marginBottom: 16,
     borderRadius: 12,
     resizeMode: "contain",
   },
@@ -135,8 +174,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 16,
     width: "100%",
-    elevation: 3, // Android shadow
-    shadowColor: "#000", // iOS shadow
+    elevation: 3,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -158,5 +197,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  background: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
   },
 });

@@ -67,7 +67,26 @@ async function deductLeafPoints(amount) {
   return newBalance;
 }
 
+/**
+ * Save quiz result ensuring we keep only the latest 20 entries.
+ * entry: { date, score, total, earned }
+ */
+async function saveQuizResult(entry) {
+  const ref = await ensureUserDoc();
+  const snap = await getDoc(ref);
+  const data = snap.exists() ? snap.data() : {};
+  const history = Array.isArray(data.scoreHistory) ? [...data.scoreHistory] : [];
+  // We'll store newest first. Prepend new entry.
+  history.unshift(entry);
+  // Trim to 20 newest
+  const trimmed = history.slice(0, 20);
+  const newLeaf = (data.leafPoints || 0) + (entry.earned || 0);
+  await updateDoc(ref, { leafPoints: newLeaf, scoreHistory: trimmed });
+  return { leafPoints: newLeaf, scoreHistory: trimmed };
+}
+
 async function pushScoreHistory(entry) {
+  // kept for backward compat but not used in main flow
   const ref = await ensureUserDoc();
   const snap = await getDoc(ref);
   const data = snap.exists() ? snap.data() : {};
@@ -215,18 +234,13 @@ export function QuizScreen({ navigation }) {
     setResultModalVisible(true);
 
     try {
-      const user = await getUserData();
-      const newHistory = user.scoreHistory || [];
-      newHistory.push({
+      const entry = {
         date: new Date().toISOString(),
         score,
         total: questions.length,
         earned,
-      });
-      await updateUserData({
-        leafPoints: (user.leafPoints || 0) + earned,
-        scoreHistory: newHistory,
-      });
+      };
+      await saveQuizResult(entry);
     } catch (err) {
       console.warn("Failed to save quiz result:", err);
     }
@@ -364,7 +378,8 @@ export function ScoreHistoryScreen() {
         unsub = onSnapshot(ref, (snap) => {
           if (snap.exists()) {
             const data = snap.data();
-            const arr = Array.isArray(data.scoreHistory) ? [...data.scoreHistory].reverse() : [];
+            // Our saveQuizResult stores newest-first
+            const arr = Array.isArray(data.scoreHistory) ? [...data.scoreHistory] : [];
             setHistory(arr);
             Animated.timing(fade, { toValue: 1, duration: 300, useNativeDriver: true }).start();
           } else {
@@ -571,14 +586,23 @@ export function MiniGamesScreen({ navigation }) {
 // Navigation Stack
 // ----------------------------
 const Stack = createNativeStackNavigator();
-export default function QuizFeatureStack() {
+export default function QuizFeatureStack({ navigation }) {
   return (
     <Stack.Navigator
-      screenOptions={{
+      screenOptions={({ navigation }) => ({
         headerStyle: { backgroundColor: "#C8E6C9" },
         headerTintColor: "#1B5E20",
         headerTitleStyle: { fontWeight: "bold" },
-      }}
+        headerLeft: () => (
+          <TouchableOpacity
+            style={{ marginLeft: 10 }}
+            onPress={() => navigation.navigate("Homescreen")}
+
+          >
+            <Ionicons name="arrow-back" size={24} color="#1B5E20" />
+          </TouchableOpacity>
+        ),
+      })}
     >
       <Stack.Screen name="Home Menu" component={HomeScreenWithQuiz} />
       <Stack.Screen name="Taking Quiz" component={QuizScreen} />
@@ -586,11 +610,20 @@ export default function QuizFeatureStack() {
       <Stack.Screen name="Shop" component={ShopScreen} />
       <Stack.Screen name="Inventory" component={InventoryScreen} />
       <Stack.Screen name="MiniGames Menu" component={MiniGamesScreen} />
-      <Stack.Screen name="TicTacToePVP" component={TicTacToeScreen} options={{ title: "Tic Tac Toe (PVP)" }} />
-      <Stack.Screen name="TicTacToeAI" component={TicTacToeAIScreen} options={{ title: "Tic Tac Toe (AI)" }} />
+      <Stack.Screen
+        name="TicTacToePVP"
+        component={TicTacToeScreen}
+        options={{ title: "Tic Tac Toe (PVP)" }}
+      />
+      <Stack.Screen
+        name="TicTacToeAI"
+        component={TicTacToeAIScreen}
+        options={{ title: "Tic Tac Toe (AI)" }}
+      />
     </Stack.Navigator>
   );
 }
+
 
 // ----------------------------
 // Styles

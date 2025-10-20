@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View,Text,StyleSheet,Image,ScrollView,TextInput,TouchableOpacity, Platform, Dimensions,ActivityIndicator,FlatList} from 'react-native';
+import React, { useState, useEffect, useLayoutEffect } from "react";
+import { View,Text,StyleSheet,Image,ScrollView,TextInput,TouchableOpacity, Platform, Dimensions,ActivityIndicator,FlatList,} from 'react-native';
 import { useNavigation,useRoute, } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,21 +7,18 @@ import { WebView } from 'react-native-webview';
 import { collection, query, where, onSnapshot, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 import { localImages } from "./localImages";
+import { MenuHeaderScreen,MenuButton } from "./MenuButton";
+import { ImageBackground } from "react-native";
 
 
 const HomeStack = createNativeStackNavigator();
-const VideosStack = createNativeStackNavigator();
 
 
 function Header() {
-  const navigation = useNavigation();
   return (
     <View style={headerStyles.container}>
-      <Text style={{fontSize:20, fontWeight:"bold"}}>LEAFQUEST</Text>
-      <TouchableOpacity style={{marginLeft:200}} onPress={() => {}}>
-        <Ionicons name="menu" size={24} color="#000"/> 
-      </TouchableOpacity>
-      <View />
+      <Text style={{fontSize:28, fontWeight:"bold"}}>LEAFQUEST</Text>
+      <MenuButton />  
     </View>
   );
 }
@@ -31,45 +28,35 @@ export function HomeScreenContent({ navigation }) {
   const [myPlants, setMyPlants] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Get the current user's ID
-    const user = auth.currentUser;
-    if (!user) {
-      console.error("⚠️ No user logged in");
+useEffect(() => {
+  const user = auth.currentUser;
+  if (!user) {
+    console.error("⚠️ No user logged in");
+    setLoading(false);
+    return;
+  }
+
+  // ✅ Listen to user's personal plant collection
+  const userPlantsRef = collection(db, "users", user.uid, "plants");
+
+  const unsubscribe = onSnapshot(
+    userPlantsRef,
+    (snapshot) => {
+      const userPlants = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setMyPlants(userPlants);
       setLoading(false);
-      return;
+    },
+    (error) => {
+      console.error("Error getting user's plants:", error);
+      setLoading(false);
     }
+  );
 
-    // Listen to user's selected plants in userPlants collection
-    const userPlantsQuery = query(
-      collection(db, "userPlants"),
-      where("userId", "==", user.uid)
-    );
-
-    const unsubscribe = onSnapshot(
-      userPlantsQuery,
-      async (snapshot) => {
-        const userPlantDocs = snapshot.docs.map((doc) => doc.data());
-
-        // Fetch full plant details for each added plant
-        const plantDetails = await Promise.all(
-          userPlantDocs.map(async (up) => {
-            const plantDoc = await getDoc(doc(db, "plants", up.plantId));
-            return { id: plantDoc.id, ...plantDoc.data() };
-          })
-        );
-
-        setMyPlants(plantDetails);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching user's plants:", error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, []);
 
   if (loading) {
     return (
@@ -81,46 +68,68 @@ export function HomeScreenContent({ navigation }) {
   }
 
   return (
+    <ImageBackground
+      source={require("./assets/leafybg.jpg")}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
     <View style={homeStyles.container}>
+      
       <Header />
 
+
+
       <ScrollView contentContainerStyle={homeStyles.scrollContent}>
-        <Text style={{ fontSize: 30, fontWeight: "bold", marginHorizontal: 24, marginVertical: 4 }}>
-          My Plants
+        <Text style={{ fontSize: 26, fontWeight: "bold", marginHorizontal: 24, marginVertical: 4, textAlign: "center"}}>
+          MY PLANTS
         </Text>
 
         <View style={homeStyles.gridContainer}>
           {myPlants.length > 0 ? (
             myPlants.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={homeStyles.gridItem}
-                onPress={() =>
-                  navigation.navigate("PlantDetails", { plantId: item.id })
-                }
-              >
-                {item.image && (
-                  <Image
-                    source={item.image.startsWith("http") ? { uri: item.image } : localImages[item.image]}
-                    style={homeStyles.image}
-                  />
-                )}
-                <Text style={homeStyles.label}>{item.name}</Text>
-              </TouchableOpacity>
+             <TouchableOpacity
+  key={item.id}
+  style={homeStyles.gridItem}
+  onPress={() =>
+    navigation.navigate("PlantDetails", { plantId: item.id })
+  }
+>
+  {item.image && (
+    <Image
+      source={
+        item.image.startsWith("http")
+          ? { uri: item.image }
+          : localImages[item.image]
+      }
+      style={homeStyles.image}
+    />
+  )}
+
+  {/* Plant Name */}
+  <Text style={homeStyles.label}>{item.name}</Text>
+
+  {/* Plant Level */}
+  {item.plantLevel !== undefined && (
+    <View style={homeStyles.levelContainer}>
+      <Ionicons name="leaf" size={14} color="#4CAF50" />
+      <Text style={homeStyles.levelText}>Level {item.plantLevel}</Text>
+    </View>
+  )}
+</TouchableOpacity>
             ))
           ) : (
             <Text style={{ margin: 20, fontSize: 16, color: "gray" }}>
-              You haven't added any plants yet.
+              You don't have your Plants yet
             </Text>
           )}
 
-          {/* Add Plant Button */}
+          
           <TouchableOpacity
             style={[
               homeStyles.gridItem,
               { justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#ccc" },
             ]}
-            onPress={() => navigation.navigate("AddPlant") }
+            onPress={() => navigation.navigate("Library") }
           >
             <Ionicons name="add-circle-outline" size={40} color="#4CAF50" />
             <Text style={homeStyles.label}>Add Plant</Text>
@@ -128,7 +137,7 @@ export function HomeScreenContent({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* Quiz Button */}
+      
       <TouchableOpacity
         style={{
           backgroundColor: "#4CAF50",
@@ -146,6 +155,7 @@ export function HomeScreenContent({ navigation }) {
         </Text>
       </TouchableOpacity>
     </View>
+    </ImageBackground>
   );
 }
 
@@ -184,140 +194,6 @@ export function VideosStackNavigator() {
 }
 
 
-
-
-export function VideoPlayerScreen() {
-  const route = useRoute();
-  const { video } = route.params;
-  const [selectedVideo, setSelectedVideo] = useState(video);
-
-  const videoItems = [
-    {
-      id: 1,
-      title: 'Intro to Plants',
-      desc: 'YouTube Video 1',
-      image: require('./assets/videoplant.png'),
-      youtubeId: 'rOSHosF0',
-    },
-    {
-      id: 2,
-      title: 'Sunlight Tips',
-      desc: 'YouTube Video 2',
-      image: require('./assets/videoplant.png'),
-      youtubeId: 'ugKWkJyGFQg', 
-    },
-    
-  ];
-
- const screenHeight = Dimensions.get('window').height;
- 
-const renderVideoPlayer = () => {
-  if (selectedVideo.youtubeId) {
-    return (
-      
-        
-      <View style={videoStyles.videoContainer}>
-        
-        <WebView
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          style={videoStyles.webview}
-          source={{ uri: `https://www.youtube.com/embed/${selectedVideo.youtubeId}` }}
-        />
-      </View>
-    );
-  } else {
-    return <Text style={{ color: 'red', textAlign: 'center', marginTop: 10 }}>No video source found.</Text>;
-  }
-};
-
-  return (
-    <View style={detailStyles.container}>
-      <Header />
-
-      {renderVideoPlayer()}
-
-      <Text style={videoplayStyles.title}>{selectedVideo.title}</Text>
-      <Text style={videoplayStyles.description}>{selectedVideo.desc}</Text>
-
-      <ScrollView style={{ padding: 15 }}>
-        {videoItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={videoStyles.videoItem}
-            onPress={() => setSelectedVideo(item)}
-          >
-            <Image source={item.image} style={videoStyles.thumbnail} />
-            <View style={videoStyles.infoBox}>
-              <Text style={videoStyles.title}>{item.title}</Text>
-              <Text style={videoStyles.desc}>{item.desc}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-
-export function VideosScreen() {
-  const navigation = useNavigation();
-  const [search, setSearch] = useState('');
-
-  const videoItems = [
-    {
-      id: 1,
-      title: 'Video One',
-      desc: 'Intro to plants',
-      image: require('./assets/videoplant.png'),
-      youtubeId: 'ew-rOSHosF0',
-    },
-    {
-      id: 2,
-      title: 'Video Two',
-      desc: 'Sunlight tips',
-      image: require('./assets/videoplant.png'),
-      youtubeId: 'ObMGZbnc750',
-    },
-    
-  ];
-
-  const filteredItems = videoItems.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase()) ||
-    item.desc.toLowerCase().includes(search.toLowerCase())
-  );
-
-  return (
-    <View style={otherStyles.container}>
-      <Header />
-      <Text style={{ fontSize: 30, fontWeight: 'bold', marginHorizontal:24, marginTop:10 }}>Videos</Text>
-      <TextInput
-        style={videoStyles.searchBar}
-        placeholder="Search videos..."
-        value={search}
-        onChangeText={setSearch}
-      />
-      <ScrollView style={{ padding: 15 }}>
-        {filteredItems.map((item) => (
-
-          
-          <TouchableOpacity
-            key={item.id}
-            style={videoStyles.videoItem}
-            onPress={() => navigation.navigate('VideoPlayer', { video: item })}
-          >
-            
-            <Image source={item.image} style={videoStyles.thumbnail} />
-            <View style={videoStyles.infoBox}>
-              <Text style={videoStyles.videoTitle}>{item.title}</Text>
-              <Text style={videoStyles.videoDesc}>{item.desc}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
 
 
 
@@ -365,13 +241,13 @@ const PlantDetailsstyles = StyleSheet.create({
 
 
 const headerStyles = StyleSheet.create({ 
-  container: { height: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ddd', marginTop: Platform.OS === 'android' ? 40 : 0,}, 
+  container: { height: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, backgroundColor: '#ffffff09',  marginTop: Platform.OS === 'android' ? 40 : 0,}, 
 });
 
 const homeStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#fafafa2c',
   },
   scrollContent: {
     paddingBottom: 20,
@@ -417,6 +293,22 @@ const homeStyles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.7)", // Semi-transparent background ✅
     paddingVertical: 4,
   },
+  levelContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: -10,
+  backgroundColor: "rgba(76, 175, 80, 0.1)", // light green background
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: 8,
+},
+levelText: {
+  fontSize: 10,
+  fontWeight: "600",
+  marginLeft: 4,
+  color: "#2E481E",
+},
+
 });
 
 const plntstyles = StyleSheet.create({ 

@@ -11,11 +11,14 @@ import React from 'react';
 import QuizScreen from './QuizDifficultyScreen';
 import { WebView } from 'react-native-webview';
 import QuizDifficultyScreen from './QuizDifficultyScreen';
-import { auth } from "./firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
 import HomeScreenContent from './Homescreen';
+import { MenuProvider } from 'react-native-popup-menu';
+import { ProfileScreen } from './MenuButton'; // Import ProfileScreen
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "./firebaseConfig";
 
 
 
@@ -40,7 +43,7 @@ export function LoginScreen({ navigation }) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
     } else if (error.code === "auth/user-not-found") {
       Alert.alert("Account Not Found", "This email is not registered.");
-    } else if (error.code === "auth/wrong-password") {
+    } else if (error.code === "auth/invalid-credential") {
       Alert.alert("Incorrect Password", "Please try again.");
     } else {
       Alert.alert("Error", "Something went wrong. Please try again.");
@@ -115,6 +118,7 @@ const Stack = createNativeStackNavigator();
 // Main App Navigator Setup (Remains the same)
 export default function App() {
   return (  
+    <MenuProvider>
     <NavigationContainer>
       <Stack.Navigator initialRouteName="LoginScreen" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
@@ -129,12 +133,14 @@ export default function App() {
       <Stack.Screen name="Homescreen" component={HomeStackScreen} />
       <Stack.Screen name="QuizScreen" component={QuizScreen} />
       <Stack.Screen name="QuizDifficultyScreen" component={QuizDifficultyScreen} />
+      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+
       
 
     </Stack.Navigator>
     
   </NavigationContainer>
-
+    </MenuProvider>
 
 
   );
@@ -402,58 +408,73 @@ export function PasswordSuccessScreen({ navigation }) {
 }
 
 export function SignUpScreen({ navigation }) {
-  const [firstName, setfirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
 
   const validateAndSignUp = async () => {
-  if (!firstName || !lastName || !email || !username || !password || !confirm) {
-    Alert.alert("Error", "Please fill in all fields.");
-    return;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    Alert.alert("Invalid Email", "Please enter a valid email address.");
-    return;
-  }
-
-  if (password !== confirm) {
-    Alert.alert("Password Mismatch", "Passwords do not match.");
-    return;
-  }
-
-  if (password.length < 6) {
-    Alert.alert("Weak Password", "Password must be at least 6 characters long.");
-    return;
-  }
-
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    navigation.navigate("WelcomeMessage");
-  } catch (error) {
-    console.log(error);
-    if (error.code === "auth/email-already-in-use") {
-      Alert.alert("Email In Use", "This email is already registered.");
-    } else {
-      Alert.alert("Signup Failed", error.message);
+    // 🧠 Validation
+    if (!firstName || !lastName || !email || !username || !password || !confirm) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
     }
-  }
-};
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
+    if (password !== confirm) {
+      Alert.alert("Password Mismatch", "Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Weak Password", "Password must be at least 6 characters long.");
+      return;
+    }
+
+    try {
+      // ✅ Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // ✅ Save user signup data to Firestore structure:
+      // users/{user.uid}/usersData/profile
+      const userDataRef = doc(db, "users", user.uid, "usersData", "profile");
+      await setDoc(userDataRef, {
+        firstName,
+        lastName,
+        email,
+        username,
+        createdAt: new Date().toISOString(),
+      });
+
+      Alert.alert("Success", "Account created successfully!");
+      navigation.navigate("WelcomeMessage");
+    } catch (error) {
+      console.error("Signup error:", error);
+      if (error.code === "auth/email-already-in-use") {
+        Alert.alert("Email In Use", "This email is already registered.");
+      } else {
+        Alert.alert("Signup Failed", error.message);
+      }
+    }
+  };
 
   return (
     <View style={styles.loginOuterContainer}>
       <StatusBar style="auto" />
       <ImageBackground
         style={styles.imagebg}
-        source={require('./assets/greenbg 1.png')}
+        source={require("./assets/greenbg 1.png")}
         resizeMode="cover"
       >
         <View style={styles.centeringContainer}>
-
           <Text style={styles.mainTitle}>CREATE ACCOUNT</Text>
 
           <View style={styles.formContainer}>
@@ -462,7 +483,7 @@ export function SignUpScreen({ navigation }) {
                 style={set1styles.input}
                 placeholder="First Name"
                 value={firstName}
-                onChangeText={setfirstName}
+                onChangeText={setFirstName}
               />
               <TextInput
                 style={set1styles.input}
@@ -497,14 +518,13 @@ export function SignUpScreen({ navigation }) {
                 value={confirm}
                 onChangeText={setConfirm}
               />
-            
 
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={validateAndSignUp}
-            >
-              <Text style={styles.loginButtonText}>SIGNUP</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={validateAndSignUp}
+              >
+                <Text style={styles.loginButtonText}>SIGNUP</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>

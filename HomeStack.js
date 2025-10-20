@@ -7,11 +7,10 @@ import { Ionicons } from '@expo/vector-icons';
 // Import from the revised Homescreen.js
 import {
   HomeScreenContent,
-  PlantDetailScreen,
-  VideosStackNavigator,
+  PlantDetailScreen, 
 } from './Homescreen';
 
-import { LibraryScreen,PlantLibraryDetailsScreen, } from './PlantLibraryDetails';
+import { LibraryScreen, } from './PlantLibraryDetails';
 
 // Import the standard camera screen
 import CameraScreen from './CameraScreen';
@@ -20,6 +19,8 @@ import CameraScreen from './CameraScreen';
 import PlantDetailsScreen from './plantdetails';
 
 import PlantlibraryDetailsScreen from './plantlibrary';
+import VideoPlayerScreen from './VideoPlayerScreen';
+import VideoScreen from './VideoScreen';
 
 // --- Create one shared Stack for all stacks in this file ---
 const Stack = createNativeStackNavigator();
@@ -29,13 +30,13 @@ const Tab = createBottomTabNavigator();
 function HomeStackNavigator() {
   return (
     <Stack.Navigator>
+      
       <Stack.Screen
         name="Homescreen"
         component={HomeScreenContent}
-        options={{ headerShown: false }}
+        options={{ headerShown: false , unmountOnBlur: true, }}
       />
-      <Stack.Screen name="AddPlant" component={LibraryScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="PlantDetails" component={PlantDetailsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="PlantDetails" component={PlantDetailsScreen} options={{ headerShown: false, unmountOnBlur: true,  }} />
 
     </Stack.Navigator>
   );
@@ -49,15 +50,44 @@ function LibraryStackNavigator() {
         name="Plant Library"
         component={LibraryScreen}
         options={{ headerShown: true, 
+        unmountOnBlur: true, 
         headerStyle: { backgroundColor: '#2E481E' }, 
         headerTintColor: '#fff', // ✅ text and icon color
         headerTitleStyle: { fontWeight: 'bold' },
         headerTitleAlign: 'center' }}
       />
       <Stack.Screen
-        name="PlantDetails"
+        name="Plant Library Details"
         component={PlantlibraryDetailsScreen}
-        options={{ headerShown: false, }}
+        options={{ headerShown: false,
+          unmountOnBlur: true, 
+        }}
+      />
+
+    </Stack.Navigator>
+  );
+}
+
+// --- Video Stack ---
+function VideoStackNavigator() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Videos"
+        component={VideoScreen}
+        options={{ headerShown: true, 
+        unmountOnBlur: true, 
+        headerStyle: { backgroundColor: '#2E481E' }, 
+        headerTintColor: '#fff', // ✅ text and icon color
+        headerTitleStyle: { fontWeight: 'bold' },
+        headerTitleAlign: 'center' }}
+      />
+      <Stack.Screen
+        name="VideoPlayer"
+        component={VideoPlayerScreen}
+        options={{ headerShown: false,
+          unmountOnBlur: true, 
+        }}
       />
 
     </Stack.Navigator>
@@ -65,6 +95,8 @@ function LibraryStackNavigator() {
 }
 
 
+
+// --- Bottom Tabs ---
 // --- Bottom Tabs ---
 export function HomeStackScreen() {
   return (
@@ -85,20 +117,36 @@ export function HomeStackScreen() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: 'green',
-        tabBarInactiveTintColor: 'gray'
+        tabBarInactiveTintColor: 'gray',
       })}
     >
       {/* Home Tab */}
-      <Tab.Screen name="Home" component={HomeStackNavigator} />
+      <Tab.Screen
+        name="Home"
+        component={HomeStackNavigator}
+        options={{ unmountOnBlur: true }}   // ✅ resets Home stack
+      />
 
       {/* Videos Tab */}
-      <Tab.Screen name="Videos" component={VideosStackNavigator} />
+      <Tab.Screen
+        name="Videos"
+        component={VideoStackNavigator}
+        options={{ unmountOnBlur: true }}   // ✅ resets Videos stack
+      />
 
       {/* Camera Tab */}
-      <Tab.Screen name="Camera" component={CameraScreen} />
+      <Tab.Screen
+        name="Camera"
+        component={CameraScreen}
+        options={{ unmountOnBlur: true }}   // ✅ resets Camera screen
+      />
 
       {/* Library Tab */}
-      <Tab.Screen name="Library" component={LibraryStackNavigator} />
+      <Tab.Screen
+        name="Library"
+        component={LibraryStackNavigator}
+        options={{ unmountOnBlur: true }}   // ✅ resets Library stack
+      />
     </Tab.Navigator>
   );
 }

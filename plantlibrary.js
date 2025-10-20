@@ -9,21 +9,16 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+import { auth, db } from "./firebaseConfig"; //
 import { Ionicons } from "@expo/vector-icons";
 import PlantStatusBar from "./PlantStatusBar";
 import { localImages } from "./localImages";
+import { getAuth } from "firebase/auth";  // ✅ import auth
+import PlantInfoTabs from "./PlantInfoTab";
+import { ImageBackground } from "react-native";
 
-export function CustomHeader({ onMenuPress }) {
-  return (
-    <View style={styles.header}>
-      <View style={{ flex: 1 }} />
-      <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
-        <Ionicons name="menu" size={30} color="green" />
-      </TouchableOpacity>
-    </View>
-  );
-}
+
+
 
   
 
@@ -32,26 +27,27 @@ export default function PlantlibraryDetailsScreen({ route, navigation }) {
   const [plant, setPlant] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPlantDetails = async () => {
-      try {
-        const docRef = doc(db, "plants", plantId);
-        const docSnap = await getDoc(docRef);
+ useEffect(() => {
+  const fetchPlantDetails = async () => {
+    try {
+      // 🌍 Fetch from global catalog (shared)
+      const docRef = doc(db, "plants", plantId);
+      const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          setPlant({ id: docSnap.id, ...docSnap.data() });
-        } else {
-          console.error("No such plant document!");
-        }
-      } catch (error) {
-        console.error("Error fetching plant details:", error);
-      } finally {
-        setLoading(false);
+      if (docSnap.exists()) {
+        setPlant({ id: docSnap.id, ...docSnap.data() });
+      } else {
+        console.error("❌ Plant not found in global library!");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching plant details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchPlantDetails();
-  }, [plantId]);
+  fetchPlantDetails();
+}, [plantId]);
 
   if (loading) {
     return (
@@ -73,8 +69,13 @@ export default function PlantlibraryDetailsScreen({ route, navigation }) {
   }
 
   return (
+    <ImageBackground
+    source={require("./assets/leafybg2.jpg")} // 👈 use your own image here
+    resizeMode="cover"
+    style={styles.background}
+  >
     <ScrollView contentContainerStyle={styles.container}>
-      <CustomHeader onMenuPress={() => navigation.navigate("Menu")} />
+
 
       <Text style={styles.title}>{plant.name}</Text>
 
@@ -87,6 +88,7 @@ export default function PlantlibraryDetailsScreen({ route, navigation }) {
         style={styles.image}
       />
 
+      <PlantInfoTabs plant={plant} />
 
       {/* Description card */}
       <View style={styles.descriptionContainer}>
@@ -96,23 +98,18 @@ export default function PlantlibraryDetailsScreen({ route, navigation }) {
         </Text>
       </View>
     </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 30,
-    backgroundColor: "transparent",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    marginTop: 40,
-  },
+
   container: {
+    paddingTop: 50,
     padding: 16,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "rgba(255, 255, 255, 0)", // optional translucent white overlay
     alignItems: "center",
+  
   },
   image: {
     width: 200,
@@ -158,4 +155,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  background: {
+  flex: 1,
+  width: "100%",
+  height: "100%",
+},
 });
