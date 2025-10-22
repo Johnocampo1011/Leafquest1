@@ -22,6 +22,7 @@ import { auth, db } from "./firebaseConfig";
 
 
 
+
 // --- LoginScreen component (Logo + Green Card + Labels + Links) ---
 export function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -124,8 +125,6 @@ export default function App() {
       <Stack.Screen name="MessageScreen" component={MessageScreen} /> 
       <Stack.Screen name="MessageScreen2" component={MessageScreen2} /> 
       <Stack.Screen name="ForgotPasswordScreen" component={ForgotPasswordScreen} />
-      <Stack.Screen name="VerificationScreen" component={VerificationScreen} />
-      <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen} />
       <Stack.Screen name="PasswordSuccessScreen" component={PasswordSuccessScreen} />
       <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
       <Stack.Screen name="WelcomeMessage" component={WelcomeMessage} />
@@ -205,53 +204,74 @@ export function MessageScreen({ navigation }) {
 
 
 // --- Other Screen Component Definitions (Remain the same) ---
-export function ForgotPasswordScreen({ navigation }) { /* ... */
-  const [username, setUsername] = useState(''); const [email, setEmail] = useState('');
+export function ForgotPasswordScreen({ navigation }) {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
 
   const handlePasswordReset = async () => {
-  if (email.trim() === "") {
-    Alert.alert("Error", "Please enter your email.");
-    return;
-  }
+    if (email.trim() === "") {
+      Alert.alert("Error", "Please enter your email.");
+      return;
+    }
 
-  try {
-    await sendPasswordResetEmail(auth, email);
-    Alert.alert("Success", "Password reset email sent!");
-  } catch (error) {
-    console.log(error);
-    Alert.alert("Error", "Failed to send reset email. Check your email address.");
-  }
-};
+    try {
+      await sendPasswordResetEmail(auth, email);
+      Alert.alert(
+        "Success",
+        "A password reset link has been sent to your email.",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("PasswordSuccessScreen"),
+          },
+        ]
+      );
+    } catch (error) {
+      console.log("Reset error:", error);
+      Alert.alert(
+        "Error",
+        "Failed to send reset email. Please check your email address."
+      );
+    }
+  };
 
-  return ( 
+  return (
     <View style={styles.loginOuterContainer}>
       <StatusBar style="auto" />
       <ImageBackground
         style={styles.imagebg}
-        source={require('./assets/greenbg 1.png')}
+        source={require("./assets/greenbg 1.png")}
         resizeMode="cover"
       >
-      
         <View style={styles.centeringContainer}>
           <Text style={styles.mainTitle}>FORGOT PASSWORD</Text>
-        
+
           <View style={styles.formContainer}>
-        
             <View style={styles.inputGroup}>
               <Text style={styles.label}>USERNAME:</Text>
-              <TextInput style={set1styles.input} value={username} onChangeText={setUsername}/>
+              <TextInput
+                style={set1styles.input}
+                value={username}
+                onChangeText={setUsername}
+              />
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>EMAIL:</Text>
-              <TextInput style={set1styles.input} keyboardType="email-address" value={email} onChangeText={setEmail}/> 
+              <TextInput
+                style={set1styles.input}
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+              />
             </View>
+
             <TouchableOpacity
               style={styles.loginButton}
-              onPress={() => navigation.navigate('VerificationScreen')}> 
+              onPress={handlePasswordReset}
+            >
               <Text style={styles.loginButtonText}>SEND EMAIL</Text>
             </TouchableOpacity>
-
           </View>
         </View>
       </ImageBackground>
@@ -259,155 +279,24 @@ export function ForgotPasswordScreen({ navigation }) { /* ... */
   );
 }
 
-export function VerificationScreen({ navigation }) {
-  const [code, setCode] = useState(['', '', '', '']);
-  const [loading, setLoading] = useState(false);
-
-  const handleResendEmail = async () => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
-      Alert.alert("Success", "Verification email resent!");
-    } catch (error) {
-      Alert.alert("Error", "Failed to resend email.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <View style={styles.loginOuterContainer}>
-      <StatusBar style="auto" />
-      <ImageBackground
-        style={styles.imagebg}
-        source={require('./assets/greenbg 1.png')}
-        resizeMode="cover"
-      >
-        <View style={styles.centeringContainer}>
-          <Text style={styles.mainTitle}>VERIFICATION</Text>
-
-          <View style={set1styles.codeContainer}>
-            {code.map((digit, idx) => (
-              <TextInput
-                key={idx}
-                style={set1styles.codeInput}
-                maxLength={1}
-                keyboardType="number-pad"
-                onChangeText={(text) => {
-                  const newCode = [...code];
-                  newCode[idx] = text;
-                  setCode(newCode);
-                }}
-                value={digit}
-              />
-            ))}
-          </View>
-
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={() => navigation.navigate('ChangePasswordScreen')}
-          >
-            <Text style={styles.loginButtonText}>CONFIRM</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.resendButton}
-            onPress={handleResendEmail}
-            disabled={loading}
-            activeOpacity={0.7}
-          >
-            {loading ? (
-              <ActivityIndicator color="#1B5E16" />
-            ) : (
-              <Text style={styles.resendText}>RESEND EMAIL</Text>
-            )}
-          </TouchableOpacity>
-
-        </View>
-      </ImageBackground>
-    </View>
-  );
-}
-
-export function ChangePasswordScreen({ navigation }) {
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-
-  const handleChangePassword = () => {
-    if (password.trim() === '' || confirm.trim() === '') {
-      Alert.alert('Error', 'Please fill in both fields.');
-      return;
-    }
-
-    if (password !== confirm) {
-      Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
-      return;
-    }
-
-
-    navigation.navigate('PasswordSuccessScreen');
-  };
-
-  return (
-    <View style={styles.loginOuterContainer}>
-      <StatusBar style="auto" />
-      <ImageBackground
-        style={styles.imagebg}
-        source={require('./assets/greenbg 1.png')}
-        resizeMode="cover"
-      >
-        <View style={styles.centeringContainer}>
-          <Text style={styles.mainTitle}>CHANGE PASSWORD</Text>
-
-          <View style={styles.formContainer}>
-            <View style={set1styles.form}>
-              <TextInput
-                style={set1styles.input}
-                placeholder="New Password"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-
-              <TextInput
-                style={set1styles.input}
-                placeholder="Confirm Password"
-                secureTextEntry
-                value={confirm}
-                onChangeText={setConfirm}
-              />
-
-              <TouchableOpacity
-                style={styles.loginButton}
-                onPress={handleChangePassword}
-              >
-                <Text style={styles.loginButtonText}>CONFIRM</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </ImageBackground>
-    </View>
-  );
-}
-
+// --- Password Reset Success Screen ---
 export function PasswordSuccessScreen({ navigation }) {
   return (
     <SafeAreaView style={set1styles.container}>
-      <Text style={set1styles.title}>Password Successfully Changed!</Text>
-      
+      <Text style={set1styles.title}>Password Reset Email Sent!</Text>
+
       <TouchableOpacity
         style={set1styles.button}
-        onPress={() => navigation.navigate('LoginScreen')}
+        onPress={() => navigation.navigate("LoginScreen")}
       >
-        <Text style={set1styles.buttonText}>PROCEED TO HOMEPAGE</Text>
+        <Text style={set1styles.buttonText}>RETURN TO LOGIN</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 export function SignUpScreen({ navigation }) {
-  const [firstName, setfirstName] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -415,6 +304,7 @@ export function SignUpScreen({ navigation }) {
   const [confirm, setConfirm] = useState("");
 
   const validateAndSignUp = async () => {
+    // 🧠 Validation
     if (!firstName || !lastName || !email || !username || !password || !confirm) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
@@ -437,12 +327,14 @@ export function SignUpScreen({ navigation }) {
     }
 
     try {
-      // Create user in Firebase Auth
+      // ✅ Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Store additional info in Firestore
-      await setDoc(doc(db, "users", user.uid), {
+      // ✅ Save user signup data to Firestore structure:
+      // users/{user.uid}/usersData/profile
+      const userDataRef = doc(db, "users", user.uid, "usersData", "profile");
+      await setDoc(userDataRef, {
         firstName,
         lastName,
         email,
@@ -453,7 +345,7 @@ export function SignUpScreen({ navigation }) {
       Alert.alert("Success", "Account created successfully!");
       navigation.navigate("WelcomeMessage");
     } catch (error) {
-      console.log(error);
+      console.error("Signup error:", error);
       if (error.code === "auth/email-already-in-use") {
         Alert.alert("Email In Use", "This email is already registered.");
       } else {
@@ -479,7 +371,7 @@ export function SignUpScreen({ navigation }) {
                 style={set1styles.input}
                 placeholder="First Name"
                 value={firstName}
-                onChangeText={setfirstName}
+                onChangeText={setFirstName}
               />
               <TextInput
                 style={set1styles.input}
