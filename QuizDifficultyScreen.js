@@ -160,10 +160,12 @@ export function HomeScreenWithQuiz({ navigation }) {
   return (
     <View style={styles.homeContainer}>
       <Text style={styles.title}>🌿 LeafQuest</Text>
-      <View style={styles.pointsRow}>
-        <Ionicons name="leaf-outline" size={18} color="#2E7D32" />
-        <Text style={styles.pointsText}> {leafPoints} Leaf Points</Text>
-      </View>
+
+<View style={styles.pointsBox}>
+  <Ionicons name="leaf-outline" size={18} color="#2E7D32" />
+  <Text style={styles.pointsText}>{leafPoints} Leaf Points</Text>
+</View>
+
 
       <View style={styles.buttonColumn}>
         <AnimatedButton title="Start Quiz" color="#388E3C" icon="play-circle-outline" onPress={() => navigation.navigate("Taking Quiz")} />
@@ -177,10 +179,7 @@ export function HomeScreenWithQuiz({ navigation }) {
 }
 
 // ----------------------------
-// Quiz Screen
-// - exit confirmation if user presses back
-// - final popup showing result and saving to Firestore
-// - tiered reward: score <4 => 0, score >=4 => score (4-10)
+// Quiz Screen (updated with A/B/C/D circle labels)
 // ----------------------------
 export function QuizScreen({ navigation }) {
   const [questions, setQuestions] = useState([]);
@@ -268,6 +267,8 @@ export function QuizScreen({ navigation }) {
   const q = questions[current];
   if (!q) return <Text>No questions found.</Text>;
 
+  const letters = ["A", "B", "C", "D"];
+
   return (
     <View style={styles.quizPage}>
       {/* Exit Confirmation Modal */}
@@ -327,9 +328,11 @@ export function QuizScreen({ navigation }) {
         </TouchableWithoutFeedback>
       </Modal>
 
+      {/* Question */}
       <Text style={styles.questionCount}>Question {current + 1} / {questions.length}</Text>
       <Text style={styles.quizTitle}>{q.question}</Text>
 
+      {/* Options with letter circles */}
       {q.options.map((opt, i) => {
         const correct = opt === q.correct || opt.isCorrect;
         const chosen = selected === opt || selected?.text === opt?.text;
@@ -340,13 +343,38 @@ export function QuizScreen({ navigation }) {
             ? "#FFCDD2"
             : "#fff"
           : "#fff";
+
+        const isSelected = chosen;
+        const isCorrect = correct && showFeedback;
+
         return (
           <TouchableOpacity
             key={i}
             style={[styles.optionButton, { backgroundColor }]}
             onPress={() => handleSelect(opt)}
+            activeOpacity={0.8}
           >
-            <Text style={styles.optionText}>{typeof opt === "string" ? opt : opt.text}</Text>
+            <View style={styles.optionRow}>
+              <View
+                style={[
+                  styles.optionCircle,
+                  isSelected && { backgroundColor: "#2E7D32" },
+                  isCorrect && { backgroundColor: "#81C784" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.optionLetter,
+                    (isSelected || isCorrect) && { color: "white" },
+                  ]}
+                >
+                  {letters[i]}
+                </Text>
+              </View>
+              <Text style={styles.optionText}>
+                {typeof opt === "string" ? opt : opt.text}
+              </Text>
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -361,6 +389,7 @@ export function QuizScreen({ navigation }) {
     </View>
   );
 }
+
 
 
 // ----------------------------
@@ -629,41 +658,184 @@ export default function QuizFeatureStack({ navigation }) {
 // Styles
 // ----------------------------
 const styles = StyleSheet.create({
-  homeContainer: { flex: 1, backgroundColor: "#E8F5E9", alignItems: "center", paddingTop: 56 },
-  title: { fontSize: 26, fontWeight: "bold", color: "#2E7D32", marginBottom: 12 },
-  pointsRow: { flexDirection: "row", alignItems: "center", marginBottom: 18 },
-  pointsText: { color: "#1B5E20", fontSize: 16, marginLeft: 6 },
-  buttonColumn: { width: "86%", gap: 12, alignItems: "center" },
-  mainButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 12, width: "100%", elevation: 3, shadowColor: "#000", shadowOpacity: 0.12, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4 },
+  homeContainer: {
+    flex: 1,
+    backgroundColor: "#E8F5E9",
+    alignItems: "center",
+    paddingTop: 56,
+  },
+
+  title: {
+    fontSize: 34, // larger title
+    fontWeight: "bold",
+    color: "#2E7D32",
+    marginBottom: 16,
+  },
+
+  pointsBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#C8E6C9", // soft green box
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 24,
+    elevation: 2, // subtle shadow for depth
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+  },
+
+  pointsText: {
+    color: "#1B5E20",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+
+  buttonColumn: {
+    width: "86%",
+    gap: 12,
+    alignItems: "center",
+  },
+
+  mainButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    width: "100%",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+
   mainButtonText: { color: "#fff", fontWeight: "700", marginLeft: 10 },
 
   quizPage: { flex: 1, backgroundColor: "#DFF0D8", padding: 18 },
-  quizTitle: { fontSize: 20, fontWeight: "bold", textAlign: "center", color: "#1B5E20", marginVertical: 8 },
-  questionCount: { textAlign: "center", color: "#2E7D32", marginBottom: 10, fontWeight: "600" },
-  optionButton: { backgroundColor: "#fff", padding: 14, borderRadius: 12, borderWidth: 1, borderColor: "#DCEEDC", marginBottom: 10 },
+  quizTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#1B5E20",
+    marginVertical: 8,
+  },
+  questionCount: {
+    textAlign: "center",
+    color: "#2E7D32",
+    marginBottom: 10,
+    fontWeight: "600",
+  },
+  optionButton: {
+    backgroundColor: "#fff",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#DCEEDC",
+    marginBottom: 10,
+  },
   optionText: { textAlign: "center", color: "#1B5E20", fontSize: 16 },
-  nextButton: { backgroundColor: "#2E7D32", padding: 14, borderRadius: 12, marginTop: 10 },
+  nextButton: {
+    backgroundColor: "#2E7D32",
+    padding: 14,
+    borderRadius: 12,
+    marginTop: 10,
+  },
   nextButtonText: { color: "#fff", textAlign: "center", fontWeight: "700" },
 
   historyContainer: { flex: 1, backgroundColor: "#E8F5E9", padding: 18 },
-  historyItem: { backgroundColor: "#FFFFFF", padding: 12, borderRadius: 10, marginBottom: 10 },
+  historyItem: {
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
   historyText: { color: "#1B5E20" },
 
   shopContainer: { flex: 1, padding: 18, backgroundColor: "#E8F5E9" },
-  shopCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, width: "48%", alignItems: "center", justifyContent: "center", elevation: 3 },
+  shopCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 14,
+    width: "48%",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+  },
   shopIcon: { fontSize: 34 },
   shopItemTitle: { marginTop: 8, fontWeight: "600" },
-  shopCostTag: { flexDirection: "row", alignItems: "center", marginTop: 8, backgroundColor: "#C8E6C9", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
+  shopCostTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    backgroundColor: "#C8E6C9",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
   shopCostText: { marginLeft: 6, color: "#2E7D32", fontWeight: "700" },
 
-  inventoryCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, width: "48%", alignItems: "center", justifyContent: "center", elevation: 3 },
+  inventoryCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 14,
+    width: "48%",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+  },
   inventoryIcon: { fontSize: 36, marginBottom: 8 },
   inventoryName: { fontWeight: "600", color: "#2E7D32", textAlign: "center" },
 
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
-  modalCard: { backgroundColor: "#fff", padding: 18, borderRadius: 10, width: "86%", alignItems: "center" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    padding: 18,
+    borderRadius: 10,
+    width: "86%",
+    alignItems: "center",
+  },
   modalTitle: { fontSize: 18, fontWeight: "700", color: "#1B5E20" },
   modalMessage: { fontSize: 14, color: "#333", marginTop: 8 },
 
-  centerPage: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#DFF0D8" },
+  centerPage: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#DFF0D8",
+  },
+
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+
+  optionCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: "#2E7D32",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    backgroundColor: "#E8F5E9",
+  },
+
+  optionLetter: {
+    color: "#2E7D32",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 });
+
