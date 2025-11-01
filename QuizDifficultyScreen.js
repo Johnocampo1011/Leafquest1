@@ -161,11 +161,10 @@ export function HomeScreenWithQuiz({ navigation }) {
     <View style={styles.homeContainer}>
       <Text style={styles.title}>🌿 LeafQuest</Text>
 
-<View style={styles.pointsBox}>
-  <Ionicons name="leaf-outline" size={18} color="#2E7D32" />
-  <Text style={styles.pointsText}>{leafPoints} Leaf Points</Text>
-</View>
-
+      <View style={styles.pointsBox}>
+        <Ionicons name="leaf-outline" size={18} color="#2E7D32" />
+        <Text style={styles.pointsText}>{leafPoints} Leaf Points</Text>
+      </View>
 
       <View style={styles.buttonColumn}>
         <AnimatedButton title="Start Quiz" color="#388E3C" icon="play-circle-outline" onPress={() => navigation.navigate("Taking Quiz")} />
@@ -390,8 +389,6 @@ export function QuizScreen({ navigation }) {
   );
 }
 
-
-
 // ----------------------------
 // Score History (live)
 // ----------------------------
@@ -445,72 +442,213 @@ export function ScoreHistoryScreen() {
 }
 
 // ----------------------------
-// Shop (live)
+// Shop Screen (real-time leafPoints + cart + quantities)
 // ----------------------------
-export function ShopScreen() {
-  const [leafPoints, setLeafPoints] = useState(0);
-  const fade = useRef(new Animated.Value(0)).current;
+export function ShopScreen({ navigation }) {
+  const auth = getAuth();
+  const user = auth.currentUser;
 
-  const catalog = [
-    { id: "w1", name: "Water", icon: "💧", cost: 10 },
-    { id: "f1", name: "Fertilizer", icon: "🌿", cost: 20 },
-    { id: "s1", name: "Sunlight", icon: "☀️", cost: 15 },
+  // live leafPoints from Firestore
+  const [leafPoints, setLeafPoints] = useState(0);
+  const [cart, setCart] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const items = [
+    { id: "0", name: "Water", icon: "💧", cost: 10 },
+    { id: "1", name: "Fertilizer", icon: "🌿", cost: 20 },
+    { id: "2", name: "Sunlight", icon: "☀️", cost: 15 },
   ];
 
-  useFocusEffect(
-    useCallback(() => {
-      let unsub;
-      const start = async () => {
+  // Manage quantities keyed by item.id
+  const initialQuantities = items.reduce((acc, it) => ({ ...acc, [it.id]: 0 }), {});
+  const [quantities, setQuantities] = useState(initialQuantities);
+
+  // Listen to user doc for live leafPoints (and inventory if desired)
+  useEffect(() => {
+    let unsub;
+    const start = async () => {
+      try {
         const ref = await ensureUserDoc();
         unsub = onSnapshot(ref, (snap) => {
           if (snap.exists()) {
-            setLeafPoints(snap.data().leafPoints || 0);
-            Animated.timing(fade, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+            const data = snap.data();
+            setLeafPoints(data.leafPoints || 0);
           }
         });
-      };
-      start();
-      return () => unsub && unsub();
-    }, [])
-  );
-
-  const buy = async (item) => {
-    try {
-      // Deduct then add inventory
-      await deductLeafPoints(item.cost);
-      await upsertInventoryItem({ name: item.name, icon: item.icon, quantity: 1 });
-      Alert.alert("Purchase Successful", `You bought ${item.icon} ${item.name}`);
-    } catch (err) {
-      if (err.message === "insufficient_points") {
-        Alert.alert("Not enough points", "You need more Leaf Points to buy this.");
-      } else {
-        console.error("Purchase error:", err);
-        Alert.alert("Error", "Could not complete purchase.");
+      } catch (err) {
+        console.warn("Shop listener error:", err);
       }
+    };
+    start();
+    return () => unsub && unsub();
+  }, []);
+
+  const increaseQty = (id) => {
+    setQuantities((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+  };
+
+  const decreaseQty = (id) => {
+    setQuantities((prev) => ({ ...prev, [id]: Math.max((prev[id] || 0) - 1, 0) }));
+  };
+
+  const openCart = () => {
+    const selectedItems = items
+      .filter((item) => (quantities[item.id] || 0) > 0)
+      .map((item) => ({
+        ...item,
+        quantity: quantities[item.id],
+        totalCost: item.cost * quantities[item.id],
+      }));
+    setCart(selectedItems);
+    setModalVisible(true);
+  };
+
+  const handlePurchase = async () => {
+    if (cart.length === 0) {
+      Alert.alert("Cart Empty", "Please add items before purchasing.");
+      return;
+    }
+
+    const totalCost = cart.reduce((sum, item) => sum + item.totalCost, 0);
+    if (totalCost > leafPoints) {
+      Alert.alert("Not enough Leaf Points", "You don't have enough points to buy these items.");
+      return;
+    }
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      const currentInventory = userSnap.exists() && Array.isArray(userSnap.data().inventory)
+        ? [...userSnap.data().inventory]
+        : [];
+
+      // Merge cart items into inventory
+      cart.forEach((cartItem) => {
+        const idx = currentInventory.findIndex((it) => it.name === cartItem.name);
+        if (idx >= 0) {
+          currentInventory[idx].quantity = (currentInventory[idx].quantity || 0) + (cartItem.quantity || 0);
+        } else {
+          currentInventory.push({
+            name: cartItem.name,
+            quantity: cartItem.quantity,
+            icon: cartItem.icon,
+          });
+        }
+      });
+
+      // Deduct points and update doc
+      const updatedPoints = (userSnap.exists() ? (userSnap.data().leafPoints || 0) : leafPoints) - totalCost;
+
+      await updateDoc(userRef, {
+        inventory: currentInventory,
+        leafPoints: updatedPoints,
+      });
+
+      // local updates
+      setLeafPoints(updatedPoints);
+      setModalVisible(false);
+      setQuantities(initialQuantities);
+      setCart([]);
+      Alert.alert("✅ Purchase Successful", "Items added to your inventory!");
+    } catch (error) {
+      console.error("Error updating inventory:", error);
+      Alert.alert("Error", "Failed to update inventory. Please try again.");
     }
   };
 
   return (
-    <Animated.View style={[styles.shopContainer, { opacity: fade }]}>
-      <Text style={styles.quizTitle}>🛒 Shop</Text>
-      <Text style={{ textAlign: "center", color: "#1B5E20", marginBottom: 10 }}>Your LeafPoints: {leafPoints}</Text>
+    <View style={styles.shopContainer}>
+      <Text style={styles.shopHeaderTitle}>🛒 Shop</Text>
+      <Text style={styles.shopPointsText}>Your LeafPoints: {leafPoints}</Text>
+
       <FlatList
-        data={catalog}
-        keyExtractor={(i) => i.id}
+        data={items}
+        keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={{ justifyContent: "space-between", marginBottom: 12 }}
+        columnWrapperStyle={{ justifyContent: "space-between", marginTop: 14, paddingHorizontal: 10 }}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.shopCard} onPress={() => buy(item)} activeOpacity={0.85}>
+          <View style={styles.shopCard}>
             <Text style={styles.shopIcon}>{item.icon}</Text>
             <Text style={styles.shopItemTitle}>{item.name}</Text>
+
             <View style={styles.shopCostTag}>
-              <Ionicons name="leaf-outline" size={14} color="#2E7D32" />
+              <Ionicons name="leaf" size={14} color="#2E7D32" />
               <Text style={styles.shopCostText}>{item.cost}</Text>
             </View>
-          </TouchableOpacity>
+
+            <View style={styles.quantityRow}>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => decreaseQty(item.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.quantityText}>−</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.quantityCount}>{quantities[item.id]}</Text>
+
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => increaseQty(item.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.quantityText}>＋</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
-    </Animated.View>
+
+      {/* Floating Cart Button */}
+      <TouchableOpacity style={styles.cartButton} onPress={openCart} activeOpacity={0.85}>
+        <Ionicons name="cart" size={22} color="white" />
+      </TouchableOpacity>
+
+      {/* Cart Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.cartModalContainer}>
+            <Text style={styles.modalTitle}>🛍 Your Cart</Text>
+            {cart.length > 0 ? (
+              <>
+                <View style={{ marginTop: 12 }}>
+                  {cart.map((item) => (
+                    <View key={item.id} style={styles.cartItemRow}>
+                      <Text style={styles.cartItemName}>
+                        {item.icon} {item.name}
+                      </Text>
+                      <Text style={styles.cartItemQuantity}>
+                        {item.quantity} × {item.cost} = {item.totalCost}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Text style={[styles.modalMessage, { fontWeight: "bold", marginTop: 10 }]}>
+                  Total: {cart.reduce((sum, i) => sum + i.totalCost, 0)} Leaf Points
+                </Text>
+
+                <TouchableOpacity style={styles.checkoutButton} onPress={handlePurchase}>
+                  <Text style={styles.checkoutButtonText}>Buy Now</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <Text style={styles.modalMessage}>Your cart is empty.</Text>
+            )}
+
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={{ marginTop: 10 }}>
+              <Text style={{ color: "#2E7D32" }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -610,7 +748,6 @@ export function MiniGamesScreen({ navigation }) {
   );
 }
 
-
 // ----------------------------
 // Navigation Stack
 // ----------------------------
@@ -626,7 +763,6 @@ export default function QuizFeatureStack({ navigation }) {
           <TouchableOpacity
             style={{ marginLeft: 10 }}
             onPress={() => navigation.navigate("Homescreen")}
-
           >
             <Ionicons name="arrow-back" size={24} color="#1B5E20" />
           </TouchableOpacity>
@@ -653,11 +789,13 @@ export default function QuizFeatureStack({ navigation }) {
   );
 }
 
-
 // ----------------------------
 // Styles
 // ----------------------------
 const styles = StyleSheet.create({
+  // ----------------------------
+  // General Layout and Home
+  // ----------------------------
   homeContainer: {
     flex: 1,
     backgroundColor: "#E8F5E9",
@@ -716,6 +854,9 @@ const styles = StyleSheet.create({
 
   mainButtonText: { color: "#fff", fontWeight: "700", marginLeft: 10 },
 
+  // ----------------------------
+  // Quiz Screen
+  // ----------------------------
   quizPage: { flex: 1, backgroundColor: "#DFF0D8", padding: 18 },
   quizTitle: {
     fontSize: 20,
@@ -747,6 +888,9 @@ const styles = StyleSheet.create({
   },
   nextButtonText: { color: "#fff", textAlign: "center", fontWeight: "700" },
 
+  // ----------------------------
+  // History
+  // ----------------------------
   historyContainer: { flex: 1, backgroundColor: "#E8F5E9", padding: 18 },
   historyItem: {
     backgroundColor: "#FFFFFF",
@@ -756,29 +900,129 @@ const styles = StyleSheet.create({
   },
   historyText: { color: "#1B5E20" },
 
-  shopContainer: { flex: 1, padding: 18, backgroundColor: "#E8F5E9" },
+  // ----------------------------
+  // 🛒 Shop Screen
+  // ----------------------------
+  shopContainer: { flex: 1, padding: 12, backgroundColor: "#F7F7F7" },
+  shopHeaderTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1B5E20",
+    textAlign: "center",
+    marginTop: 6,
+  },
+  shopPointsText: {
+    textAlign: "center",
+    fontSize: 14,
+    color: "#1B5E20",
+    marginBottom: 6,
+  },
+
+  // Card used by grid items (48% width for 2-column)
   shopCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 14,
+    padding: 16,
     width: "48%",
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 12,
     elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
   },
-  shopIcon: { fontSize: 34 },
-  shopItemTitle: { marginTop: 8, fontWeight: "600" },
+
+  shopIcon: { fontSize: 36, marginBottom: 6 },
+  shopItemTitle: { marginTop: 6, fontWeight: "600", color: "#2E7D32", fontSize: 16 },
   shopCostTag: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 8,
-    backgroundColor: "#C8E6C9",
+    backgroundColor: "#E8F5E9",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 20,
   },
   shopCostText: { marginLeft: 6, color: "#2E7D32", fontWeight: "700" },
 
+  // quantityRow reused for each card
+  quantityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  quantityButton: {
+    backgroundColor: "#C8E6C9",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  quantityText: {
+    color: "#1B5E20",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+  quantityCount: {
+    marginHorizontal: 12,
+    fontSize: 16,
+    color: "#1B5E20",
+  },
+
+  cartButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#2E7D32",
+    padding: 16,
+    borderRadius: 50,
+    elevation: 5,
+  },
+  buyButton: {
+    marginTop: 14,
+    backgroundColor: "#2E7D32",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  buyButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  // cart modal styles
+  cartModalContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    width: "88%",
+    maxHeight: "80%",
+    elevation: 5,
+  },
+  cartItemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  cartItemName: { fontSize: 16, color: "#1B5E20", fontWeight: "500" },
+  cartItemQuantity: { fontSize: 14, color: "#1B5E20" },
+
+  checkoutButton: {
+    backgroundColor: "#2E7D32",
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 16,
+    alignItems: "center",
+  },
+  checkoutButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+
+  // ----------------------------
+  // Inventory card
+  // ----------------------------
   inventoryCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -791,6 +1035,9 @@ const styles = StyleSheet.create({
   inventoryIcon: { fontSize: 36, marginBottom: 8 },
   inventoryName: { fontWeight: "600", color: "#2E7D32", textAlign: "center" },
 
+  // ----------------------------
+  // Modals and Center Layout
+  // ----------------------------
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -814,6 +1061,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#DFF0D8",
   },
 
+  // ----------------------------
+  // Quiz Option Circle
+  // ----------------------------
   optionRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -838,4 +1088,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
