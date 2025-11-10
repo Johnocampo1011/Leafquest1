@@ -206,16 +206,22 @@ export function QuizScreen({ navigation }) {
     load();
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      const onBack = () => {
-        setExitModalVisible(true);
-        return true;
-      };
-      BackHandler.addEventListener("hardwareBackPress", onBack);
-      return () => BackHandler.removeEventListener("hardwareBackPress", onBack);
-    }, [])
-  );
+useFocusEffect(
+  useCallback(() => {
+    const onBack = () => {
+      setExitModalVisible(true);
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBack
+    );
+
+    return () => subscription.remove(); // ✅ modern cleanup
+  }, [])
+);
+
 
   const handleSelect = (opt) => {
     if (showFeedback) return;
