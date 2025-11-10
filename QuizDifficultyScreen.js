@@ -172,13 +172,22 @@ export function HomeScreenWithQuiz({ navigation }) {
         <AnimatedButton title="Shop" color="#00796B" icon="cart-outline" onPress={() => navigation.navigate("Shop")} />
         <AnimatedButton title="Inventory" color="#4CAF50" icon="bag-outline" onPress={() => navigation.navigate("Inventory")} />
         <AnimatedButton title="Mini-Games" color="#8E44AD" icon="game-controller-outline" onPress={() => navigation.navigate("MiniGames Menu")} />
+        
+        <TouchableOpacity
+  style={styles.circularHomeButton}
+  onPress={() => navigation.navigate("Homescreen")}
+  activeOpacity={0.8}
+>
+  <Ionicons name="home-outline" size={28} color="#fff" />
+</TouchableOpacity>
+
       </View>
     </View>
   );
 }
 
 // ----------------------------
-// Quiz Screen (updated with A/B/C/D circle labels)
+// Quiz Screen 
 // ----------------------------
 export function QuizScreen({ navigation }) {
   const [questions, setQuestions] = useState([]);
@@ -1093,4 +1102,20 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
+
+  circularHomeButton: {
+  width: 60,            // button width
+  height: 60,           // button height
+  borderRadius: 30,     // half of width/height for perfect circle
+  backgroundColor: "#0c7a1aff",
+  justifyContent: "center",
+  alignItems: "center",
+  marginTop: 12,        // spacing from other buttons
+  elevation: 4,
+  shadowColor: "#000",
+  shadowOpacity: 0.2,
+  shadowOffset: { width: 0, height: 2 },
+  shadowRadius: 3,
+}
+
 });
